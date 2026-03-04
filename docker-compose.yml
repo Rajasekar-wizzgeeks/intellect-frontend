@@ -6,12 +6,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3003
     ports:
       - "3003:3003"
     networks:
-      - intellect-network
+      - shared-app-network
     restart: unless-stopped
 
 networks:
-  intellect-network:
-    driver: bridge
+  shared-app-network:
+    external: true
