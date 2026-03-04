@@ -1,0 +1,280 @@
+.cap {
+  margin-top: 8px;
+}
+
+.cap-title {
+  color: var(--color-green);
+  margin-top: 10px;
+}
+
+.idp-title {
+  color: var(--color-green);
+}
+
+.cap--padded {
+  padding-left: 40px;
+}
+
+.cap-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: stretch;
+  margin-bottom: 12px;
+
+  &--tight {
+    margin-bottom: 8px;
+  }
+}
+
+.cap-label {
+  border: 2px solid var(--color-gold);
+  padding: 6px 8px;
+  font-weight: 600;
+  font-size: var(--fs-md);
+  border-right: none;
+  &--green {
+    background: var(--color-green-mid);
+    color: #fff;
+    border-color: var(--color-gold);
+  }
+}
+
+.cap-cell {
+  border: 2px solid var(--color-gold);
+  min-height: 28px;
+}
+
+.cap-block {
+  margin-top: 16px;
+
+  &__header {
+    font-size: var(--fs-md);
+    border: 2px solid var(--color-gold);
+    padding: 6px 8px;
+    font-weight: 600;
+    background: var(--color-green-mid);
+    color: #fff;
+  }
+  .cap-block-box-border {
+    border-bottom: none;
+  }
+
+  &--mt8 {
+    margin-top: 8px;
+  }
+}
+
+.cap-table {
+  border-left: 2px solid var(--color-gold);
+  border-right: 2px solid var(--color-gold);
+}
+
+.cap-tr {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  border-bottom: 2px solid var(--color-gold);
+}
+
+.cap-td {
+  padding: 3px 8px 0;
+  min-height: 28px;
+  &--label {
+    border-right: 2px solid var(--color-gold);
+    background: #fff;
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--fs-md);
+  }
+}
+
+.cap-textarea {
+  border: 2px solid var(--color-gold);
+  height: 280px;
+  margin-top: 0;
+
+  &.cap-textarea--lg {
+    height: 300px;
+  }
+}
+
+/* Page 2: two-column goals grid */
+.cap-grid2 {
+  margin-top: 28px;
+  border: 2px solid var(--color-gold);
+  border-top: none;
+
+  &__header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--color-green-mid);
+    color: #fff;
+    border-top: 2px solid var(--color-gold);
+  }
+
+  &__th {
+    padding: 6px 8px;
+    font-weight: 600;
+    font-size: var(--fs-md);
+    border-right: 2px solid var(--color-gold);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 2px solid var(--color-gold);
+  }
+
+  &__td {
+    min-height: 46px;
+    border-right: 2px solid var(--color-gold);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+/* IDP 6-column grid */
+.idp-grid6 {
+  margin-top: 12px;
+  border: 2px solid var(--color-gold);
+  border-top: none;
+
+  &__header {
+    display: grid;
+    grid-template-columns: 51px 1.4fr 2fr 1fr 1fr 1.3fr;
+    background: var(--color-green-mid);
+    color: #fff;
+    border-top: 2px solid var(--color-gold);
+    // border-bottom: none;
+  }
+
+  &__th {
+    padding: 6px 8px;
+    font-weight: 600;
+    font-size: var(--fs-md);
+    border-right: 2px solid var(--color-gold);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 51px 1.4fr 2fr 1fr 1fr 1.3fr;
+    border-top: 2px solid var(--color-gold);
+  }
+
+  &__td {
+    min-height: 120px;
+    border-right: 2px solid var(--color-gold);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+/* Signatures */
+.cap-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  margin-top: 88px;
+}
+
+.cap-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__line {
+    width: 70%;
+    height: 1.2px;
+    background: linear-gradient(
+      to right,
+      transparent 0,
+      transparent 4px,
+      var(--color-gold) 4px,
+      var(--color-gold) 100%
+    );
+    background: var(--color-gold);
+    opacity: 0.8;
+    margin-bottom: 15px;
+  }
+
+  &__label {
+    color: var(--color-green-mid);
+    font-weight: 600;
+    font-size: var(--fs-md);
+  }
+}
+
+/* Section band used before tables/boxes */
+.section-band {
+  margin-top: 16px;
+  background: var(--color-green-mid);
+  color: #fff;
+  border: 2px solid var(--color-gold);
+  border-bottom: none;
+  padding: 6px 8px;
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+
+/* Assignments: 4-column grid */
+.assign-grid4 {
+  border: 2px solid var(--color-gold);
+  border-top: none;
+
+  &__header {
+    display: grid;
+    grid-template-columns: 48px 3fr 1.5fr 2fr;
+    background: var(--color-surface);
+    color: var(--color-green);
+    border-top: 2px solid var(--color-gold);
+    // border-bottom: none;
+  }
+
+  &__th {
+    padding: 6px 8px;
+    font-weight: 600;
+    font-size: var(--fs-md);
+    border-right: 2px solid var(--color-gold);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 48px 3fr 1.5fr 2fr;
+    border-top: 2px solid var(--color-gold);
+  }
+
+  &__td {
+    min-height: 75px;
+    border-right: 2px solid var(--color-gold);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+/* Summary box */
+.summary {
+  margin-top: 16px;
+
+  &__box {
+    border: 2px solid var(--color-gold);
+    height: 360px;
+    background: var(--color-bg);
+  }
+}

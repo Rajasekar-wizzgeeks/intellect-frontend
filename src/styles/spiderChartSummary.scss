@@ -1,0 +1,80 @@
+.scs-title {
+  color: var(--color-green);
+}
+
+.scs-desc {
+  margin-top: 10px;
+  color: var(--color-text);
+
+  &__text {
+    line-height: 1.55;
+    font-size: var(--fs-md);
+  }
+
+  &__list {
+    margin-top: 12px;
+    padding-left: 20px;
+    line-height: 1.6;
+    font-size: var(--fs-md);
+  }
+
+  &__item {
+    font-size: var(--fs-md);
+
+    &--mt10 {
+      margin-top: 10px;
+    }
+  }
+}
+
+.scs-chartwrap {
+  position: relative;
+  margin-top: 12px;
+
+  &__center {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.scs-chart {
+  width: 400px; // matches the size variable
+  height: 400px;
+  object-fit: contain;
+  overflow: visible;
+  display: block;
+}
+
+.scs-legend {
+  position: absolute;
+  top: 110px;
+  right: 58px;
+  background: var(--color-muted);
+  padding: 12px 16px;
+  border-radius: 2px;
+
+  &__title {
+    font-size: var(--fs-md);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  &__color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: #999; // overridden inline per item
+    border-radius: 2px;
+  }
+
+  &__label {
+    font-size: var(--fs-md);
+  }
+}

@@ -1,0 +1,115 @@
+/* Using CSS variables from :root */
+
+.pc-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: inherit;
+  color: var(--color-text);
+
+  thead th {
+    background: var(--color-green-header);
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px 8px;
+    border: 1px solid var(--color-table-border);
+    font-size: var(--fs-sm);
+  }
+
+  // Column sizing
+  .pc-col-label {
+    width: var(--pc-col-label-w, 230px);
+    text-align: left;
+  }
+  .pc-col-self {
+    width: 90px;
+  }
+  .pc-col-mgr {
+    width: 110px;
+  }
+  .pc-col-team {
+    width: 98px;
+  }
+  .pc-col-peers {
+    width: 90px;
+  }
+
+  tbody td {
+    border: 1px solid var(--color-table-border);
+    padding: 8px 10px;
+    vertical-align: middle;
+    font-size: var(--fs-md);
+    // min-height: 20px;
+  }
+
+  .pc-label {
+    background: var(--color-sage);
+    font-weight: 700;
+    color: var(--color-text);
+    text-align: left;
+    white-space: normal;
+  }
+
+  .pc-gutter {
+    width: 12px;
+    background: var(--table-gutter-bg);
+    border-left: 1px solid var(--color-table-border);
+    border-right: 1px solid var(--color-table-border);
+    padding: 0;
+  }
+
+  .pc-cell {
+    background: var(--color-white);
+  }
+
+  .pc-score {
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    &.editing {
+      padding: 0;
+
+      &:focus-within {
+        outline: none;
+      }
+    }
+  }
+  .pc-your {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+  .pc-cohort-color {
+    background: var(--surface-cream);
+  }
+  .pc-cohort {
+    color: var(--color-text);
+    font-weight: 600;
+    // background: var(--color-sage);
+  }
+}
+
+.pc-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: inherit;
+  font-family: inherit;
+  background: white;
+  box-sizing: border-box;
+  display: block;
+  margin: 0;
+  text-align: center;
+
+  &:focus {
+    outline: none;
+  }
+}

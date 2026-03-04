@@ -1,0 +1,182 @@
+.home {
+  // min-height: 79vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background-color: var(--color-secondary-bg);
+  // height: 89%;
+  height: calc(100vh - 165px);
+}
+
+.home__grid {
+  // width: 100%;
+  // max-width: 1180px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .home {
+    padding: 20px;
+  }
+
+  .home__grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.home-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background-color: var(--color-surface);
+  box-shadow: 0 18px 45px rgba(17, 24, 39, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.home-card__topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.home-card__topbar--overall {
+  background: linear-gradient(
+    90deg,
+    var(--color-green) 0%,
+    var(--color-green-mid) 55%,
+    var(--color-gold) 100%
+  );
+}
+
+.home-card__topbar--report360 {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) 0%,
+    var(--color-warm-sand) 55%,
+    var(--color-green-mid) 100%
+  );
+}
+
+.home-card__body {
+  padding: 32px;
+}
+
+.home-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.home-card__icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-card__icon--overall {
+  background-color: var(--color-green);
+  box-shadow: 0 10px 24px rgba(18, 52, 29, 0.18);
+}
+
+.home-card__icon--report360 {
+  background-color: var(--color-gold);
+  box-shadow: 0 10px 24px rgba(174, 127, 46, 0.22);
+}
+
+.home-card__badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background-color: var(--color-secondary-bg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.home-card__badge--overall {
+  color: var(--color-green-mid);
+}
+
+.home-card__badge--report360 {
+  color: var(--color-gold);
+}
+
+.home-card__content {
+  margin-bottom: 24px;
+}
+
+.home-card__title {
+  font-size: var(--fs-xmd);
+  font-weight: 800;
+  color: var(--color-green-header);
+  margin: 0 0 8px 0;
+}
+
+.home-card__desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text);
+  opacity: 0.9;
+  max-width: 440px;
+}
+
+.home-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.home-stat {
+  padding: 16px;
+  border-radius: 12px;
+  background-color: var(--color-secondary-bg);
+}
+
+.home-stat__label {
+  font-size: 11px;
+  color: var(--color-text);
+  opacity: 0.65;
+  margin-bottom: 6px;
+}
+
+.home-stat__value {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.home-stat__value--green {
+  color: var(--color-green);
+}
+
+.home-stat__value--gold {
+  color: var(--color-gold);
+}
+
+.home-card__cta {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-white);
+}
+
+.home-card__cta--overall {
+  background-color: var(--color-green);
+}
+
+.home-card__cta--report360 {
+  background-color: var(--color-gold);
+}

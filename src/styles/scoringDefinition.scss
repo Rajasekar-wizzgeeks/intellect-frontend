@@ -1,0 +1,53 @@
+.sd-usage {
+  margin-top: 45px;
+
+  &__list {
+    margin-top: 14px;
+    padding-left: 56px;
+    line-height: 1.55;
+    font-size: var(--fs-lg);
+  }
+
+  &__item {
+    // base li styles if needed
+    &--spaced {
+      margin-top: 14px;
+    }
+  }
+
+  &__note {
+    margin-top: 8px;
+    font-size: var(--fs-md);
+  }
+}
+
+.sd-more-usage {
+  margin-top: 28px;
+  padding-left: 40px;
+
+  &__list {
+    line-height: 1.55;
+    padding-left: 16px;
+    font-size: var(--fs-lg);
+  }
+
+  &__item {
+    &--mt8 {
+      margin-top: 8px;
+    }
+    &--mt18 {
+      margin-top: 18px;
+    }
+  }
+
+  &__sublist {
+    margin-top: 10px;
+    padding-left: 18px;
+    font-size: var(--fs-md);
+  }
+
+  &__note {
+    margin-top: 8px;
+    font-size: var(--fs-md);
+  }
+}

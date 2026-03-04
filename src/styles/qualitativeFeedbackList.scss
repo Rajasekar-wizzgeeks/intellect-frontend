@@ -1,0 +1,30 @@
+.qfl-title {
+  color: var(--color-green);
+}
+
+.qfl-question {
+  margin-top: 16px;
+
+  &--first {
+    margin-top: 6px;
+  }
+
+  &__header {
+    color: var(--color-green);
+    font-weight: 700;
+    padding-left: 4px;
+    margin-bottom: 30px;
+  }
+
+  &__index {
+    margin-right: 8px;
+  }
+}
+
+.qfl-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-left: 8px;
+  padding-right: 8px;
+}

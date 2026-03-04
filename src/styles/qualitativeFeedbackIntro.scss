@@ -1,0 +1,25 @@
+.qfi-title {
+  color: var(--color-green);
+}
+
+.qfi-body {
+  margin-top: 8px;
+  color: var(--color-text);
+  max-width: 620px;
+  padding-left: 40px;
+}
+
+.qfi-paragraph {
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--color-text);
+  // font-weight: 500;
+
+  &:first-child {
+    margin: 0 0 16px 0;
+  }
+
+  &:not(:first-child) {
+    margin: 0;
+  }
+}

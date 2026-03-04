@@ -1,0 +1,126 @@
+/* Global CSS variables */
+:root {
+  /* Font sizes */
+  --fs-xs: 10px;
+  --fs-sm: 12px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-xmd: 20px;
+  --fs-xls: 22px;
+
+  /* Base palette */
+  --color-text: #333333;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-muted: #e5e7e9;
+  --color-secondary-bg: #f7f7fc;
+  --color-black: #111;
+
+  /* Primary colours (Brand Core) */
+  --color-green: #12341d;
+  --color-green-mid: #21552f;
+  --color-green-header: #21552f;
+  --color-gold: #ae7f2e;
+  --color-warm-sand: #dca972;
+
+  /* Keep legacy names mapped to brand palette */
+  --color-border: #123b2b;
+  --color-accent: #21552f;
+  --color-copper: #ae7f2e;
+  --color-copper-dark: #dca972;
+  --color-white: #ffffff;
+  --feedback-initial-viewport-bg: var(--color-secondary-bg);
+  --feedback-initial-card-bg: #fbf7f7;
+  --feedback-initial-card-border: #e6e6e6;
+  --feedback-initial-title-color: #111111;
+  --feedback-initial-underline-color: #d65a5a;
+  --feedback-initial-name-color: #7b2d2d;
+  --feedback-initial-date-color: #111111;
+  /* --feedback-initial-blob-top: rgba(170, 150, 180, 0.25);
+  --feedback-initial-blob-dot: rgba(120, 90, 140, 0.55);
+  --feedback-initial-blob-bottom: rgba(220, 180, 170, 0.35); */
+
+  /* Secondary colours (Supporting UI Shades) */
+  --color-muted-green: #478159;
+  --color-sage: #81b48d;
+  --color-mint: #b5d3bb;
+
+  /* Neutral warm tones (UI Background & Surface Colors) */
+  --surface-clay: #e1b58e;
+  --surface-peach: #f0d0b4;
+  --surface-cream: #fee7da;
+
+  /* Tables specific */
+  --color-table-border: #ae7f2e;
+  --bg-label: #e2efe6;
+  --table-gutter-bg: #f4fff7;
+  --cell-pad-y: 8px;
+  --cell-pad-x: 10px;
+
+  /* Cover page (initial) - can be refined to new greens if needed */
+  --cover-text: #e8f1ea;
+  --green-deep-1: rgba(9, 48, 28, 0.92);
+  --green-deep-2: rgba(12, 61, 36, 0.88);
+  --green-deep-3: rgba(16, 70, 40, 0.6);
+  --green-deep-4: rgba(20, 80, 45, 0.25);
+
+  /* Bar colors */
+  --bar-bg: #e5e7e9;
+  --bar-self: #81b48d;
+  --bar-self-tail: #b5d3bb;
+
+  /* Competency 3-series bar chart */
+  --chart-series-group-mean: #0b63b6;
+  --chart-series-manager-rating: #b22222;
+  --chart-series-self-rating: #0e9f3d;
+  --chart-separator: var(--feedback-initial-underline-color);
+
+  /* Strengths page */
+  --strength-pill-bg: #86ffb8;
+  --strength-card-bg: #efefef;
+  --strength-divider: rgba(0, 0, 0, 0.45);
+  --strength-title-color:#17ad90;
+  --strength-arc-color:#00a651;
+
+  /* Areas of Improvement page */
+  --improve-pill-bg: #f3c6c6;
+
+
+  /* Component theming hooks (defaults) */
+  --arc-color: var(--color-green-mid);
+  --chip-color: var(--color-green-mid);
+  --fb-border: var(--color-border);
+  --bs-arc: var(--color-gold);
+  --bs-chip: var(--color-gold);
+
+}
+
+/* body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+} */
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: "Courier New", Consolas, Monaco, Menlo, monospace;
+  font-size: 0.95rem;
+}

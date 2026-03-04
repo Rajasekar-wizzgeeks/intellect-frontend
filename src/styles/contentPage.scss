@@ -1,0 +1,50 @@
+.content-page {
+  padding: 24px 48px 48px;
+  // height: 803px;
+  box-sizing: border-box;
+  overflow: hidden;
+  width: 100%;
+
+  &__title {
+    margin: 48px 0 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    color: var(--color-text);
+    // font-weight: 800;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
+    font-size: var(--fs-xl);
+  }
+
+  &__title-index {
+    font-weight: 900;
+  }
+
+  &__title-index-bold {
+    font-weight: 900;
+    font-size: var(--fs-xls);
+  }
+
+  &__title-text {
+    font-weight: 600;
+  }
+  &__title-text-bold {
+    font-weight: 600;
+    font-size: var(--fs-xls);
+  }
+
+  &__table {
+    margin-top: 24px;
+    max-width: 88%;
+    padding-left: 37px;
+  }
+  &__table-score {
+    margin-top: 8px;
+    max-width: 100%;
+    padding-left: 37px;
+  }
+}
+.content-page > * {
+  margin-top: 0;
+}

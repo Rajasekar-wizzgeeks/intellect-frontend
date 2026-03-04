@@ -1,0 +1,56 @@
+/* Using brand colors from :root */
+
+.report-header {
+  width: 100%;
+  background: transparent;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: start;
+    padding: 32px;
+    gap: 24px;
+  }
+
+  &__cell {
+    position: relative;
+    min-height: 64px;
+
+    &--left {
+      text-align: left;
+    }
+    &--center {
+      text-align: center;
+    }
+    &--right {
+      text-align: right;
+    }
+  }
+
+  &__title {
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--color-copper);
+    font-size: clamp(14px, 1.4vw, 18px);
+    text-transform: uppercase;
+  }
+
+  &__logo {
+    margin-top: 8px;
+    height: 42px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+  }
+
+  @media (max-width: 768px) {
+    &__row {
+      grid-template-columns: 1fr 1fr 1fr;
+      padding: 16px 16px 0 16px;
+      gap: 12px;
+    }
+    &__logo {
+      height: 34px;
+    }
+  }
+}

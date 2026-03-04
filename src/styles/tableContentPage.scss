@@ -1,0 +1,121 @@
+/* Table of Contents styles (dedicated stylesheet) */
+.toc {
+  margin-top: 36px;
+  max-width: 90%;
+  padding-left: 36px;
+
+  &__suptitle {
+    margin: 0 0 18px;
+    font-weight: 500;
+    color: var(--color-text);
+    font-size: var(--fs-lg);
+  }
+
+  &__title {
+    margin: 0 0 15px;
+    font-weight: 500;
+    color: var(--color-text);
+    font-size: var(--fs-lg);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    &--lvl1,
+    &--lvl2,
+    &--lvl3 {
+      margin-top: 6px;
+    }
+  }
+
+  &__item {
+    // margin: 6px 0;
+    gap: 6px;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto; /* label/dots + page number */
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  &__label {
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* number, text, dots (pseudo) */
+    align-items: baseline;
+    column-gap: 8px;
+    min-width: 0; /* allow text to wrap properly */
+  }
+
+  &__num {
+    font-weight: 700;
+    color: var(--color-text);
+    min-width: 2.2ch; /* keep numbers aligned */
+    font-size: var(--fs-md);
+  }
+
+  &__text {
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: var(--fs-md);
+  }
+
+  /* dotted leader between text and page number */
+  &__dots {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 24px;
+    height: 1em;
+    overflow: hidden;
+    margin: 0 8px;
+  }
+  &__dots::before {
+    content: ". ";
+    color: #777;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+
+  &__page {
+    min-width: 2ch;
+    text-align: right;
+    font-weight: 500;
+    color: var(--color-text);
+    font-size: var(--fs-md);
+  }
+
+  /* indentation for nested levels */
+  &__list--lvl1 {
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  &__list--lvl2 {
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  &__list--lvl3 {
+    padding-left: 40px;
+  }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    &__row {
+      gap: 6px;
+    }
+    &__dots {
+      margin: 0 6px;
+    }
+  }
+}
