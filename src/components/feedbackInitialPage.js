@@ -22,8 +22,8 @@ const FeedbackInitialPage = ({ initialName = "" }) => {
           </div>
 
           <div>
-            <p className="feedback-initial-name">
-              <span>Name - </span>
+            <div className="feedback-initial-name">
+              <span>Name -</span>
               <input
                 type="text"
                 className="feedback-initial-name-field"
@@ -37,7 +37,7 @@ const FeedbackInitialPage = ({ initialName = "" }) => {
               >
                 {name && name.trim().length > 0 ? name : "\u00A0"}
               </span>
-            </p>
+            </div>
             <div className="feedback-initial-date">Feb 2025</div>
           </div>
         </div>
