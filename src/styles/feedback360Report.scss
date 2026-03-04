@@ -7,7 +7,6 @@
   .section-page {
     position: relative;
     counter-increment: page;
-    
 
     &::after {
       content: counter(page);
@@ -21,8 +20,8 @@
     }
   }
 
-  .ppt-section-page{
-     width: 794px;
+  .ppt-section-page {
+    width: 794px;
     height: 580px;
     margin: auto;
     background: #fff;
@@ -35,7 +34,6 @@
     flex-direction: column;
     // justify-content: center;
     // align-items: center;
-
 
     &::after {
       content: counter(page);
@@ -66,7 +64,7 @@
 }
 
 .feedbackreport-btn--download {
-  // display: none;
+  display: none;
   background: var(--color-green);
 }
 
