@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  intellect-frontend:
+    container_name: intellect-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    networks:
+      - intellect-network
+    restart: unless-stopped
+
+networks:
+  intellect-network:
+    driver: bridge

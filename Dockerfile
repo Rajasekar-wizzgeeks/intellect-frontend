@@ -9,6 +9,6 @@ COPY . .
 
 COPY .env .env
 
-EXPOSE 6104
+EXPOSE 3003
 
 CMD ["npm", "start"]
