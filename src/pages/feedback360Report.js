@@ -18,10 +18,17 @@ import { useOutletContext } from "react-router-dom";
 
 const Feedback360Report = () => {
   const [feedbackOverallData, setFeedbackOverallData] = useState(null);
-  const { setIsHeader, setHeaderName } = useOutletContext();
-  const [excelFile, setExcelFile] = useState(null);
+  const { setHeaderName } = useOutletContext();
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
+  const currentYearFileInputRef = useRef(null);
+  const previousYearFileInputRef = useRef(null);
+  const previousSecondYearFileInputRef = useRef(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [currentYearExcelFile, setCurrentYearExcelFile] = useState(null);
+  const [previousYearExcelFile, setPreviousYearExcelFile] = useState(null);
+  const [previousSecondYearExcelFile, setPreviousSecondYearExcelFile] =
+    useState(null);
+  const [uploadError, setUploadError] = useState("");
   const [averageCompentency, setAverageCompentency] = useState(null);
 
   const buildCompetencyItemsFromApi = (summary) => {
@@ -491,26 +498,43 @@ const Feedback360Report = () => {
       },
   };
 
-  const handleExcelChange = (e) => {
-    const file = e.target.files?.[0] || null;
-    setExcelFile(file);
-    if (file) {
-      handleExcelUpload(file);
-      e.target.value = "";
-    }
-  };
-
   // console.log("feedbackOverallData", averageCompentency);
 
-  const handleExcelUpload = async (fileArg) => {
-    const fileToUpload = fileArg || excelFile;
-    if (!fileToUpload || isUploading) return;
+  const openUploadModal = () => {
+    if (isUploading) return;
+    setUploadError("");
+    setIsUploadModalOpen(true);
+  };
+
+  const closeUploadModal = () => {
+    if (isUploading) return;
+    setIsUploadModalOpen(false);
+  };
+
+  const handleThreeFileUpload = async () => {
+    if (isUploading) return;
+
+    if (!currentYearExcelFile || !previousYearExcelFile || !previousSecondYearExcelFile) {
+      setUploadError("Please select all 3 Excel files.");
+      return;
+    }
+
     try {
+      setUploadError("");
       setIsUploading(true);
-      const response = await excelSheetFeedback(fileToUpload);
+      const response = await excelSheetFeedback([
+        currentYearExcelFile,
+        previousYearExcelFile,
+        previousSecondYearExcelFile,
+      ]);
       setFeedbackOverallData(response);
+      setIsUploadModalOpen(false);
+      setCurrentYearExcelFile(null);
+      setPreviousYearExcelFile(null);
+      setPreviousSecondYearExcelFile(null);
     } catch (err) {
       console.error("Excel upload failed", err);
+      setUploadError("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -531,17 +555,9 @@ const Feedback360Report = () => {
         >
           Download PDF
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx,.xls,.csv"
-          onChange={handleExcelChange}
-          className="feedbackreport-file-input"
-          // disabled={!isUploading}
-        />
         <button
           type="button"
-          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+          onClick={openUploadModal}
           className={`feedbackreport-btn feedbackreport-btn--upload${
             isUploading ? " feedbackreport-btn--upload-disabled" : ""
           }`}
@@ -550,6 +566,145 @@ const Feedback360Report = () => {
           {isUploading ? "Uploading..." : "Upload Excel"}
         </button>
       </div>
+
+      {isUploadModalOpen ? (
+        <div
+          className="feedbackreport-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Upload Excel Sheets"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeUploadModal();
+          }}
+        >
+          <div className="feedbackreport-modal">
+            <div className="feedbackreport-modal__header">
+              <div className="feedbackreport-modal__title">Upload Excel Sheets</div>
+              <button
+                type="button"
+                className="feedbackreport-modal__close"
+                onClick={closeUploadModal}
+                disabled={isUploading}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="feedbackreport-modal__body">
+              <div className="feedbackreport-upload-grid">
+                <div className="feedbackreport-upload-item">
+                  <div className="feedbackreport-upload-item__label">Current Year</div>
+                  <input
+                    ref={currentYearFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="feedbackreport-file-input"
+                    onChange={(e) => {
+                      setCurrentYearExcelFile(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="feedbackreport-btn feedbackreport-btn--upload"
+                    onClick={() =>
+                      currentYearFileInputRef.current &&
+                      currentYearFileInputRef.current.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {currentYearExcelFile ? "Change File" : "Choose File"}
+                  </button>
+                  <div className="feedbackreport-upload-item__filename">
+                    {currentYearExcelFile?.name || "No file selected"}
+                  </div>
+                </div>
+
+                <div className="feedbackreport-upload-item">
+                  <div className="feedbackreport-upload-item__label">Previous Year</div>
+                  <input
+                    ref={previousYearFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="feedbackreport-file-input"
+                    onChange={(e) => {
+                      setPreviousYearExcelFile(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="feedbackreport-btn feedbackreport-btn--upload"
+                    onClick={() =>
+                      previousYearFileInputRef.current &&
+                      previousYearFileInputRef.current.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {previousYearExcelFile ? "Change File" : "Choose File"}
+                  </button>
+                  <div className="feedbackreport-upload-item__filename">
+                    {previousYearExcelFile?.name || "No file selected"}
+                  </div>
+                </div>
+
+                <div className="feedbackreport-upload-item">
+                  <div className="feedbackreport-upload-item__label">Previous 2nd Year</div>
+                  <input
+                    ref={previousSecondYearFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="feedbackreport-file-input"
+                    onChange={(e) => {
+                      setPreviousSecondYearExcelFile(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="feedbackreport-btn feedbackreport-btn--upload"
+                    onClick={() =>
+                      previousSecondYearFileInputRef.current &&
+                      previousSecondYearFileInputRef.current.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {previousSecondYearExcelFile ? "Change File" : "Choose File"}
+                  </button>
+                  <div className="feedbackreport-upload-item__filename">
+                    {previousSecondYearExcelFile?.name || "No file selected"}
+                  </div>
+                </div>
+              </div>
+
+              {uploadError ? (
+                <div className="feedbackreport-upload-error">{uploadError}</div>
+              ) : null}
+            </div>
+
+            <div className="feedbackreport-modal__footer">
+              <button
+                type="button"
+                className="feedbackreport-btn feedbackreport-btn--upload feedbackreport-btn--secondary"
+                onClick={closeUploadModal}
+                disabled={isUploading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`feedbackreport-btn feedbackreport-btn--upload${
+                  isUploading ? " feedbackreport-btn--upload-disabled" : ""
+                }`}
+                onClick={handleThreeFileUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? "Uploading..." : "Upload"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="section-page pdf-section">
         <FeedbackInitialPage  initialName={feedbackOverallData?.name ? feedbackOverallData?.name : ""} />
       </div>

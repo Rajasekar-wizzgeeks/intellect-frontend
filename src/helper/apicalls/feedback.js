@@ -1,9 +1,13 @@
 import { feedbackExcelUrl } from "../apiurls";
 
-export const excelSheetFeedback = async (file) => {
+export const excelSheetFeedback = async (fileOrFiles) => {
   try {
     const form = new FormData();
-    form.append("file", file);
+    if (Array.isArray(fileOrFiles)) {
+      fileOrFiles.filter(Boolean).forEach((f) => form.append("files", f));
+    } else {
+      form.append("files", fileOrFiles);
+    }
     const response = await fetch(feedbackExcelUrl, {
       method: "POST",
       body: form,
