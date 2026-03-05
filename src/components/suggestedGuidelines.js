@@ -129,6 +129,7 @@ const SuggestedGuidelines = ({
         <FeedbackCommonHeader
           key="sg-h1"
           title="Suggested Guidelines When Viewing Your Report"
+          titleWidth={100}
         />
 
         <div key="sg-content" className="suggested-guidelines-content">
@@ -178,7 +179,16 @@ const SuggestedGuidelines = ({
       <FeedbackCommonHeader
         className="suggestion-overall"
         key="hdr"
-        title={title}
+        title={
+          <>
+            <div className="feedback-common-header__title-line1">
+              Your Competency Summary :
+            </div>
+            <div className="feedback-common-header__title-line2">
+              The Bigger Picture
+            </div>
+          </>
+        }
         right={
           averageCompentencyOverallScore !== undefined &&
           averageCompentencyOverallScore !== null ? (

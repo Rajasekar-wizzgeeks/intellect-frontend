@@ -124,7 +124,16 @@ const SummaryByCompetencyPage = ({
       <div className="sbc-hdr-chart-wrapper" key="sbc-wrapper-1">
         <FeedbackCommonHeader
           key="sbc-hdr-1"
-          title={title}
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                Summary by Competency -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Creating the Right Culture
+              </div>
+            </>
+          }
           right={
             overallScore !== undefined && overallScore !== null ? (
               <div className="sbc-header__pill">
@@ -168,7 +177,16 @@ const SummaryByCompetencyPage = ({
       <div>
         <FeedbackCommonHeader
           key="sbc-hdr-2"
-          title={"Summary by Competency – Leadership Personality & Style"}
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                Summary by Competency -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Leadership Personality & Style
+              </div>
+            </>
+          }
           right={
             leadershipOverallScore !== undefined &&
             leadershipOverallScore !== null ? (

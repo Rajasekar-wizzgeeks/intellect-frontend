@@ -82,6 +82,38 @@ const StaffPerformanceSummaryByCompetencyPage = ({
   const blocks = useMemo(() => {
     const out = [];
 
+    const buildHeaderTitleNode = (rawTitle) => {
+      if (typeof rawTitle !== "string") return rawTitle;
+      const raw = rawTitle.trim();
+      if (!raw) return raw;
+
+      const colonIdx = raw.indexOf(":");
+      if (colonIdx !== -1 && colonIdx < raw.length - 1) {
+        const line1 = raw.slice(0, colonIdx + 1).trim();
+        const line2 = raw.slice(colonIdx + 1).trim();
+        return (
+          <>
+            <div className="feedback-common-header__title-line1">{line1}</div>
+            <div className="feedback-common-header__title-line2">{line2}</div>
+          </>
+        );
+      }
+
+      const dashMatch = raw.match(/^(.*?)(\s[-–—]\s)(.+)$/);
+      if (dashMatch) {
+        const line1 = String(dashMatch[1] ?? "").trim();
+        const line2 = String(dashMatch[3] ?? "").trim();
+        return (
+          <>
+            <div className="feedback-common-header__title-line1">{line1} -</div>
+            <div className="feedback-common-header__title-line2">{line2}</div>
+          </>
+        );
+      }
+
+      return raw;
+    };
+
     const buildChartItems = (rawItems) => {
       const parsed = rawItems.map((it) => ({
         ...it,
@@ -157,7 +189,7 @@ const StaffPerformanceSummaryByCompetencyPage = ({
         >
           <FeedbackCommonHeader
             key={`${keyPrefix}-hdr`}
-            title={sectionTitle}
+            title={buildHeaderTitleNode(sectionTitle)}
             right={
               currentOverall !== null && currentOverall !== undefined ? (
                 <div className="sbc-header__pill">

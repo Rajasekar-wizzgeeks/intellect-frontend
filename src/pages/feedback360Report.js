@@ -543,6 +543,7 @@ const Feedback360Report = () => {
   useEffect(() => {
     setHeaderName("Feedback");
   }, []);
+  console.log(feedbackOverallData, "ksndkdjfn");
 
   return (
     <div className="feedbackreport-main-container">
