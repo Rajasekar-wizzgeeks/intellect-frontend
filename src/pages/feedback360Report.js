@@ -539,9 +539,9 @@ const Feedback360Report = () => {
     if (isUploading) return;
 
     if (
-      !currentYearExcelFile ||
-      !previousYearExcelFile ||
-      !previousSecondYearExcelFile
+      !currentYearExcelFile 
+      // !previousYearExcelFile ||
+      // !previousSecondYearExcelFile
     ) {
       setUploadError("Please select all 3 Excel files.");
       return;
