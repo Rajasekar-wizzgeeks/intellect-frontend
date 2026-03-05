@@ -22,7 +22,7 @@ const Feedback360Report = () => {
   const [excelFile, setExcelFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const [averageCompentency, setAverageCompentency] = useState(null);
+  const [averageCompentency, setAverageCompentency] = useState({});
 
   const buildCompetencyItemsFromApi = (summary) => {
     if (!summary) return [];
@@ -117,7 +117,7 @@ const Feedback360Report = () => {
     let total_no_of_count = 0;
     if (Object.entries(d).length === 0) {
       return 0;
-    }    
+    }
     Object.entries(d).map(([key, value]) => {
       Object.entries(value).map(([subKey, subValue]) => {
         if (subKey !== "Self") {
@@ -318,6 +318,30 @@ const Feedback360Report = () => {
       },
     ],
   );
+
+  useEffect(() => {
+    if (!feedbackOverallData) return;
+
+    setAverageCompentency((prev) => {
+      const next = { ...(prev || {}) };
+
+      const initial = {
+        right_culture_competency: summaryByCompetencyItems,
+        leadership_style_competency: summaryByCompetencyLeadershipItems,
+        leadership_staff_dev_competency: staffPerformanceCompetencyItems,
+        educational_quality_competency: educationalQualityCompetencyItems,
+        engagement_with_management_competency: engagementWithManagementItems,
+      };
+
+      Object.entries(initial).forEach(([k, rows]) => {
+        if (!Array.isArray(next[k]) || next[k].length === 0) {
+          next[k] = rows;
+        }
+      });
+
+      return next;
+    });
+  }, [feedbackOverallData]);
 
   const biggerPictureItems = competencyBiggerPictureItems.length
     ? competencyBiggerPictureItems

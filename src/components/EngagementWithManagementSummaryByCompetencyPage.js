@@ -76,7 +76,6 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
 
     let total = 0;
     let count = 0;
-    console.log(rowsArg);
 
     rowsArg.forEach((row) => {
       Object.entries(row).forEach(([key, value]) => {

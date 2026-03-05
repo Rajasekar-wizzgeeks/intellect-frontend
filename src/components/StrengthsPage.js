@@ -18,26 +18,8 @@ const StrengthsPage = ({
   improvementsGroupSubTitle = "(Ratings < 4.5 Only)",
   improvementsManagerTitle = "Manager Rating",
   improvementsManagerSubTitle = "(Ratings < 4 Only)",
-  groupItems = [
-    {
-      score: 4.91,
-      text: "Builds rapport with people and treats them with respect and dignity",
-    },
-    {
-      score: 4.91,
-      text: "Leads without aggression or arrogance",
-    },
-    {
-      score: 4.86,
-      text: "Builds rapport with people and treats them with respect and dignity",
-    },
-  ],
-  managerItems = [
-    {
-      score: 5.0,
-      text: "Manages school finances and payment approvals appropriately and maintains clear and accurate accounts",
-    },
-  ],
+  groupItems = [],
+  managerItems = [],
   improvementsGroupItems = [],
   improvementsManagerItems = [],
   averageCompentency = {},
@@ -279,7 +261,7 @@ const StrengthsPage = ({
 
                 <div className="sp-col__body" style={{ height: 330 }}>
                   {improvementPoints.length ===
-                    effectiveImprovementsGroupItems.length  &&
+                    effectiveImprovementsGroupItems.length &&
                     effectiveImprovementsGroupItems.map((it, i) => (
                       <div
                         key={`ig-${i}`}
@@ -292,8 +274,9 @@ const StrengthsPage = ({
                           className="sp-row__line"
                           style={{
                             top: 31,
-                            width: Math.min(160 -improvementPoints [i].x, 50),
-                            left: i === 1 ? -35 : -(155 - improvementPoints[i].x),
+                            width: Math.min(160 - improvementPoints[i].x, 50),
+                            left:
+                              i === 1 ? -35 : -(155 - improvementPoints[i].x),
                           }}
                         />
                         <div className="sp-pill">
