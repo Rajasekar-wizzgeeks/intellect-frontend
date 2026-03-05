@@ -127,15 +127,16 @@ const Feedback360Report = () => {
     }
     Object.entries(d).map(([key, value]) => {
       Object.entries(value).map(([subKey, subValue]) => {
-        total += subValue;
+        if (subKey !== "Self") {
+          total += subValue;
+          total_no_of_count += 1;
+        }
       });
-      total_no_of_count += Object.entries(value).length;
     });
     return Number((total / total_no_of_count).toFixed(2));
   };
 
   const buildThreeWayCompetencyItems = (obj, fallbackItems) => {
-    
     if (!obj) return fallbackItems;
     return Object.entries(obj).map(([label, vals]) => ({
       label,
@@ -325,6 +326,30 @@ const Feedback360Report = () => {
     ],
   );
 
+  useEffect(() => {
+    if (!feedbackOverallData) return;
+
+    setAverageCompentency((prev) => {
+      const next = { ...(prev || {}) };
+
+      const initial = {
+        right_culture_competency: summaryByCompetencyItems,
+        leadership_style_competency: summaryByCompetencyLeadershipItems,
+        leadership_staff_dev_competency: staffPerformanceCompetencyItems,
+        educational_quality_competency: educationalQualityCompetencyItems,
+        engagement_with_management_competency: engagementWithManagementItems,
+      };
+
+      Object.entries(initial).forEach(([k, rows]) => {
+        if (!Array.isArray(next[k]) || next[k].length === 0) {
+          next[k] = rows;
+        }
+      });
+
+      return next;
+    });
+  }, [feedbackOverallData]);
+
   const biggerPictureItems = competencyBiggerPictureItems.length
     ? competencyBiggerPictureItems
     : [];
@@ -490,12 +515,11 @@ const Feedback360Report = () => {
     note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
     // Use the API-provided action_areas_thing object directly
     // Structure: { continue: [...], start: [...], stop: [...] }
-    columns:
-      feedbackOverallData?.action_areas_thing || {
-        continue: [],
-        start: [],
-        stop: [],
-      },
+    columns: feedbackOverallData?.action_areas_thing || {
+      continue: [],
+      start: [],
+      stop: [],
+    },
   };
 
   // console.log("feedbackOverallData", averageCompentency);
@@ -514,7 +538,11 @@ const Feedback360Report = () => {
   const handleThreeFileUpload = async () => {
     if (isUploading) return;
 
-    if (!currentYearExcelFile || !previousYearExcelFile || !previousSecondYearExcelFile) {
+    if (
+      !currentYearExcelFile ||
+      !previousYearExcelFile ||
+      !previousSecondYearExcelFile
+    ) {
       setUploadError("Please select all 3 Excel files.");
       return;
     }
@@ -539,7 +567,6 @@ const Feedback360Report = () => {
       setIsUploading(false);
     }
   };
-
 
   useEffect(() => {
     setHeaderName("Feedback");
@@ -579,7 +606,9 @@ const Feedback360Report = () => {
         >
           <div className="feedbackreport-modal">
             <div className="feedbackreport-modal__header">
-              <div className="feedbackreport-modal__title">Upload Excel Sheets</div>
+              <div className="feedbackreport-modal__title">
+                Upload Excel Sheets
+              </div>
               <button
                 type="button"
                 className="feedbackreport-modal__close"
@@ -593,7 +622,9 @@ const Feedback360Report = () => {
             <div className="feedbackreport-modal__body">
               <div className="feedbackreport-upload-grid">
                 <div className="feedbackreport-upload-item">
-                  <div className="feedbackreport-upload-item__label">Current Year</div>
+                  <div className="feedbackreport-upload-item__label">
+                    Current Year
+                  </div>
                   <input
                     ref={currentYearFileInputRef}
                     type="file"
@@ -621,7 +652,9 @@ const Feedback360Report = () => {
                 </div>
 
                 <div className="feedbackreport-upload-item">
-                  <div className="feedbackreport-upload-item__label">Previous Year</div>
+                  <div className="feedbackreport-upload-item__label">
+                    Previous Year
+                  </div>
                   <input
                     ref={previousYearFileInputRef}
                     type="file"
@@ -649,14 +682,18 @@ const Feedback360Report = () => {
                 </div>
 
                 <div className="feedbackreport-upload-item">
-                  <div className="feedbackreport-upload-item__label">Previous 2nd Year</div>
+                  <div className="feedbackreport-upload-item__label">
+                    Previous 2nd Year
+                  </div>
                   <input
                     ref={previousSecondYearFileInputRef}
                     type="file"
                     accept=".xlsx,.xls,.csv"
                     className="feedbackreport-file-input"
                     onChange={(e) => {
-                      setPreviousSecondYearExcelFile(e.target.files?.[0] || null);
+                      setPreviousSecondYearExcelFile(
+                        e.target.files?.[0] || null,
+                      );
                       e.target.value = "";
                     }}
                   />
@@ -669,7 +706,9 @@ const Feedback360Report = () => {
                     }
                     disabled={isUploading}
                   >
-                    {previousSecondYearExcelFile ? "Change File" : "Choose File"}
+                    {previousSecondYearExcelFile
+                      ? "Change File"
+                      : "Choose File"}
                   </button>
                   <div className="feedbackreport-upload-item__filename">
                     {previousSecondYearExcelFile?.name || "No file selected"}
@@ -706,7 +745,11 @@ const Feedback360Report = () => {
         </div>
       ) : null}
       <div className="section-page pdf-section">
-        <FeedbackInitialPage  initialName={feedbackOverallData?.name ? feedbackOverallData?.name : ""} />
+        <FeedbackInitialPage
+          initialName={
+            feedbackOverallData?.name ? feedbackOverallData?.name : ""
+          }
+        />
       </div>
       <SurveyFeedback />
 

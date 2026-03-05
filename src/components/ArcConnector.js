@@ -10,7 +10,7 @@ export default function ArcConnector({
   setPointsLine,
   circleColor,
   circleBorderColor,
-  circleBorderWidth = 1,
+  circleBorderWidth = 1.5,
   circleRadius = 7,
 }) {
   const pathRef = useRef(null);
