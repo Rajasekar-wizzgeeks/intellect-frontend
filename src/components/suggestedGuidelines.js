@@ -105,7 +105,7 @@ const SuggestedGuidelines = ({
 
     merged.forEach((row) => {
       Object.entries(row).forEach(([key, value]) => {
-        if (key === "label") return;
+        if (key === "label" || key === "selfRating") return;
         const num = Number(value);
         if (Number.isFinite(num) && value) {
           total += num;

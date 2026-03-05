@@ -117,18 +117,19 @@ const Feedback360Report = () => {
     let total_no_of_count = 0;
     if (Object.entries(d).length === 0) {
       return 0;
-    }
+    }    
     Object.entries(d).map(([key, value]) => {
       Object.entries(value).map(([subKey, subValue]) => {
-        total += subValue;
+        if (subKey !== "Self") {
+          total += subValue;
+          total_no_of_count += 1;
+        }
       });
-      total_no_of_count += Object.entries(value).length;
     });
     return Number((total / total_no_of_count).toFixed(2));
   };
 
   const buildThreeWayCompetencyItems = (obj, fallbackItems) => {
-    
     if (!obj) return fallbackItems;
     return Object.entries(obj).map(([label, vals]) => ({
       label,
@@ -483,12 +484,11 @@ const Feedback360Report = () => {
     note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
     // Use the API-provided action_areas_thing object directly
     // Structure: { continue: [...], start: [...], stop: [...] }
-    columns:
-      feedbackOverallData?.action_areas_thing || {
-        continue: [],
-        start: [],
-        stop: [],
-      },
+    columns: feedbackOverallData?.action_areas_thing || {
+      continue: [],
+      start: [],
+      stop: [],
+    },
   };
 
   const handleExcelChange = (e) => {
@@ -515,7 +515,6 @@ const Feedback360Report = () => {
       setIsUploading(false);
     }
   };
-
 
   useEffect(() => {
     setHeaderName("Feedback");
@@ -551,7 +550,11 @@ const Feedback360Report = () => {
         </button>
       </div>
       <div className="section-page pdf-section">
-        <FeedbackInitialPage  initialName={feedbackOverallData?.name ? feedbackOverallData?.name : ""} />
+        <FeedbackInitialPage
+          initialName={
+            feedbackOverallData?.name ? feedbackOverallData?.name : ""
+          }
+        />
       </div>
       <SurveyFeedback />
 
