@@ -15,7 +15,17 @@ const FeedbackInitialPage = ({ initialName = "" }) => {
         {/* <div className="feedback-initial-blob-top" />
         <div className="feedback-initial-blob-bottom" /> */}
 
-        <div className="feedback-initial-left">
+     
+
+        <div className="feedback-initial-right">
+          <img
+            className="feedback-initial-image"
+            src={ReportCycle}
+            alt="360 Feedback Report"
+          />
+        </div>
+           <div className="feedback-initial-left">
+            <div className="feedback-initial-left-container">
           <div>
             <h1 className="feedback-initial-title">360 Feedback Report</h1>
             <div className="feedback-initial-underline" />
@@ -40,14 +50,7 @@ const FeedbackInitialPage = ({ initialName = "" }) => {
             </div>
             <div className="feedback-initial-date">Feb 2025</div>
           </div>
-        </div>
-
-        <div className="feedback-initial-right">
-          <img
-            className="feedback-initial-image"
-            src={ReportCycle}
-            alt="360 Feedback Report"
-          />
+          </div>
         </div>
       </div>
     </div>

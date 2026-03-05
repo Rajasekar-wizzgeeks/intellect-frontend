@@ -22,7 +22,7 @@ const Feedback360Report = () => {
   const [excelFile, setExcelFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const [averageCompentency, setAverageCompentency] = useState(null);
+  const [averageCompentency, setAverageCompentency] = useState({});
 
   const buildCompetencyItemsFromApi = (summary) => {
     if (!summary) return [];
@@ -120,15 +120,16 @@ const Feedback360Report = () => {
     }
     Object.entries(d).map(([key, value]) => {
       Object.entries(value).map(([subKey, subValue]) => {
-        total += subValue;
+        if (subKey !== "Self") {
+          total += subValue;
+          total_no_of_count += 1;
+        }
       });
-      total_no_of_count += Object.entries(value).length;
     });
     return Number((total / total_no_of_count).toFixed(2));
   };
 
   const buildThreeWayCompetencyItems = (obj, fallbackItems) => {
-    
     if (!obj) return fallbackItems;
     return Object.entries(obj).map(([label, vals]) => ({
       label,
@@ -318,6 +319,30 @@ const Feedback360Report = () => {
     ],
   );
 
+  useEffect(() => {
+    if (!feedbackOverallData) return;
+
+    setAverageCompentency((prev) => {
+      const next = { ...(prev || {}) };
+
+      const initial = {
+        right_culture_competency: summaryByCompetencyItems,
+        leadership_style_competency: summaryByCompetencyLeadershipItems,
+        leadership_staff_dev_competency: staffPerformanceCompetencyItems,
+        educational_quality_competency: educationalQualityCompetencyItems,
+        engagement_with_management_competency: engagementWithManagementItems,
+      };
+
+      Object.entries(initial).forEach(([k, rows]) => {
+        if (!Array.isArray(next[k]) || next[k].length === 0) {
+          next[k] = rows;
+        }
+      });
+
+      return next;
+    });
+  }, [feedbackOverallData]);
+
   const biggerPictureItems = competencyBiggerPictureItems.length
     ? competencyBiggerPictureItems
     : [];
@@ -483,12 +508,11 @@ const Feedback360Report = () => {
     note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
     // Use the API-provided action_areas_thing object directly
     // Structure: { continue: [...], start: [...], stop: [...] }
-    columns:
-      feedbackOverallData?.action_areas_thing || {
-        continue: [],
-        start: [],
-        stop: [],
-      },
+    columns: feedbackOverallData?.action_areas_thing || {
+      continue: [],
+      start: [],
+      stop: [],
+    },
   };
 
   const handleExcelChange = (e) => {
@@ -515,7 +539,6 @@ const Feedback360Report = () => {
       setIsUploading(false);
     }
   };
-
 
   useEffect(() => {
     setHeaderName("Feedback");
@@ -551,7 +574,11 @@ const Feedback360Report = () => {
         </button>
       </div>
       <div className="section-page pdf-section">
-        <FeedbackInitialPage  initialName={feedbackOverallData?.name ? feedbackOverallData?.name : ""} />
+        <FeedbackInitialPage
+          initialName={
+            feedbackOverallData?.name ? feedbackOverallData?.name : ""
+          }
+        />
       </div>
       <SurveyFeedback />
 

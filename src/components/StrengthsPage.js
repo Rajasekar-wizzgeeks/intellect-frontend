@@ -18,26 +18,8 @@ const StrengthsPage = ({
   improvementsGroupSubTitle = "(Ratings < 4.5 Only)",
   improvementsManagerTitle = "Manager Rating",
   improvementsManagerSubTitle = "(Ratings < 4 Only)",
-  groupItems = [
-    {
-      score: 4.91,
-      text: "Builds rapport with people and treats them with respect and dignity",
-    },
-    {
-      score: 4.91,
-      text: "Leads without aggression or arrogance",
-    },
-    {
-      score: 4.86,
-      text: "Builds rapport with people and treats them with respect and dignity",
-    },
-  ],
-  managerItems = [
-    {
-      score: 5.0,
-      text: "Manages school finances and payment approvals appropriately and maintains clear and accurate accounts",
-    },
-  ],
+  groupItems = [],
+  managerItems = [],
   improvementsGroupItems = [],
   improvementsManagerItems = [],
   averageCompentency = {},
@@ -160,8 +142,8 @@ const StrengthsPage = ({
               setPointsLine={handleStrengthPointsLine}
               circleColor={"var(--strength-pill-bg)"}
               circleBorderColor={"var(--strength-arc-color)"}
-              strokeWidth={5}
-              circleRadius={8}
+              strokeWidth={6}
+              circleRadius={10}
             />
             <div className="sp-left__icon" aria-hidden="true">
               <img src={strengthImage} alt="" className="sp-left__img" />
@@ -185,15 +167,15 @@ const StrengthsPage = ({
                         style={{
                           top:
                             // strengthPoints[i].y - rowTopAdjust
-                            i === 0 ? 22 : i === 1 ? 123 : 222,
+                            i === 0 ? 22 : i === 1 ? 122 : 223,
                         }}
                       >
                         <div
                           className="sp-row__line"
                           style={{
                             top: 31,
-                            width: Math.min(160 - strengthPoints[i].x, 65),
-                            left: -(165 - strengthPoints[i].x),
+                            width: Math.min(160 - strengthPoints[i].x, 50),
+                            left: i === 1 ? -35 : -(155 - strengthPoints[i].x),
                           }}
                         />
                         <div className="sp-pill">
@@ -220,7 +202,7 @@ const StrengthsPage = ({
                       className="sp-row sp-row--manager"
                       style={{
                         position: "absolute",
-                        top: idx === 0 ? 22 : idx === 1 ? 123 : 222,
+                        top: idx === 0 ? 22 : idx === 1 ? 122 : 223,
                       }}
                     >
                       <div className="sp-pill">
@@ -258,7 +240,7 @@ const StrengthsPage = ({
               circleColor={"var(--improve-pill-bg"}
               circleBorderColor={"#b33737"}
               strokeWidth={6}
-              circleRadius={8}
+              circleRadius={10}
             />
             <div className="sp-left__icon" aria-hidden="true">
               <img src={strengthImage} alt="" className="sp-left__img" />
@@ -285,15 +267,16 @@ const StrengthsPage = ({
                         key={`ig-${i}`}
                         className="sp-row"
                         style={{
-                          top: i === 0 ? 22 : i === 1 ? 123 : 222,
+                          top: i === 0 ? 22 : i === 1 ? 122 : 223,
                         }}
                       >
                         <div
                           className="sp-row__line"
                           style={{
                             top: 31,
-                            width: Math.min(160 - improvementPoints[i].x, 65),
-                            left: -(165 - improvementPoints[i].x),
+                            width: Math.min(160 - improvementPoints[i].x, 50),
+                            left:
+                              i === 1 ? -35 : -(155 - improvementPoints[i].x),
                           }}
                         />
                         <div className="sp-pill">
@@ -324,7 +307,7 @@ const StrengthsPage = ({
                       className="sp-row sp-row--manager"
                       style={{
                         position: "absolute",
-                        top: idx === 0 ? 22 : idx === 1 ? 123 : 222,
+                        top: idx === 0 ? 22 : idx === 1 ? 122 : 223,
                       }}
                     >
                       <div className="sp-pill">
