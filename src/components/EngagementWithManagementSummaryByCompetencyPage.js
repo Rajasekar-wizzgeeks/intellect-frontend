@@ -114,7 +114,16 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       <div className="sbc-hdr-chart-wrapper" key="ewm-hdr-chart">
         <FeedbackCommonHeader
           key="ewm-hdr"
-          title={title}
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                Summary by Competency -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Engagement With Management
+              </div>
+            </>
+          }
           right={
             localOverallScore !== undefined && localOverallScore !== null ? (
               <div className="sbc-header__pill">
@@ -159,6 +168,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
         <FeedbackCommonHeader
           key="ewm-compare-hdr"
           title={comparisonTitle}
+          titleWidth={100}
           className="sbc-compare__header"
         />
 

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import AutoPaginatedSections from "./AutoPaginatedSections";
@@ -8,7 +8,7 @@ import AutoPaginatedPptSections from "./AutoPaginatedPptSections";
 
 ChartJS.register(ArcElement, Tooltip);
 
-const Donut = ({ percent, color }) => {
+const Donut = ({ percent, color,cardColor }) => {  
   const pct = Number(percent);
   const safePct = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
 
@@ -138,8 +138,8 @@ const Donut = ({ percent, color }) => {
   const badgeRadiusPx = 60;
 
   const badgeStyle = {
-    // background: color,
-    left: `calc(50% + ${badgeRadiusPx * Math.cos(angleRad)}px + 5px)`,
+    background: cardColor,
+    left: `calc(50% + ${badgeRadiusPx * Math.cos(angleRad)}px + 9px)`,
     top: `calc(50% + ${badgeRadiusPx * Math.sin(angleRad) - 5}px - 9px)`,
   };
 
@@ -154,14 +154,101 @@ const Donut = ({ percent, color }) => {
     </div>
   );
 };
+
+const EditableAdjective = ({ value, onSave }) => {
+  const [editValue, setEditValue] = useState(String(value ?? ""));
+
+  useEffect(() => {
+    setEditValue(String(value ?? ""));
+  }, [value]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSave(editValue);
+    }
+  };
+
+  return (
+    <textarea
+      value={editValue}
+      onChange={(e) => setEditValue(e.target.value)}
+      onBlur={() => onSave(editValue)}
+      onKeyDown={handleKeyDown}
+      autoFocus
+      className="nls-adj-edit-textarea"
+    />
+  );
+};
+
+const NomineesLeadershipStyleAdjectives = React.memo(
+  ({ adjectivesSubtitle, adjectives = [], footnote }) => {
+    const [localAdjectives, setLocalAdjectives] = useState(adjectives);
+    const [editing, setEditing] = useState(null); // { idx }
+
+    useEffect(() => {
+      setLocalAdjectives(adjectives);
+    }, [adjectives]);
+
+    return (
+      <div key="nls-adj" className="nls-adj">
+        <div className="nls-adj__header">
+          <div className="nls-adj__title">
+            {"Description of Workplace Culture -"}
+          </div>
+          <div className="nls-adj__title-2">
+            {"Frequently Mentioned Adjectives"}
+          </div>
+          <div className="nls-adj__subtitle">{adjectivesSubtitle}</div>
+          <div className="nls-adj__underline" aria-hidden="true" />
+        </div>
+
+        <div className="nls-adj__grid">
+          {localAdjectives?.map((a, idx) => (
+            <div
+              key={`${a}-${idx}`}
+              className={`nls-adj-card nls-adj-card--${idx < 5 ? "lg" : idx < 10 ? "md" : "sm"}`.trim()}
+              onDoubleClick={() => setEditing({ idx })}
+              style={{ cursor: "pointer" }}
+            >
+              {editing?.idx === idx ? (
+                <EditableAdjective
+                  key={idx}
+                  value={a}
+                  onSave={(newValue) => {
+                    setLocalAdjectives((prev) => {
+                      const updated = [...(prev || [])];
+                      updated[idx] = newValue;
+                      return updated;
+                    });
+                    setEditing(null);
+                  }}
+                />
+              ) : (
+                String(a ?? "")
+                  .trim()
+                  .split(/\s+/)
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(" ")
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="nls-adj__footnote">{footnote}</div>
+      </div>
+    );
+  },
+);
+
 const NomineesLeadershipStylePage = ({
   title = "Nominee’s Leadership Style",
   items = [],
-  adjectivesTitle = "Description of Workplace Culture - Frequently Mentioned Adjectives",
+  adjectivesTitle = "Description of Workplace Culture - ",
   adjectivesSubtitle = "(Adjectives that occur more than once)",
   adjectives = [],
   footnote = "* This excludes self feedback ; The larger fonts indicate more number of responses",
-}) => {
+}) => {  
   const blocks = useMemo(() => {
     const out = [];
 
@@ -176,7 +263,7 @@ const NomineesLeadershipStylePage = ({
           <div className="nls-charts">
             {items?.map((it, idx) => (
               <div key={idx} className="nls-charts__col">
-                <Donut percent={it.percent} color={it.color} />
+                <Donut percent={it.percent} color={it.color} cardColor={it.cardColor} />
               </div>
             ))}
           </div>
@@ -197,30 +284,16 @@ const NomineesLeadershipStylePage = ({
     );
 
     out.push(
-      <div key="nls-adj" className="nls-adj">
-        <div className="nls-adj__header">
-          <div className="nls-adj__title">{adjectivesTitle}</div>
-          <div className="nls-adj__subtitle">{adjectivesSubtitle}</div>
-          <div className="nls-adj__underline" aria-hidden="true" />
-        </div>
-
-        <div className="nls-adj__grid">
-          {adjectives?.map((a, idx) => (
-            <div
-              key={`${a}-${idx}`}
-              className={`nls-adj-card nls-adj-card--${idx < 5 ? "lg" : idx < 10 ? "md" : "sm"}`.trim()}
-            >
-              {a.charAt(0).toUpperCase() + a.slice(1)}
-            </div>
-          ))}
-        </div>
-
-        <div className="nls-adj__footnote">{footnote}</div>
-      </div>,
+      <NomineesLeadershipStyleAdjectives
+        key="nls-adj"
+        adjectives={adjectives}
+        adjectivesSubtitle={adjectivesSubtitle}
+        footnote={footnote}
+      />,
     );
 
     return out;
-  }, [adjectives, adjectivesSubtitle, adjectivesTitle, footnote, items, title]);
+  }, [adjectives, adjectivesSubtitle, footnote, items, title]);
 
   return (
     <AutoPaginatedSections

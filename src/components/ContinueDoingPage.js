@@ -30,7 +30,7 @@ const EditableCell = ({ value, onSave }) => {
   );
 };
 
-const ContinueDoingGrid = ({ title, columns, onColumnsChange }) => {
+const ContinueDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 }) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
 
   return (
@@ -50,10 +50,16 @@ const ContinueDoingGrid = ({ title, columns, onColumnsChange }) => {
                     value={columns[colIdx]?.[rowIdx]}
                     onSave={(newValue) => {
                       const updated = [...columns];
-                      if (!updated[colIdx]) updated[colIdx] = [];
-                      updated[colIdx] = [...updated[colIdx]];
-                      updated[colIdx][rowIdx] = newValue;
-                      onColumnsChange(updated);
+                      const absoluteRowIdx = rowOffset + rowIdx;
+                      onColumnsChange((prevColumns) => {
+                        const nextColumns = Array.isArray(prevColumns)
+                          ? [...prevColumns]
+                          : [];
+                        if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
+                        nextColumns[colIdx] = [...nextColumns[colIdx]];
+                        nextColumns[colIdx][absoluteRowIdx] = newValue;
+                        return nextColumns;
+                      });
                       setEditing(null);
                     }}
                   />
@@ -90,19 +96,31 @@ const ContinueDoingPage = ({
       Array.isArray(localColumns) &&
       localColumns.some((c) => Array.isArray(c) && c.length);
 
-    out.push(
-      <FeedbackCommonHeader key="cd-hdr" title={title} className="cd-header" />,
-    );
-
     if (hasColumns) {
-      out.push(
-        <ContinueDoingGrid
-          key="cd-grid"
-          title={title}
-          columns={localColumns}
-          onColumnsChange={setLocalColumns}
-        />,
+      const maxRows = Math.max(
+        0,
+        ...localColumns.map((c) => (Array.isArray(c) ? c.length : 0)),
       );
+      const rowsPerChunk = 10;
+      const chunkCount = Math.max(1, Math.ceil(maxRows / rowsPerChunk));
+
+      for (let chunkIdx = 0; chunkIdx < chunkCount; chunkIdx += 1) {
+        const start = chunkIdx * rowsPerChunk;
+        const end = start + rowsPerChunk;
+        const chunkColumns = localColumns.map((col) =>
+          Array.isArray(col) ? col.slice(start, end) : [],
+        );
+
+        out.push(
+          <ContinueDoingGrid
+            key={`cd-grid-${chunkIdx}`}
+            title={title}
+            columns={chunkColumns}
+            onColumnsChange={setLocalColumns}
+            rowOffset={start}
+          />,
+        );
+      }
     }
 
     if (footnote) {
@@ -201,13 +219,20 @@ const ContinueDoingPage = ({
     return out;
   }, [localColumns, footnote, immediateActionSummary, title]);
 
+  const Header = useMemo(() => {
+    return () => (
+      <FeedbackCommonHeader key="cd-hdr" title={title} titleWidth="100" className="cd-header" />
+    );
+  }, [title]);
+
   return (
     // <div className="section-page-container">
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1123}
+      pageHeight={950}
       pagePadding={0}
+      HeaderComponent={Header}
       contentClassName="continue-doing-page"
       componentId="continue-doing"
     />

@@ -16,7 +16,16 @@ const SurveyFeedback = () => {
       <div className="survey-feedback-content-block">
         <FeedbackCommonHeader
           key="h1"
-          title="360° Survey Feedback – Key Highlights"
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                360° Survey Feedback -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Key Highlights
+              </div>
+            </>
+          }
         />
         <div key="p1" className="survey-feedback-content">
           <ul className="survey-feedback-bullets">

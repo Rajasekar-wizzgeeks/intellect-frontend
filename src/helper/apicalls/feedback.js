@@ -3,7 +3,7 @@ import { feedbackExcelUrl } from "../apiurls";
 export const excelSheetFeedback = async (file) => {
   try {
     const form = new FormData();
-    form.append("file", file);
+    form.append("files", file);
     const response = await fetch(feedbackExcelUrl, {
       method: "POST",
       body: form,
