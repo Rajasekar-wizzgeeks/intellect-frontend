@@ -221,7 +221,7 @@ const ContinueDoingPage = ({
 
   const Header = useMemo(() => {
     return () => (
-      <FeedbackCommonHeader key="cd-hdr" title={title} className="cd-header" />
+      <FeedbackCommonHeader key="cd-hdr" title={title} titleWidth="100" className="cd-header" />
     );
   }, [title]);
 

@@ -82,6 +82,19 @@ const SuggestedGuidelines = ({
       }
     });
 
+    resultItems.sort((a, b) => {
+      const av = Number(a?.groupMean);
+      const bv = Number(b?.groupMean);
+
+      const aValid = Number.isFinite(av) && av !== -1;
+      const bValid = Number.isFinite(bv) && bv !== -1;
+
+      if (aValid && bValid) return bv - av;
+      if (aValid && !bValid) return -1;
+      if (!aValid && bValid) return 1;
+      return 0;
+    });
+
     return resultItems;
   };
 
@@ -97,7 +110,19 @@ const SuggestedGuidelines = ({
       const updated = summary.find((row) => row.label === baseRow.label);
       return updated ? { ...baseRow, ...updated } : baseRow;
     });
-    // console.log("merged", merged);
+
+    merged.sort((a, b) => {
+      const av = Number(a?.groupMean);
+      const bv = Number(b?.groupMean);
+
+      const aValid = Number.isFinite(av) && av !== -1;
+      const bValid = Number.isFinite(bv) && bv !== -1;
+
+      if (aValid && bValid) return bv - av;
+      if (aValid && !bValid) return -1;
+      if (!aValid && bValid) return 1;
+      return 0;
+    });
     setAverageCompentencyData(merged);
 
     let total = 0;

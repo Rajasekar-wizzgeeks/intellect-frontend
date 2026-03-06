@@ -192,7 +192,7 @@ const StopDoingPage = ({
       localColumns.some((c) => Array.isArray(c) && c.length);
 
     out.push(
-      <FeedbackCommonHeader key="sd-hdr" title={title} className="sd-header" />,
+      <FeedbackCommonHeader key="sd-hdr" title={title} titleWidth="100" className="sd-header" />,
     );
 
     if (hasColumns) {

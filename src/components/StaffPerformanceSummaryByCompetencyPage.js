@@ -41,6 +41,25 @@ const StaffPerformanceSummaryByCompetencyPage = ({
   const [leftRows, setLeftRows] = useState(items);
   const [rightRows, setRightRows] = useState(items2);
 
+  const sortRowsByGroupMeanDesc = (rows) => {
+    if (!Array.isArray(rows)) return rows;
+    const cloned = [...rows];
+    cloned.sort((a, b) => {
+      const av = Number(a?.groupMean);
+      const bv = Number(b?.groupMean);
+
+      const aMissing = !Number.isFinite(av) || av === -1;
+      const bMissing = !Number.isFinite(bv) || bv === -1;
+
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+
+      return bv - av;
+    });
+    return cloned;
+  };
+
   const computeOverallFromRows = (rows) => {
     if (!Array.isArray(rows) || !rows.length) return 0;
     let total = 0;
@@ -62,19 +81,20 @@ const StaffPerformanceSummaryByCompetencyPage = ({
   };
 
   const handleRowsChange = (rows, section) => {
+    const sortedRows = sortRowsByGroupMeanDesc(rows);
     if (section === "left") {
-      setLeftRows(rows);
-      setLeftOverallScore(computeOverallFromRows(rows));
+      setLeftRows(sortedRows);
+      setLeftOverallScore(computeOverallFromRows(sortedRows));
       setAverageCompentency((prev) => ({
         ...prev,
-        leadership_staff_dev_competency: rows,
+        leadership_staff_dev_competency: sortedRows,
       }));
     } else if (section === "right") {
-      setRightRows(rows);
-      setRightOverallScore(computeOverallFromRows(rows));
+      setRightRows(sortedRows);
+      setRightOverallScore(computeOverallFromRows(sortedRows));
       setAverageCompentency((prev) => ({
         ...prev,
-        educational_quality_competency: rows,
+        educational_quality_competency: sortedRows,
       }));
     }
   };
@@ -216,21 +236,6 @@ const StaffPerformanceSummaryByCompetencyPage = ({
         </div>,
       );
 
-      // out.push(
-      //   <div key={`${keyPrefix}-chart`} className="sbc-chart">
-      //     <CompetencyThreeBarChart
-      //       items={chartItems}
-      //       legendItems={LEGEND_2}
-      //       className="sbc-chart__inner"
-      //       barHeight={12}
-      //       barGap={6}
-      //       firstRowBorder={true}
-      //       onRowsChange={(rows) =>
-      //         handleRowsChange(rows, isLeft ? "left" : "right")
-      //       }
-      //     />
-      //   </div>,
-      // );
     };
 
     pushSection({

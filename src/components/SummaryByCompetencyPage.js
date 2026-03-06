@@ -13,6 +13,7 @@ const SummaryByCompetencyPage = ({
   setAverageCompentency,
   setFeedbackOverallData,
 }) => {
+  
   const [
     rightCultureCompetencyOverallScore,
     setRightCultureCompetencyOverallScore,
@@ -23,6 +24,24 @@ const SummaryByCompetencyPage = ({
   ] = useState(leadershipOverallScore);
   const [rightCultureRows, setRightCultureRows] = useState(items);
   const [leadershipRows, setLeadershipRows] = useState(leadershipItems);
+
+  const sortRowsByGroupMeanDesc = (rows) => {
+    if (!Array.isArray(rows)) return rows;
+    const cloned = [...rows];
+    cloned.sort((a, b) => {
+      const av = Number(a?.groupMean);
+      const bv = Number(b?.groupMean);
+
+      const aMissing = !Number.isFinite(av) || av === -1;
+      const bMissing = !Number.isFinite(bv) || bv === -1;
+
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      return bv - av;
+    });
+    return cloned;
+  };
 
   const handleOverallScore = (rows) => {
     if (!Array.isArray(rows) || !rows.length) return 0;
@@ -45,22 +64,23 @@ const SummaryByCompetencyPage = ({
   };
 
   const handleItemsChange = (rows, competency) => {
-    const overallScore = handleOverallScore(rows);
+    const sortedRows = sortRowsByGroupMeanDesc(rows);
+    const overallScore = handleOverallScore(sortedRows);
 
     if (competency === "right_culture_competency") {
       setRightCultureCompetencyOverallScore(overallScore);
-      setRightCultureRows(rows);
+      setRightCultureRows(sortedRows);
       setAverageCompentency((prev) => ({
         ...prev,
-        right_culture_competency: rows,
+        right_culture_competency: sortedRows,
       }));
     }
     if (competency === "leadership_style_competency") {
       setLeadershipCompetencyOverallScore(overallScore);
-      setLeadershipRows(rows);
+      setLeadershipRows(sortedRows);
       setAverageCompentency((prev) => ({
         ...prev,
-        leadership_style_competency: rows,
+        leadership_style_competency: sortedRows,
       }));
     }
   };

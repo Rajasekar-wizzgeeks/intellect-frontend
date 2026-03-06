@@ -411,14 +411,17 @@ const Feedback360Report = () => {
       A: {
         color: "#20c6a2",
         pillColor: "#20c6a2",
+        cardColor:"#067a61"
       },
       B: {
         color: "#3a9ad9",
         pillColor: "#3a9ad9",
+        cardColor:"#13679e"
       },
       C: {
         color: "#ef4b3a",
         pillColor: "#ef4b3a",
+        cardColor:"#e82315"
       },
     };
     const orderedKeys = ["A", "B", "C"];
@@ -427,6 +430,7 @@ const Feedback360Report = () => {
       .map((key) => {
         const { text, count } = nomineeObj[key];
         const pct = (count / total) * 100;
+        console.log(pct);
 
         const base =
           key === "C"
@@ -443,6 +447,7 @@ const Feedback360Report = () => {
           color: style.color,
           pillText: `${labelText} – ${count} respondent${count === 1 ? "" : "s"}`,
           pillColor: style.pillColor,
+          cardColor: style.cardColor,
         };
       });
   };
@@ -543,7 +548,7 @@ const Feedback360Report = () => {
   useEffect(() => {
     setHeaderName("Feedback");
   }, []);
-  console.log(feedbackOverallData, "ksndkdjfn");
+  // console.log(feedbackOverallData, "ksndkdjfn");
 
   return (
     <div className="feedbackreport-main-container">
