@@ -89,11 +89,14 @@ const Feedback360Report = () => {
       )
       .filter((t) => t && t !== "-" && t !== "--" && t !== "---");
     if (!cleaned.length) return [];
-    const columnCount = cleaned.length > 40 ? 3 : 2;
+    const columnCount = cleaned.length > 60 ? 3 : 2;
     const cols = Array.from({ length: columnCount }, () => []);
 
+    const rowsPerCol = Math.ceil(cleaned.length / columnCount);
+
     cleaned.forEach((text, idx) => {
-      cols[idx % columnCount].push(text);
+      const colIdx = Math.min(columnCount - 1, Math.floor(idx / rowsPerCol));
+      cols[colIdx].push(text);
     });
 
     return cols;
@@ -430,7 +433,6 @@ const Feedback360Report = () => {
       .map((key) => {
         const { text, count } = nomineeObj[key];
         const pct = (count / total) * 100;
-        console.log(pct);
 
         const base =
           key === "C"
@@ -586,7 +588,7 @@ const Feedback360Report = () => {
           }
         />
       </div>
-      <SurveyFeedback />
+      <SurveyFeedback overviewData={feedbackOverallData} />
 
       <SuggestedGuidelines
         items={biggerPictureItems}

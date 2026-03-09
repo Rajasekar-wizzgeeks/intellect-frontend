@@ -108,7 +108,7 @@ const StopDoingGrid = ({ title, columns, onColumnsChange }) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
 
   return (
-    <div className="sd-grid" role="table" aria-label={title}>
+    <div className="sd-grid"  role="table" aria-label={title}>
       {columns.map((col, colIdx) => (
         <div key={colIdx} className="sd-col" role="rowgroup">
           {col.map((row, rowIdx) => (
@@ -170,7 +170,7 @@ const StopDoingPage = ({
 }) => {
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
-  );
+  );  
 
   useEffect(() => {
     if (Array.isArray(columns)) {
@@ -202,6 +202,7 @@ const StopDoingPage = ({
           title={title}
           columns={localColumns}
           onColumnsChange={setLocalColumns}
+        
         />,
       );
     }

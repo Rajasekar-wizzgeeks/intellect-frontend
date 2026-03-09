@@ -230,7 +230,7 @@ const ContinueDoingPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={950}
+      pageHeight={1000}
       pagePadding={0}
       HeaderComponent={Header}
       contentClassName="continue-doing-page"

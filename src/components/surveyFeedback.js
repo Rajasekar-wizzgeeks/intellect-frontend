@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/surveyFeedback.scss";
@@ -8,7 +8,25 @@ import educationalQulaity from "../assets/png/educationalQulaity.png";
 import culture from "../assets/png/culture.png";
 import management from "../assets/png/management.png";
 
-const SurveyFeedback = () => {
+const SurveyFeedback = ({overviewData}) => {
+
+
+//   console.log(overviewData,'slknfjkn');
+  
+//   const totalSurveyQuestion=0
+
+//   useEffect(()=>{
+//     if(overviewData){
+//       totalSurveyQuestion = Object.keys(overviewData?.educational_quality_competency).length + 
+//       Object.keys(overviewData?.engagement_with_management_competency).length + 
+//       Object.keys(overviewData?.leadership_staff_dev_competency
+// ).length + 
+//       Object.keys(overviewData?.right_culture_competency
+// ).length + 
+//       Object.keys(overviewData?.leadership_style_competency
+// ).length;
+//     }
+//   },[overviewData])
   const blocks = useMemo(() => {
     const out = [];
 
@@ -102,7 +120,7 @@ const SurveyFeedback = () => {
         <div key="p2" className="survey-feedback-content survey-structure">
           <ul className="survey-feedback-bullets survey-ul-item">
             <li className="survey-ul-item-li">
-              Total number of <strong>Respondents</strong> – <strong>44</strong>{" "}
+              Total number of <strong>Respondents</strong> – <strong>{overviewData?.total_response - 1 || 0}</strong>{" "}
               +<strong> Self feedback</strong>
             </li>
             <li>
