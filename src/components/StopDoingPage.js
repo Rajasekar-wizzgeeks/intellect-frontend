@@ -104,13 +104,15 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
   );
 };
 
-const StopDoingGrid = ({ title, columns, onColumnsChange }) => {
+const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChunk}) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
 
   return (
-    <div className="sd-grid"  role="table" aria-label={title}>
+    <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 50 :0}} aria-label={title}>
       {columns.map((col, colIdx) => (
-        <div key={colIdx} className="sd-col" role="rowgroup">
+        <div key={colIdx} className="sd-col" 
+        // style={{borderTop:lastChunk ? 1 : "none" }}
+         role="rowgroup">
           {col.map((row, rowIdx) => (
             <div key={rowIdx} className="sd-row" role="row">
               <div
@@ -124,11 +126,16 @@ const StopDoingGrid = ({ title, columns, onColumnsChange }) => {
                     key={`${colIdx}-${rowIdx}`}
                     value={columns[colIdx]?.[rowIdx]}
                     onSave={(newValue) => {
-                      const updated = [...columns];
-                      if (!updated[colIdx]) updated[colIdx] = [];
-                      updated[colIdx] = [...updated[colIdx]];
-                      updated[colIdx][rowIdx] = newValue;
-                      onColumnsChange(updated);
+                      const absoluteRowIdx = rowOffset + rowIdx;
+                      onColumnsChange((prevColumns) => {
+                        const nextColumns = Array.isArray(prevColumns)
+                          ? [...prevColumns]
+                          : [];
+                        if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
+                        nextColumns[colIdx] = [...nextColumns[colIdx]];
+                        nextColumns[colIdx][absoluteRowIdx] = newValue;
+                        return nextColumns;
+                      });
                       setEditing(null);
                     }}
                   />
@@ -194,27 +201,46 @@ const StopDoingPage = ({
     out.push(
       <FeedbackCommonHeader key="sd-hdr" title={title} titleWidth="100" className="sd-header" />,
     );
-
+  
     if (hasColumns) {
-      out.push(
-        <StopDoingGrid
-          key="sd-grid"
-          title={title}
-          columns={localColumns}
-          onColumnsChange={setLocalColumns}
-        
-        />,
+      const maxRows = Math.max(
+        0,
+        ...localColumns.map((c) => (Array.isArray(c) ? c.length : 0)),
       );
+      const rowsPerChunk = 10;
+      const chunkCount = Math.max(1, Math.ceil(maxRows / rowsPerChunk));
+     
+      for (let chunkIdx = 0; chunkIdx < chunkCount; chunkIdx += 1) {
+        const start = chunkIdx * rowsPerChunk;
+        const end = start + rowsPerChunk;
+        const chunkColumns = localColumns.map((col) =>
+          Array.isArray(col) ? col.slice(start, end) : [],
+        );
+
+        out.push(
+          <StopDoingGrid
+            
+            key={`sd-grid-${chunkIdx}`}
+            title={title}
+            columns={chunkColumns}
+            onColumnsChange={setLocalColumns}
+            rowOffset={start}
+            lastChunk={chunkIdx === chunkCount - 1}
+          />,
+        );
+      }
     }
 
     out.push(
+      <div className="sd-traits-container">
       <StopDoingTraits
         key="sd-traits"
         traits={localTraits}
         traitsTitle={traitsTitle}
         traitsSubtitle={traitsSubtitle}
         onTraitsChange={setLocalTraits}
-      />,
+      />
+      </div>
     );
 
     out.push(
@@ -238,7 +264,7 @@ const StopDoingPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1023}
+      pageHeight={1000}
       pagePadding={0}
       contentClassName="stop-doing-page"
       componentId="stop-doing"

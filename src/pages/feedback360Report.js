@@ -89,7 +89,7 @@ const Feedback360Report = () => {
       )
       .filter((t) => t && t !== "-" && t !== "--" && t !== "---");
     if (!cleaned.length) return [];
-    const columnCount = cleaned.length > 60 ? 3 : 2;
+    const columnCount = cleaned.length > 300 ? 3 : 2;
     const cols = Array.from({ length: columnCount }, () => []);
 
     const rowsPerCol = Math.ceil(cleaned.length / columnCount);

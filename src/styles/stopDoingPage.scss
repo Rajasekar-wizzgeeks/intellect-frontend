@@ -32,11 +32,11 @@
 }
 
 .sd-grid {
-  margin-top: 18px;
+  // margin-top: 18px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-  padding-bottom: 30px;
+  gap: 8px;
+  // padding-bottom: 30px;
 }
 
 .sd-col {
