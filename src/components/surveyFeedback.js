@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/surveyFeedback.scss";
@@ -8,25 +8,38 @@ import educationalQulaity from "../assets/png/educationalQulaity.png";
 import culture from "../assets/png/culture.png";
 import management from "../assets/png/management.png";
 
-const SurveyFeedback = ({overviewData}) => {
+const SurveyFeedback = ({ overviewData }) => {
+  const totalSurveyQuestion = useMemo(() => {
+    if (!overviewData || typeof overviewData !== "object") return 0;
 
+    return (
+      Object.keys(overviewData?.educational_quality_competency || {}).length +
+      Object.keys(overviewData?.engagement_with_management_competency || {})
+        .length +
+      Object.keys(overviewData?.leadership_staff_dev_competency || {}).length +
+      Object.keys(overviewData?.right_culture_competency || {}).length +
+      Object.keys(overviewData?.leadership_style_competency || {}).length
+    );
+  }, [overviewData]);
 
-//   console.log(overviewData,'slknfjkn');
-  
-//   const totalSurveyQuestion=0
+  const qualitativeQuestionCount = 6;
 
-//   useEffect(()=>{
-//     if(overviewData){
-//       totalSurveyQuestion = Object.keys(overviewData?.educational_quality_competency).length + 
-//       Object.keys(overviewData?.engagement_with_management_competency).length + 
-//       Object.keys(overviewData?.leadership_staff_dev_competency
-// ).length + 
-//       Object.keys(overviewData?.right_culture_competency
-// ).length + 
-//       Object.keys(overviewData?.leadership_style_competency
-// ).length;
-//     }
-//   },[overviewData])
+  const leadershipStaffDevQuestionCount = useMemo(() => {
+    return Object.keys(overviewData?.leadership_staff_dev_competency || {})
+      .length;
+  }, [overviewData]);
+
+  const educationalQualityQuestionCount = useMemo(() => {
+    return Object.keys(overviewData?.educational_quality_competency || {})
+      .length;
+  }, [overviewData]);
+
+  const engagementWithManagementQuestionCount = useMemo(() => {
+    return Object.keys(
+      overviewData?.engagement_with_management_competency || {},
+    ).length;
+  }, [overviewData]);
+
   const blocks = useMemo(() => {
     const out = [];
 
@@ -120,18 +133,22 @@ const SurveyFeedback = ({overviewData}) => {
         <div key="p2" className="survey-feedback-content survey-structure">
           <ul className="survey-feedback-bullets survey-ul-item">
             <li className="survey-ul-item-li">
-              Total number of <strong>Respondents</strong> – <strong>{overviewData?.total_response - 1 || 0}</strong>{" "}
-              +<strong> Self feedback</strong>
+              Total number of <strong>Respondents</strong> –{" "}
+              <strong>{overviewData?.total_response - 1 || 0}</strong> +
+              <strong> Self feedback</strong>
             </li>
             <li>
-              Total number of questions – <strong>30</strong> (24 survey
-              questions + 6 qualitative questions)
+              Total number of questions –{" "}
+              <strong>{totalSurveyQuestion + qualitativeQuestionCount}</strong>{" "}
+              ({totalSurveyQuestion} survey questions +{" "}
+              {qualitativeQuestionCount} qualitative questions)
             </li>
           </ul>
 
           <ul className="survey-feedback-subpoints survey-structure__sub">
             <li>
-              The <strong>24 survey questions</strong> were clustered into
+              The <strong>{totalSurveyQuestion} survey questions</strong> were
+              clustered into
               <strong> 5 competencies</strong> as indicated below
             </li>
           </ul>
@@ -188,7 +205,7 @@ const SurveyFeedback = ({overviewData}) => {
             <li>
               <span className="survey-structure__dash" />
               <span>
-                <strong>6 questions</strong> on
+                <strong>{leadershipStaffDevQuestionCount} questions</strong> on
                 <strong>
                   {" "}
                   Leadership for Staff Performance &amp; Development
@@ -200,7 +217,7 @@ const SurveyFeedback = ({overviewData}) => {
             <li>
               <span className="survey-structure__dash" />
               <span>
-                <strong>5 questions</strong> on
+                <strong>{educationalQualityQuestionCount} questions</strong> on
                 <strong> Educational Quality &amp; Student Outcomes</strong>,
                 were not included for <strong>Managers</strong> and
                 <strong> Office Staff</strong> as they were relevant only for
@@ -210,7 +227,10 @@ const SurveyFeedback = ({overviewData}) => {
             <li>
               <span className="survey-structure__dash" />
               <span>
-                <strong>3 questions</strong> on
+                <strong>
+                  {engagementWithManagementQuestionCount} questions
+                </strong>{" "}
+                on
                 <strong> Engagement with Management</strong>, were not included
                 for
                 <strong> Teachers</strong> and <strong>Office Staff</strong> as
@@ -223,7 +243,7 @@ const SurveyFeedback = ({overviewData}) => {
     );
 
     return out;
-  }, []);
+  }, [overviewData?.total_response, totalSurveyQuestion]);
 
   return (
     // <div className="section-page-container">

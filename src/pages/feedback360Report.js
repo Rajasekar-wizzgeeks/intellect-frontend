@@ -325,24 +325,12 @@ const Feedback360Report = () => {
   useEffect(() => {
     if (!feedbackOverallData) return;
 
-    setAverageCompentency((prev) => {
-      const next = { ...(prev || {}) };
-
-      const initial = {
-        right_culture_competency: summaryByCompetencyItems,
-        leadership_style_competency: summaryByCompetencyLeadershipItems,
-        leadership_staff_dev_competency: staffPerformanceCompetencyItems,
-        educational_quality_competency: educationalQualityCompetencyItems,
-        engagement_with_management_competency: engagementWithManagementItems,
-      };
-
-      Object.entries(initial).forEach(([k, rows]) => {
-        if (!Array.isArray(next[k]) || next[k].length === 0) {
-          next[k] = rows;
-        }
-      });
-
-      return next;
+    setAverageCompentency({
+      right_culture_competency: summaryByCompetencyItems,
+      leadership_style_competency: summaryByCompetencyLeadershipItems,
+      leadership_staff_dev_competency: staffPerformanceCompetencyItems,
+      educational_quality_competency: educationalQualityCompetencyItems,
+      engagement_with_management_competency: engagementWithManagementItems,
     });
   }, [feedbackOverallData]);
 
@@ -458,55 +446,6 @@ const Feedback360Report = () => {
     feedbackOverallData?.nominee_leadership,
   );
 
-  const mostPredominantLeadershipTraitColumns = [
-    [
-      "Humble.",
-      "**Very humble, Good Team spirit, Motivation**",
-      "Always kind to all , appreciation, motivation to build good citizens.",
-      "**Kindness and respect** to all",
-      "As a newcomer, I feel he consistently shows **respect** for the staff, listens **attentively** to our concerns , and takes **thoughtful steps** to address any issues.",
-      "Being **respectful** to co-workers, his commitment towards the school and enthusiasm.",
-      "Giving respect to all and easily approachable.",
-      "He respects every individual in the organization **without any bias**",
-      "His commitment and dedication towards the school and the respect given to everyone in the school with **dignity**.",
-      "His way of making work environment a **happy and peaceful place** with a lot of **respect and dignity**.",
-      "**Respectful, accountable, reliable, committed, team spirit.**",
-      "Valuing the Teachers and **Equality**",
-      "**Giving direction** and guiding to do activities like education",
-      "By **encouraging** and guiding us with lot of positive words",
-    ],
-    [
-      "**Encouraging and guiding** us in the right path",
-      "**Advising and guiding** us the right part",
-      "He is highly approachable & provide necessary guidance whenever needed. So, I can say he is mostly having participative style of leadership which I like very well.",
-      "Provides **opportunities for growth (2)** and trustworthy",
-      "Providing more **professional development**",
-      "**Vision**, and passionate about education and is approachable, communicative skills strong and able to lead by example",
-      "**Great motivator** and inspires staff and students all the time.",
-      "Keeps encouraging and motivating the staff to do activities in the school/class apart from teaching.",
-      "His willingness to **listen** makes him a good leader.",
-      "**Observation, Listening, analyzing each person and problem from all angles**, simply approaching everything 360 degrees.",
-      "Principal sir is very calm and good listener . And very passionate",
-      "**Emotionally stable**, Balancing with teachers ,Parents and students as well.",
-      "**Self-discipline**",
-      "**Delegates the work well**",
-    ],
-    [
-      'A Principal should possess the ability to analyze situations thoroughly and foresee potential challenges. He/she must prepare to address issues before they escalate, and ensure he/she is well-informed about matters within the school. He/she should say "NO" firmly when required.',
-      "**Impartial**",
-      "**Non partial (2)**",
-      "**Unbiased**",
-      "**patience (2)**",
-      "Keeps his schedule flexible",
-      "Integrity must be at the core of leadership",
-      "His belief in students and staff.",
-      "Should be able to coach, delegate, communicate and be proactive, Leader should influence and guide the people.",
-      "Tensionless work culture, developing confidence in staff, keeping full confidence in teachers. handling diplomatically the situations",
-      "The one thing that can make a principal stand out as a leader is their ability to **inspire and empower** others.",
-      "Effective leaders develop the art and skill of being truly coachable.",
-      "Leaders should seek to take the road in situation.",
-    ],
-  ];
 
   const immediateActionAreasSummary = {
     title: "Immediate Action Areas - Summary",
@@ -673,7 +612,7 @@ const Feedback360Report = () => {
         columns={
           buildThreeTextColumns(
             feedbackOverallData?.predominant_leader_thing,
-          ) || mostPredominantLeadershipTraitColumns
+          ) 
         }
       />
       <ContinueDoingPage
