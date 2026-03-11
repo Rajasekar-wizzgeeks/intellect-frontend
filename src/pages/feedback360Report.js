@@ -138,12 +138,27 @@ const Feedback360Report = () => {
 
   const buildThreeWayCompetencyItems = (obj, fallbackItems) => {
     if (!obj) return fallbackItems;
-    return Object.entries(obj).map(([label, vals]) => ({
+    const rows = Object.entries(obj).map(([label, vals]) => ({
       label,
       groupMean: vals?.Subordinates === null ? -1 : vals?.Subordinates,
       managerRating: vals?.Manager === null ? -1 : vals?.Manager,
       selfRating: vals?.Self === null ? -1 : vals?.Self,
     }));
+
+    // rows.sort((a, b) => {
+    //   const av = Number(a?.groupMean);
+    //   const bv = Number(b?.groupMean);
+
+    //   const aValid = Number.isFinite(av) && av !== -1;
+    //   const bValid = Number.isFinite(bv) && bv !== -1;
+
+    //   if (aValid && bValid) return bv - av;
+    //   if (aValid && !bValid) return -1;
+    //   if (!aValid && bValid) return 1;
+    //   return 0;
+    // });
+
+    return rows;
   };
 
   const competencyBiggerPictureItems = buildCompetencyItemsFromApi(
@@ -325,6 +340,7 @@ const Feedback360Report = () => {
       },
     ],
   );
+  
 
   useEffect(() => {
     if (!feedbackOverallData) return;
@@ -456,8 +472,6 @@ const Feedback360Report = () => {
     description:
       "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
     note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
-    // Use the API-provided action_areas_thing object directly
-    // Structure: { continue: [...], start: [...], stop: [...] }
     columns: feedbackOverallData?.action_areas_thing || {
       continue: [],
       start: [],
@@ -474,9 +488,11 @@ const Feedback360Report = () => {
     }
   };
 
-  // console.log("feedbackOverallData", averageCompentency);
+  // console.log("feedbackOverallData", feedbackOverallData);
 
   const handleExcelUpload = async (fileArg) => {
+    setAverageCompentency({});
+    setFeedbackOverallData({});
     const fileToUpload = fileArg || excelFile;
     if (!fileToUpload || isUploading) return;
     try {
@@ -493,8 +509,6 @@ const Feedback360Report = () => {
   useEffect(() => {
     setHeaderName("Feedback");
   }, []);
-  // console.log(feedbackOverallData, "ksndkdjfn");
-
   return (
     <div className="feedbackreport-main-container">
       <GlobalLoader visible={isUploading} />
