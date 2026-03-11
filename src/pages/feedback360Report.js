@@ -73,8 +73,12 @@ const Feedback360Report = () => {
     if (!cleaned.length) return [];
 
     const cols = [[], [], []];
+
+    const rowsPerCol = Math.ceil(cleaned.length / 3);
+
     cleaned.forEach((text, idx) => {
-      cols[idx % 3].push(text);
+      const colIdx = Math.min(2, Math.floor(idx / rowsPerCol));
+      cols[colIdx].push(text);
     });
     return cols;
   };

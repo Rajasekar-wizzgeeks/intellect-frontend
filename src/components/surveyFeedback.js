@@ -120,7 +120,7 @@ const SurveyFeedback = ({ overviewData }) => {
           <ul className="survey-feedback-bullets survey-ul-margin-item">
             <li>
               Feedback has been solicited and received from your Team Members
-              (43) and Manager/s
+              ({overviewData?.total_response?.Subordinates || 0}) and Manager/s
             </li>
           </ul>
         </div>
@@ -134,7 +134,7 @@ const SurveyFeedback = ({ overviewData }) => {
           <ul className="survey-feedback-bullets survey-ul-item">
             <li className="survey-ul-item-li">
               Total number of <strong>Respondents</strong> –{" "}
-              <strong>{overviewData?.total_response - 1 || 0}</strong> +
+              <strong>{overviewData?.total_response?.total - 1 || 0}</strong> +
               <strong> Self feedback</strong>
             </li>
             <li>

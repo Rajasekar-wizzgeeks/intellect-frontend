@@ -108,7 +108,7 @@ const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChu
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
 
   return (
-    <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 50 :0}} aria-label={title}>
+    <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 0 :0}} aria-label={title}>
       {columns.map((col, colIdx) => (
         <div key={colIdx} className="sd-col" 
         // style={{borderTop:lastChunk ? 1 : "none" }}
@@ -219,7 +219,6 @@ const StopDoingPage = ({
 
         out.push(
           <StopDoingGrid
-            
             key={`sd-grid-${chunkIdx}`}
             title={title}
             columns={chunkColumns}
