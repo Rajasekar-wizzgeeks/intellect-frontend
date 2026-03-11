@@ -72,7 +72,7 @@ const StrengthsPage = ({
     return {
       groupStrengths: groupStrengths.slice(0, 3),
       groupImprovements: groupImprovements.slice(0, 3),
-      managerStrengths: managerStrengths.slice(0, 3),
+      managerStrengths: managerStrengths,
       managerImprovements: managerImprovements.slice(0, 3),
     };
   }, [averageCompentency]);
