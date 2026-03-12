@@ -271,7 +271,7 @@ const SummaryByCompetencyPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1123}
+      pageHeight={1103}
       pagePadding={0}
       contentClassName="summary-by-competency-page"
       componentId="summary-by-competency"

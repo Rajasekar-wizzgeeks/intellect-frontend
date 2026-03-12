@@ -5,27 +5,28 @@
   min-height: 100%;
   box-sizing: border-box;
   background: var(--color-bg);
+  padding-top: 40px;
 
   .sbc-hdr-chart-educational-quality {
     .sbc-header {
-      padding-top: 40px;
+      padding-top: 20px;
     }
   }
 
   .sbc-hdr-chart-wrapper {
-    padding-bottom: 46px;
+    padding-bottom: 30px;
     border-bottom: 1px solid var(--color-text);
   }
 
   .sbc-header-leadership {
-    padding-top: 40px;
+    padding-top: 35px;
   }
 }
 
 .sbc-header {
   // padding-left: 40px;
   // padding-right: 40px;
-  padding: 58px 48px 0;
+  padding: 10px 48px 0;
 }
 
 .sbc-header__pill {

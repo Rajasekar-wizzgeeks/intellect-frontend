@@ -218,6 +218,7 @@ const StopDoingPage = ({
         );
 
         out.push(
+          <div className="sd-grid-wrapper" >
           <StopDoingGrid
             key={`sd-grid-${chunkIdx}`}
             title={title}
@@ -225,7 +226,8 @@ const StopDoingPage = ({
             onColumnsChange={setLocalColumns}
             rowOffset={start}
             lastChunk={chunkIdx === chunkCount - 1}
-          />,
+          />
+          </div>,
         );
       }
     }
@@ -239,14 +241,13 @@ const StopDoingPage = ({
         traitsSubtitle={traitsSubtitle}
         onTraitsChange={setLocalTraits}
       />
+      <div key="sd-foot" className="sd-footnote">
+        {footnote}
+      </div>
       </div>
     );
 
-    out.push(
-      <div key="sd-foot" className="sd-footnote">
-        {footnote}
-      </div>,
-    );
+ 
 
     return out;
   }, [
@@ -263,7 +264,7 @@ const StopDoingPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1000}
+      pageHeight={990}
       pagePadding={0}
       contentClassName="stop-doing-page"
       componentId="stop-doing"

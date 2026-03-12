@@ -72,8 +72,8 @@
 
   /* Competency 3-series bar chart */
   --chart-series-group-mean: #805195;
-  --chart-series-manager-rating: #661818;
-  --chart-series-self-rating: #005b44;
+  --chart-series-manager-rating: #e37a2e;
+  --chart-series-self-rating: #016e52;
   --chart-separator: var(--feedback-initial-underline-color);
 
   /* Strengths page */
