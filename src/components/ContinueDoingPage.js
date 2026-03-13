@@ -176,7 +176,7 @@ const ContinueDoingPage = ({
     }
 
     const pageWidth = 794;
-    const pageHeight = 900;
+    const pageHeight = 930;
     const pagePadding = 0;
     const performMeasure = async ({ slice, includeFootnote }) => {
       return new Promise((resolve) => {

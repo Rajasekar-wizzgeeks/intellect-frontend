@@ -13,6 +13,7 @@ div[data-last-on-page="true"] > .sp-strengths {
 
 .sp--improvement {
   --sp-arc-color: var(--feedback-initial-underline-color);
+  min-height: 580px;
 
   .feedback-common-header {
     padding: 48px 48px 0;
