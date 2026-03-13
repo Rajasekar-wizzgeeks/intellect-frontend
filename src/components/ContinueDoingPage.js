@@ -144,14 +144,24 @@ const ContinueDoingPage = ({
   columns = [],
   footnote = "* This excludes self feedback",
   immediateActionSummary,
+  continue: shouldReMeasure = false,
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
   const [gridChunks, setGridChunks] = useState(null);
+  const [measureTick, setMeasureTick] = useState(0);
 
   const isBrowser =
     typeof window !== "undefined" && typeof document !== "undefined";
 
   const measurementId = useRef(`continue-doing-${Date.now()}`);
+
+  useEffect(() => {
+    if (!shouldReMeasure) return;
+    const id = setTimeout(() => {
+      setMeasureTick((t) => t + 1);
+    }, 10000);
+    return () => clearTimeout(id);
+  }, [shouldReMeasure]);
 
   useEffect(() => {
     setLocalColumns(columns);
@@ -325,7 +335,7 @@ const ContinueDoingPage = ({
         `continue-doing-chunk-${measurementId.current}`,
       );
     };
-  }, [isBrowser, items, localColumns, footnote, title]);
+  }, [isBrowser, items, localColumns, footnote, title, measureTick]);
 
   const blocks = useMemo(() => {
     const out = [];
@@ -479,7 +489,6 @@ if (hasColumns) {
 
     return out;
   }, [localColumns, footnote, immediateActionSummary, title, gridChunks]);
-
   const Header = useMemo(() => {
     return () => (
       <FeedbackCommonHeader
