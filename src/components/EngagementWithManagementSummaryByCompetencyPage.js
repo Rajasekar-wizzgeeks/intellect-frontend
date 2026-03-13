@@ -172,23 +172,10 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       </div>,
     );
 
-    // out.push(
-    //   <div key="ewm-chart" className="sbc-chart">
-    //     <CompetencyThreeBarChart
-    //       items={parsed}
-    //       legendItems={LEGEND_2}
-    //       className="sbc-chart__inner"
-    //       barHeight={barHeight}
-    //       barGap={6}
-    //       rowPaddingY={24}
-    //       firstRowBorder={true}
-    //       onRowsChange={handleRowsChange}
-    //     />
-    //   </div>,
-    // );
-
+    if (comparisonAverage && Object.keys(comparisonAverage).length > 0) {
     out.push(
-      <div key="ewm-compare" className="sbc-compare">
+      <>
+      {comparisonAverage && Object.keys(comparisonAverage).length > 0 && <div key="ewm-compare" className="sbc-compare">
         <FeedbackCommonHeader
           key="ewm-compare-hdr"
           title={`Comparison of Average Scores – ${file3Year} Vs ${file2Year}`}
@@ -266,8 +253,9 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
             (-) Indicates decrease in score this year when compared to last year
           </div>
         </div>
-      </div>,
-    );
+      </div>}
+      </>
+    );}
 
     return out;
   }, [

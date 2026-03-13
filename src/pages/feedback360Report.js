@@ -15,6 +15,7 @@ import GlobalLoader from "../components/globalLoader";
 import { downloadPdfSplitByHeader } from "../utils/pdf";
 import { excelSheetFeedback } from "../helper/apicalls/feedback";
 import { useOutletContext } from "react-router-dom";
+import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
 
 const Feedback360Report = () => {
   const [feedbackOverallData, setFeedbackOverallData] = useState(null);
@@ -30,6 +31,7 @@ const Feedback360Report = () => {
     useState(null);
   const [uploadError, setUploadError] = useState("");
   const [averageCompentency, setAverageCompentency] = useState(null);
+  const [dragOverKey, setDragOverKey] = useState(null);
 
   const currentYearLabel = new Date().getFullYear();
   const previousYearLabel = currentYearLabel - 1;
@@ -45,6 +47,41 @@ const Feedback360Report = () => {
 
   const [file2Year, setFile2Year] = useState(previousYearLabel);
   const [file3Year, setFile3Year] = useState(previousSecondYearLabel);
+
+  const acceptFile = (file) => {
+    if (!file) return false;
+    const name = String(file.name || "").toLowerCase();
+    return name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv");
+  };
+
+  const handleDrop = (key, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverKey(null);
+    const file = e.dataTransfer?.files?.[0] || null;
+    if (!acceptFile(file)) return;
+
+    if (key === "file1") {
+      setCurrentYearExcelFile(file);
+      setUploadError("");
+    } else if (key === "file2") {
+      setPreviousYearExcelFile(file);
+    } else if (key === "file3") {
+      setPreviousSecondYearExcelFile(file);
+    }
+  };
+
+  const handleDragOver = (key, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverKey(key);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverKey(null);
+  };
 
   const buildCompetencyItemsFromApi = (summary) => {
     if (!summary) return [];
@@ -581,25 +618,34 @@ const Feedback360Report = () => {
           <div className="feedbackreport-modal">
             <div className="feedbackreport-modal__header">
               <div className="feedbackreport-modal__title">
-                Upload Excel Sheets
+                <FileSpreadsheet size={20} />
+                <span>Upload Excel Sheets</span>
               </div>
               <button
                 type="button"
                 className="feedbackreport-modal__close"
                 onClick={closeUploadModal}
                 disabled={isUploading}
+                aria-label="Close"
               >
                 ×
               </button>
             </div>
 
-            <div className="feedbackreport-modal__body">
-              <div className="feedbackreport-upload-grid">
-                <div className="feedbackreport-upload-item">
-                  <div className="feedbackreport-upload-item__label">
-                    File 1 
-                    {/* ({currentYearLabel}) */}
+            <div className="feedbackreport-modal__body feedbackreport-modal__body--scroll">
+              <div className="feedbackreport-info-alert" role="note">
+                <AlertCircle size={16} className="feedbackreport-info-alert__icon" />
+                <div className="feedbackreport-info-alert__text">
+                  Upload your Excel files to compare data between {file3Year} and {file2Year}. The primary file is required.
+                </div>
+              </div>
+
+              <div className="feedbackreport-upload-stack">
+                <div className="feedbackreport-upload-section">
+                  <div className="feedbackreport-upload-section__header">
+                    <div className="feedbackreport-upload-section__label">Primary File</div>
                   </div>
+
                   <input
                     ref={currentYearFileInputRef}
                     type="file"
@@ -611,47 +657,95 @@ const Feedback360Report = () => {
                       e.target.value = "";
                     }}
                   />
-                  <button
-                    type="button"
-                    className="feedbackreport-btn feedbackreport-btn--upload"
+
+                  <div
+                    className={`feedbackreport-dropzone${
+                      currentYearExcelFile ? " feedbackreport-dropzone--has-file" : ""
+                    }${dragOverKey === "file1" ? " feedbackreport-dropzone--dragover" : ""}`}
                     onClick={() =>
                       currentYearFileInputRef.current &&
                       currentYearFileInputRef.current.click()
                     }
-                    disabled={isUploading}
+                    onDrop={(e) => handleDrop("file1", e)}
+                    onDragOver={(e) => handleDragOver("file1", e)}
+                    onDragLeave={handleDragLeave}
+                    role="button"
+                    tabIndex={0}
                   >
-                    {currentYearExcelFile ? "Change File" : "Choose File"}
-                  </button>
-                  <div className="feedbackreport-upload-item__filename">
-                    {currentYearExcelFile?.name || "No file selected"}
+                    {currentYearExcelFile ? (
+                      <div className="feedbackreport-dropzone__file">
+                        <div className="feedbackreport-dropzone__file-left">
+                          <div className="feedbackreport-dropzone__file-icon">
+                            <Check size={18} />
+                          </div>
+                          <div className="feedbackreport-dropzone__file-meta">
+                            <div className="feedbackreport-dropzone__file-name">
+                              {currentYearExcelFile.name}
+                            </div>
+                            <div className="feedbackreport-dropzone__file-size">
+                              {(currentYearExcelFile.size / 1024).toFixed(2)} KB
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="feedbackreport-icon-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentYearExcelFile(null);
+                          }}
+                          aria-label="Remove file"
+                          disabled={isUploading}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="feedbackreport-dropzone__empty">
+                        <div className="feedbackreport-dropzone__upload-icon">
+                          <Upload size={22} />
+                        </div>
+                        <div className="feedbackreport-dropzone__empty-text">
+                          <div className="feedbackreport-dropzone__empty-title">
+                            Click to upload or drag and drop
+                          </div>
+                          <div className="feedbackreport-dropzone__empty-subtitle">
+                            Excel files only (.xlsx, .xls, .csv)
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="feedbackreport-upload-item">
-                  <div className="feedbackreport-upload-item__label">
-                    File 2 
+                <div className="feedbackreport-upload-section">
+                  <div className="feedbackreport-upload-section__header">
+                    <div className="feedbackreport-upload-section__label">
+                      Comparison File ({file2Year})
+                    </div>
+                    <select
+                      value={file2Year}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        if (!Number.isFinite(next)) return;
+                        setFile2Year(next);
+                        if (next === file3Year) {
+                          const candidate = next - 1;
+                          if (yearOptions.includes(candidate)) setFile3Year(candidate);
+                        }
+                      }}
+                      disabled={isUploading}
+                      className="feedbackreport-year-select"
+                      aria-label="Select year for File 2"
+                    >
+                      {yearOptions.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <select
-                    value={file2Year}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      if (!Number.isFinite(next)) return;
-                      setFile2Year(next);
-                      if (next === file3Year) {
-                        const candidate = next - 1;
-                        if (yearOptions.includes(candidate)) setFile3Year(candidate);
-                      }
-                    }}
-                    disabled={isUploading}
-                    style={{ width: "100%", marginBottom: 8, height: 34,borderRadius:5 }}
-                    aria-label="Select year for File 2"
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
+
                   <input
                     ref={previousYearFileInputRef}
                     type="file"
@@ -662,79 +756,168 @@ const Feedback360Report = () => {
                       e.target.value = "";
                     }}
                   />
-                  <button
-                    type="button"
-                    className="feedbackreport-btn feedbackreport-btn--upload"
+
+                  <div
+                    className={`feedbackreport-dropzone${
+                      previousYearExcelFile ? " feedbackreport-dropzone--has-file" : ""
+                    }${dragOverKey === "file2" ? " feedbackreport-dropzone--dragover" : ""}`}
                     onClick={() =>
                       previousYearFileInputRef.current &&
                       previousYearFileInputRef.current.click()
                     }
-                    disabled={isUploading}
+                    onDrop={(e) => handleDrop("file2", e)}
+                    onDragOver={(e) => handleDragOver("file2", e)}
+                    onDragLeave={handleDragLeave}
+                    role="button"
+                    tabIndex={0}
                   >
-                    {previousYearExcelFile ? "Change File" : "Choose File"}
-                  </button>
-                  <div className="feedbackreport-upload-item__filename">
-                    {previousYearExcelFile?.name || "No file selected"}
+                    {previousYearExcelFile ? (
+                      <div className="feedbackreport-dropzone__file">
+                        <div className="feedbackreport-dropzone__file-left">
+                          <div className="feedbackreport-dropzone__file-icon">
+                            <Check size={18} />
+                          </div>
+                          <div className="feedbackreport-dropzone__file-meta">
+                            <div className="feedbackreport-dropzone__file-name">
+                              {previousYearExcelFile.name}
+                            </div>
+                            <div className="feedbackreport-dropzone__file-size">
+                              {(previousYearExcelFile.size / 1024).toFixed(2)} KB
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="feedbackreport-icon-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviousYearExcelFile(null);
+                          }}
+                          aria-label="Remove file"
+                          disabled={isUploading}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="feedbackreport-dropzone__empty">
+                        <div className="feedbackreport-dropzone__upload-icon">
+                          <Upload size={22} />
+                        </div>
+                        <div className="feedbackreport-dropzone__empty-text">
+                          <div className="feedbackreport-dropzone__empty-title">
+                            Click to upload or drag and drop
+                          </div>
+                          <div className="feedbackreport-dropzone__empty-subtitle">
+                            Excel files only (.xlsx, .xls, .csv)
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="feedbackreport-upload-item">
-                  <div className="feedbackreport-upload-item__label">
-                    File 3
+                <div className="feedbackreport-upload-section">
+                  <div className="feedbackreport-upload-section__header">
+                    <div className="feedbackreport-upload-section__label">
+                      Comparison File ({file3Year})
+                    </div>
+                    <select
+                      value={file3Year}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        if (!Number.isFinite(next)) return;
+                        setFile3Year(next);
+                        if (next === file2Year) {
+                          const candidate = next + 1;
+                          if (yearOptions.includes(candidate)) setFile2Year(candidate);
+                        }
+                      }}
+                      disabled={isUploading}
+                      className="feedbackreport-year-select"
+                      aria-label="Select year for File 3"
+                    >
+                      {yearOptions.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <select
-                    value={file3Year}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      if (!Number.isFinite(next)) return;
-                      setFile3Year(next);
-                      if (next === file2Year) {
-                        const candidate = next + 1;
-                        if (yearOptions.includes(candidate)) setFile2Year(candidate);
-                      }
-                    }}
-                    disabled={isUploading}
-                    style={{ width: "100%", marginBottom: 8, height: 34, borderRadius: 5 }}
-                    aria-label="Select year for File 3"
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
+
                   <input
                     ref={previousSecondYearFileInputRef}
                     type="file"
                     accept=".xlsx,.xls,.csv"
                     className="feedbackreport-file-input"
                     onChange={(e) => {
-                      setPreviousSecondYearExcelFile(
-                        e.target.files?.[0] || null,
-                      );
+                      setPreviousSecondYearExcelFile(e.target.files?.[0] || null);
                       e.target.value = "";
                     }}
                   />
-                  <button
-                    type="button"
-                    className="feedbackreport-btn feedbackreport-btn--upload"
+
+                  <div
+                    className={`feedbackreport-dropzone${
+                      previousSecondYearExcelFile ? " feedbackreport-dropzone--has-file" : ""
+                    }${dragOverKey === "file3" ? " feedbackreport-dropzone--dragover" : ""}`}
                     onClick={() =>
                       previousSecondYearFileInputRef.current &&
                       previousSecondYearFileInputRef.current.click()
                     }
-                    disabled={isUploading}
+                    onDrop={(e) => handleDrop("file3", e)}
+                    onDragOver={(e) => handleDragOver("file3", e)}
+                    onDragLeave={handleDragLeave}
+                    role="button"
+                    tabIndex={0}
                   >
-                    {previousSecondYearExcelFile
-                      ? "Change File"
-                      : "Choose File"}
-                  </button>
-                  <div className="feedbackreport-upload-item__filename">
-                    {previousSecondYearExcelFile?.name || "No file selected"}
+                    {previousSecondYearExcelFile ? (
+                      <div className="feedbackreport-dropzone__file">
+                        <div className="feedbackreport-dropzone__file-left">
+                          <div className="feedbackreport-dropzone__file-icon">
+                            <Check size={18} />
+                          </div>
+                          <div className="feedbackreport-dropzone__file-meta">
+                            <div className="feedbackreport-dropzone__file-name">
+                              {previousSecondYearExcelFile.name}
+                            </div>
+                            <div className="feedbackreport-dropzone__file-size">
+                              {(previousSecondYearExcelFile.size / 1024).toFixed(2)} KB
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="feedbackreport-icon-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviousSecondYearExcelFile(null);
+                          }}
+                          aria-label="Remove file"
+                          disabled={isUploading}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="feedbackreport-dropzone__empty">
+                        <div className="feedbackreport-dropzone__upload-icon">
+                          <Upload size={22} />
+                        </div>
+                        <div className="feedbackreport-dropzone__empty-text">
+                          <div className="feedbackreport-dropzone__empty-title">
+                            Click to upload or drag and drop
+                          </div>
+                          <div className="feedbackreport-dropzone__empty-subtitle">
+                            Excel files only (.xlsx, .xls, .csv)
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+              <div className="feedbackreport-comparison-tip">
                 Comparison files will be used to compute comparison data ({file3Year} vs {file2Year}).
               </div>
 
@@ -746,7 +929,7 @@ const Feedback360Report = () => {
             <div className="feedbackreport-modal__footer">
               <button
                 type="button"
-                className="feedbackreport-btn feedbackreport-btn--upload feedbackreport-btn--secondary"
+                className="feedbackreport-btn feedbackreport-btn--secondary"
                 onClick={closeUploadModal}
                 disabled={isUploading}
               >
@@ -755,12 +938,17 @@ const Feedback360Report = () => {
               <button
                 type="button"
                 className={`feedbackreport-btn feedbackreport-btn--upload${
-                  isUploading ? " feedbackreport-btn--upload-disabled" : ""
+                  isUploading || !currentYearExcelFile
+                    ? " feedbackreport-btn--upload-disabled"
+                    : ""
                 }`}
                 onClick={handleThreeFileUpload}
-                disabled={isUploading}
+                disabled={isUploading || !currentYearExcelFile}
               >
-                {isUploading ? "Uploading..." : "Upload"}
+                <span className="feedbackreport-btn__icon" aria-hidden="true">
+                  <Upload size={16} />
+                </span>
+                {isUploading ? "Uploading..." : "Upload Files"}
               </button>
             </div>
           </div>
