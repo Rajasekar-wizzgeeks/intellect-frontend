@@ -147,6 +147,7 @@ const ContinueDoingPage = ({
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
   const [gridChunks, setGridChunks] = useState(null);
+  const [isMeasuring, setIsMeasuring] = useState(true);
 
   const isBrowser =
     typeof window !== "undefined" && typeof document !== "undefined";
@@ -163,21 +164,46 @@ const ContinueDoingPage = ({
     localColumns.forEach((col, colIdx) => {
       if (!Array.isArray(col)) return;
       col.forEach((row, rowIdx) => {
-        out.push({ colIdx, rowIdx });
+        if (row && String(row).trim()) {
+          out.push({ colIdx, rowIdx });
+        }
       });
     });
     return out;
   }, [localColumns]);
 
+  const hasContent = useMemo(() => {
+    const hasColumnsContent =
+      Array.isArray(localColumns) &&
+      localColumns.some(
+        (col) =>
+          Array.isArray(col) &&
+          col.some((cell) => cell && String(cell).trim()),
+      );
+
+    const iaCols = immediateActionSummary?.columns;
+    const hasImmediateActionContent =
+      !!immediateActionSummary &&
+      ((Array.isArray(iaCols?.continue) && iaCols.continue.length > 0) ||
+        (Array.isArray(iaCols?.start) && iaCols.start.length > 0) ||
+        (Array.isArray(iaCols?.stop) && iaCols.stop.length > 0));
+
+    return hasColumnsContent || hasImmediateActionContent;
+  }, [localColumns, immediateActionSummary]);
+
   useEffect(() => {
-    if (!isBrowser) {
-      setGridChunks(null);
+    if (!isBrowser || !hasContent) {
+      setGridChunks([]);
+      setIsMeasuring(false);
       return;
     }
+
+    setIsMeasuring(true);
 
     const pageWidth = 794;
     const pageHeight = 930;
     const pagePadding = 0;
+
     const performMeasure = async ({ slice, includeFootnote }) => {
       return new Promise((resolve) => {
         const container = document.createElement("div");
@@ -193,18 +219,13 @@ const ContinueDoingPage = ({
         document.body.appendChild(container);
         const root = createRoot(container);
 
-        const Header = () => (
-          <FeedbackCommonHeader
-            key="cd-hdr"
-            title={title}
-            titleWidth="100"
-            className="cd-header"
-          />
-        );
-
         root.render(
           <div className="continue-doing-page">
-            <Header />
+            <FeedbackCommonHeader
+              title={title}
+              titleWidth="100"
+              className="cd-header"
+            />
             <div data-measure-block="1">
               <ContinueDoingGrid
                 title={title}
@@ -267,198 +288,229 @@ const ContinueDoingPage = ({
     const buildChunks = async () => {
       if (!items.length) {
         setGridChunks([]);
+        setIsMeasuring(false);
         return;
       }
 
       await measurementManager.addToQueue(
         `continue-doing-chunk-${measurementId.current}`,
         async () => {
-          const headerMeasure = await performMeasure({
-            slice: items.slice(0, 1),
-            includeFootnote: false,
-          });
+          try {
+            const initialMeasure = await performMeasure({
+              slice: items,
+              includeFootnote: !!footnote,
+            });
 
-          const headerHeight = headerMeasure.headerHeightPx;
-          const usableHeight = pageHeight - pagePadding * 2 - headerHeight;
+            const headerHeight = initialMeasure.headerHeightPx || 0;
+            const usableHeight = pageHeight - pagePadding * 2 - headerHeight;
 
-          const chunks = [];
-          let start = 0;
-
-          while (start < items.length) {
-            let low = 1;
-            let high = items.length - start;
-            let best = 1;
-
-            while (low <= high) {
-              const mid = Math.floor((low + high) / 2);
-              const { blockHeightPx } = await performMeasure({
-                slice: items.slice(start, start + mid),
-                includeFootnote: false,
-              });
-
-              if (blockHeightPx <= usableHeight && blockHeightPx > 0) {
-                best = mid;
-                low = mid + 1;
-              } else {
-                high = mid - 1;
-              }
+            if (
+              initialMeasure.blockHeightPx > 0 &&
+              initialMeasure.blockHeightPx <= usableHeight
+            ) {
+              setGridChunks([items]);
+              return;
             }
 
-            chunks.push(items.slice(start, start + best));
-            start += best;
-          }
+            const chunks = [];
+            let start = 0;
 
-          setGridChunks(chunks);
+            while (start < items.length) {
+              let low = 1;
+              let high = items.length - start;
+              let best = 0;
+
+              while (low <= high) {
+                const mid = Math.floor((low + high) / 2);
+                const isLastChunk = start + mid === items.length;
+                const { blockHeightPx } = await performMeasure({
+                  slice: items.slice(start, start + mid),
+                  includeFootnote: isLastChunk && !!footnote,
+                });
+
+                if (blockHeightPx > 0 && blockHeightPx <= usableHeight) {
+                  best = mid;
+                  low = mid + 1;
+                } else {
+                  high = mid - 1;
+                }
+              }
+
+              if (best === 0) {
+                best = 1;
+              }
+
+              const chunk = items.slice(start, start + best);
+              if (chunk.length) {
+                chunks.push(chunk);
+              }
+              start += best;
+            }
+
+            setGridChunks(chunks);
+          } finally {
+            setIsMeasuring(false);
+          }
         },
       );
     };
 
     buildChunks();
+
     return () => {
       measurementManager.removeFromQueue(
         `continue-doing-chunk-${measurementId.current}`,
       );
     };
-  }, [isBrowser, items, localColumns, footnote, title]);
+  }, [isBrowser, hasContent, items, localColumns, footnote, title]);
 
   const blocks = useMemo(() => {
     const out = [];
 
-    const hasColumns =
+    if (!hasContent) return out;
+
+    const hasColumnsContent =
       Array.isArray(localColumns) &&
-      localColumns.some((c) => Array.isArray(c) && c.length);
+      localColumns.some(
+        (col) =>
+          Array.isArray(col) &&
+          col.some((cell) => cell && String(cell).trim()),
+      );
 
-    if (hasColumns) {
-      const chunksToUse =
-        Array.isArray(gridChunks) && gridChunks.length ? gridChunks : null;
+    if (hasColumnsContent) {
+      const chunksToUse = Array.isArray(gridChunks)
+        ? gridChunks.filter((c) => Array.isArray(c) && c.length)
+        : null;
 
-      if (chunksToUse) {
+      if (chunksToUse && chunksToUse.length) {
+        let currentOffset = 0;
         chunksToUse.forEach((chunk, chunkIdx) => {
           out.push(
-            <ContinueDoingGrid
-              key={`cd-grid-${chunkIdx}`}
-              title={title}
-              columns={localColumns}
-              onColumnsChange={setLocalColumns}
-              rowOffset={0}
-              items={chunk}
-            />,
+            <div key={`cd-chunk-wrapper-${chunkIdx}`}>
+              <ContinueDoingGrid
+                key={`cd-grid-${chunkIdx}`}
+                title={title}
+                columns={localColumns}
+                onColumnsChange={setLocalColumns}
+                rowOffset={currentOffset}
+                items={chunk}
+              />
+              {chunkIdx === chunksToUse.length - 1 && footnote && (
+                <div className="cd-footnote">{footnote}</div>
+              )}
+            </div>,
           );
+          currentOffset += chunk.length;
         });
       } else {
         out.push(
-          <ContinueDoingGrid
-            key="cd-grid"
-            title={title}
-            columns={localColumns}
-            onColumnsChange={setLocalColumns}
-            rowOffset={0}
-          />,
+          <div key="cd-initial-render">
+            <ContinueDoingGrid
+              title={title}
+              columns={localColumns}
+              onColumnsChange={setLocalColumns}
+              items={items}
+            />
+            {footnote && <div className="cd-footnote">{footnote}</div>}
+          </div>,
         );
       }
     }
 
-    if (footnote) {
-      out.push(
-        <div key="cd-foot" className="cd-footnote">
-          {footnote}
-        </div>,
-      );
-    }
-
-    // if (footnote) {
-    //   out.push(
-
-    //   );
-    // }
-
     if (immediateActionSummary) {
-      const {
-        title: iaTitle = "Immediate Action Areas - Summary",
-        description = "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
-        note = "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
-        columns: iaCols = {
-          continue: [],
-          start: [],
-          stop: [],
-        },
-      } = immediateActionSummary;
+      const hasImmediateActionContent =
+        immediateActionSummary.columns?.continue?.length > 0 ||
+        immediateActionSummary.columns?.start?.length > 0 ||
+        immediateActionSummary.columns?.stop?.length > 0;
 
-      out.push(
-        <div key="cd-ia" className="cd-ia">
-          {/* <div className="cd-ia__title">{iaTitle}</div>
-          <div className="cd-ia__underline" aria-hidden="true" /> */}
+      if (hasImmediateActionContent) {
+        const {
+          title: iaTitle = "Immediate Action Areas - Summary",
+          description = "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
+          note = "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
+          columns: iaCols = {
+            continue: [],
+            start: [],
+            stop: [],
+          },
+        } = immediateActionSummary;
 
-          <div className="cd-ia__desc">{description}</div>
-          <div className="cd-ia__note">{note}</div>
+        out.push(
+          <div key="cd-ia" className="cd-ia">
+            {/* <div className="cd-ia__title">{iaTitle}</div>
+            <div className="cd-ia__underline" aria-hidden="true" /> */}
 
-          <div className="cd-ia__panel" role="table" aria-label={iaTitle}>
-            <div className="cd-ia-col" role="rowgroup">
-              <div
-                className="cd-ia-col__head cd-ia-col__head--continue"
-                role="row"
-              >
-                CONTINUE
+            <div className="cd-ia__desc">{description}</div>
+            <div className="cd-ia__note">{note}</div>
+
+            <div className="cd-ia__panel" role="table" aria-label={iaTitle}>
+              <div className="cd-ia-col" role="rowgroup">
+                <div
+                  className="cd-ia-col__head cd-ia-col__head--continue"
+                  role="row"
+                >
+                  CONTINUE
+                </div>
+                <div
+                  className="cd-ia-col__body cd-ia-col__body--continue"
+                  role="row"
+                >
+                  {iaCols.continue.map((t, i) => (
+                    <div key={i} className="cd-ia-bullet" role="row">
+                      <span className="cd-ia-bullet__dot" aria-hidden="true">
+                        •
+                      </span>
+                      <span className="cd-ia-bullet__text">{t}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div
-                className="cd-ia-col__body cd-ia-col__body--continue"
-                role="row"
-              >
-                {iaCols.continue.map((t, i) => (
-                  <div key={i} className="cd-ia-bullet" role="row">
-                    <span className="cd-ia-bullet__dot" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="cd-ia-bullet__text">{t}</span>
-                  </div>
-                ))}
+
+              <div className="cd-ia-col" role="rowgroup">
+                <div
+                  className="cd-ia-col__head cd-ia-col__head--start"
+                  role="row"
+                >
+                  START
+                </div>
+                <div
+                  className="cd-ia-col__body cd-ia-col__body--start"
+                  role="row"
+                >
+                  {iaCols.start.map((t, i) => (
+                    <div key={i} className="cd-ia-bullet" role="row">
+                      <span className="cd-ia-bullet__dot" aria-hidden="true">
+                        •
+                      </span>
+                      <span className="cd-ia-bullet__text">{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="cd-ia-col" role="rowgroup">
+                <div className="cd-ia-col__head cd-ia-col__head--stop" role="row">
+                  STOP
+                </div>
+                <div className="cd-ia-col__body cd-ia-col__body--stop" role="row">
+                  {iaCols.stop.map((t, i) => (
+                    <div key={i} className="cd-ia-bullet" role="row">
+                      <span className="cd-ia-bullet__dot" aria-hidden="true">
+                        •
+                      </span>
+                      <span className="cd-ia-bullet__text">{t}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <div className="cd-ia-col" role="rowgroup">
-              <div
-                className="cd-ia-col__head cd-ia-col__head--start"
-                role="row"
-              >
-                START
-              </div>
-              <div
-                className="cd-ia-col__body cd-ia-col__body--start"
-                role="row"
-              >
-                {iaCols.start.map((t, i) => (
-                  <div key={i} className="cd-ia-bullet" role="row">
-                    <span className="cd-ia-bullet__dot" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="cd-ia-bullet__text">{t}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="cd-ia-col" role="rowgroup">
-              <div className="cd-ia-col__head cd-ia-col__head--stop" role="row">
-                STOP
-              </div>
-              <div className="cd-ia-col__body cd-ia-col__body--stop" role="row">
-                {iaCols.stop.map((t, i) => (
-                  <div key={i} className="cd-ia-bullet" role="row">
-                    <span className="cd-ia-bullet__dot" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="cd-ia-bullet__text">{t}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>,
-      );
+          </div>,
+        );
+      }
     }
 
     return out;
-  }, [localColumns, footnote, immediateActionSummary, title, gridChunks]);
+  }, [hasContent, localColumns, footnote, immediateActionSummary, title, gridChunks, items]);
 
   const Header = useMemo(() => {
     return () => (
@@ -471,8 +523,15 @@ const ContinueDoingPage = ({
     );
   }, [title]);
 
+  if (!hasContent && !isMeasuring) {
+    return null;
+  }
+
+  if (!blocks.length && !isMeasuring) {
+    return null;
+  }
+
   return (
-    // <div className="section-page-container">
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
@@ -482,7 +541,6 @@ const ContinueDoingPage = ({
       contentClassName="continue-doing-page"
       componentId="continue-doing"
     />
-    // </div>
   );
 };
 
