@@ -119,6 +119,38 @@ const StrengthsPage = ({
     });
   }, []);
 
+  const getArcRowTop = useCallback((points, index, bodyHeight, arcHeight) => {
+    const y = points?.[index]?.y;
+    if (!Number.isFinite(y) || !Number.isFinite(bodyHeight) || !arcHeight) {
+      return 0;
+    }
+
+    const pillMarginTop = 12;
+    const pillHeight = 40;
+    const lineY = pillMarginTop + pillHeight - (index === 0 ? 10 :index === 1 ? 5 : 0) / 2;
+
+    const scaleY = bodyHeight / arcHeight;
+    const yScaled = y * scaleY;
+    const top = Math.round(yScaled - lineY);
+    return Math.max(0, Math.min(bodyHeight - 1, top));
+  }, []);
+
+  const getConnectorLineStyle = useCallback((points, index) => {
+    const x = points?.[index]?.x;
+    const pillMarginTop = 12;
+    const pillHeight = 40;
+    const lineY = pillMarginTop + pillHeight / 2;
+
+    if (!Number.isFinite(x)) {
+      return { top: lineY, width: 0, left: 0 };
+    }
+
+    const width = Math.max(0, Math.min(150 - x, 50));
+    const left = -(155 - x);
+    return { top: lineY, width, left };
+  }, []);
+
+
   const blocks = useMemo(() => {
     const out = [];
 
@@ -126,12 +158,16 @@ const StrengthsPage = ({
     const arcHeight = 450;
     const paddingTop = topOffset;
     const paddingBottom = topOffset;
+    const bodyHeight = 330;
 
     out.push(
       <div key="strengths" className="sp sp-strengths">
         <FeedbackCommonHeader title={title} />
 
-        <div className="sp-grid" style={{ "--sp-arc-color": arcColor }}>
+        <div
+          className="sp-grid"
+          style={{ "--sp-arc-color": arcColor, "--sp-left-height": `${bodyHeight}px` }}
+        >
           <div className="sp-left">
             <ArcConnector
               items={effectiveGroupItems}
@@ -158,25 +194,19 @@ const StrengthsPage = ({
                 </div>
                 <div className="sp-col__header-sub">{groupSubTitle}</div>
 
-                <div className="sp-col__body" style={{ height: 330 }}>
+                <div className="sp-col__body" style={{ height: bodyHeight }}>
                   {strengthPoints.length === effectiveGroupItems.length &&
                     effectiveGroupItems.map((it, i) => (
                       <div
                         key={`g-${i}`}
                         className="sp-row"
                         style={{
-                          top:
-                            // strengthPoints[i].y - rowTopAdjust
-                            i === 0 ? 22 : i === 1 ? 122 : 223,
+                          top: getArcRowTop(strengthPoints, i, bodyHeight, arcHeight),
                         }}
                       >
                         <div
                           className="sp-row__line"
-                          style={{
-                            top: 31,
-                            width: Math.min(160 - strengthPoints[i].x, 50),
-                            left: i === 1 ? -35 : -(155 - strengthPoints[i].x),
-                          }}
+                          style={getConnectorLineStyle(strengthPoints, i)}
                         />
                         <div className="sp-pill">
                           {Number(it.score).toFixed(2)}
@@ -200,10 +230,10 @@ const StrengthsPage = ({
                     <div
                       key={`m-${idx}`}
                       className="sp-row sp-row--manager"
-                      style={{
-                        position: "absolute",
-                        top: idx === 0 ? 22 : idx === 1 ? 122 : 223,
-                      }}
+                      // style={{
+                      //   position: "absolute",
+                      //   top: idx === 0 ? 22 : idx === 1 ? 122 : 223,
+                      // }}
                     >
                       <div className="sp-pill">
                         {Number(it.score).toFixed(2)}
@@ -227,6 +257,7 @@ const StrengthsPage = ({
           className="sp-grid"
           style={{
             "--sp-arc-color": "var(--feedback-initial-underline-color)",
+            "--sp-left-height": `${bodyHeight}px`,
           }}
         >
           <div className="sp-left">
@@ -237,7 +268,7 @@ const StrengthsPage = ({
               paddingTop={paddingTop}
               paddingBottom={paddingBottom}
               setPointsLine={handleImprovementPointsLine}
-              circleColor={"var(--improve-pill-bg"}
+              circleColor={"var(--improve-pill-bg)"}
               circleBorderColor={"#b33737"}
               strokeWidth={6}
               circleRadius={10}
@@ -259,7 +290,7 @@ const StrengthsPage = ({
                   {improvementsGroupSubTitle}
                 </div>
 
-                <div className="sp-col__body" style={{ height: 330 }}>
+                <div className="sp-col__body" style={{ height: bodyHeight }}>
                   {improvementPoints.length ===
                     effectiveImprovementsGroupItems.length &&
                     effectiveImprovementsGroupItems.map((it, i) => (
@@ -267,17 +298,17 @@ const StrengthsPage = ({
                         key={`ig-${i}`}
                         className="sp-row"
                         style={{
-                          top: i === 0 ? 22 : i === 1 ? 122 : 223,
+                          top: getArcRowTop(
+                            improvementPoints,
+                            i,
+                            bodyHeight,
+                            arcHeight
+                          ),
                         }}
                       >
                         <div
                           className="sp-row__line"
-                          style={{
-                            top: 31,
-                            width: Math.min(160 - improvementPoints[i].x, 50),
-                            left:
-                              i === 1 ? -35 : -(155 - improvementPoints[i].x),
-                          }}
+                          style={getConnectorLineStyle(improvementPoints, i)}
                         />
                         <div className="sp-pill">
                           {Number(it.score).toFixed(2)}
@@ -307,7 +338,7 @@ const StrengthsPage = ({
                       className="sp-row sp-row--manager"
                       style={{
                         position: "absolute",
-                        top: idx === 0 ? 22 : idx === 1 ? 122 : 223,
+                        top: idx === 0 ? 10 : idx === 1 ? 112 : 213,
                       }}
                     >
                       <div className="sp-pill">
@@ -321,7 +352,7 @@ const StrengthsPage = ({
             </div>
           </div>
         </div>
-      </div>,
+      </div>
     );
 
     return out;

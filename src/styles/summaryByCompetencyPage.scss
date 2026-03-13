@@ -23,6 +23,10 @@
   }
 }
 
+div[data-last-on-page="true"] > .sbc-hdr-chart-wrapper {
+  border-bottom: 0;
+}
+
 .sbc-header {
   // padding-left: 40px;
   // padding-right: 40px;
