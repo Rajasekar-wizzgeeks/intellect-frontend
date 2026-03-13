@@ -139,12 +139,11 @@ const ContinueDoingGrid = ({
   );
 };
 
-const ContinueDoingPage = ({
+const MostThingPage = ({
   title = "What the Nominee Should “Continue Doing”…",
   columns = [],
   footnote = "* This excludes self feedback",
   immediateActionSummary,
-  componentId,
   // continue: shouldReMeasure = false,
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
@@ -155,10 +154,6 @@ const ContinueDoingPage = ({
     typeof window !== "undefined" && typeof document !== "undefined";
 
   const measurementId = useRef(`continue-doing-${Date.now()}`);
-
-  const autoPaginatedComponentId = useMemo(() => {
-    return componentId || measurementId.current;
-  }, [componentId]);
 
   // useEffect(() => {
   //   if (!shouldReMeasure) return;
@@ -514,10 +509,10 @@ const ContinueDoingPage = ({
       pagePadding={0}
       HeaderComponent={Header}
       contentClassName="continue-doing-page"
-      componentId={autoPaginatedComponentId}
+      componentId="continue-doing"
     />
     // </div>
   );
 };
 
-export default ContinueDoingPage;
+export default MostThingPage;
