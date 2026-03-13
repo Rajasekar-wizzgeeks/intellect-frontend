@@ -14,7 +14,7 @@ const EditableCell = ({ value, onSave }) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onSave(editValue);
-    } 
+    }
     // else if (e.key === "Escape") {
     //   onCancel();
     // }
@@ -97,11 +97,7 @@ const ContinueDoingGrid = ({
         </div>
       ))} */}
       {rows.map((row) => (
-        <div
-          key={`${row.colIdx}-${row.rowIdx}`}
-          className="cd-row"
-          role="row"
-        >
+        <div key={`${row.colIdx}-${row.rowIdx}`} className="cd-row" role="row">
           <div
             className="cd-cell"
             role="cell"
@@ -180,9 +176,8 @@ const ContinueDoingPage = ({
     }
 
     const pageWidth = 794;
-    const pageHeight = 970;
+    const pageHeight = 900;
     const pagePadding = 0;
-
     const performMeasure = async ({ slice, includeFootnote }) => {
       return new Promise((resolve) => {
         const container = document.createElement("div");
@@ -222,7 +217,7 @@ const ContinueDoingPage = ({
                 <div className="cd-footnote">{footnote}</div>
               ) : null}
             </div>
-          </div>
+          </div>,
         );
 
         const measure = async () => {
@@ -314,14 +309,14 @@ const ContinueDoingPage = ({
           }
 
           setGridChunks(chunks);
-        }
+        },
       );
     };
 
     buildChunks();
     return () => {
       measurementManager.removeFromQueue(
-        `continue-doing-chunk-${measurementId.current}`
+        `continue-doing-chunk-${measurementId.current}`,
       );
     };
   }, [isBrowser, items, localColumns, footnote, title]);
@@ -334,9 +329,8 @@ const ContinueDoingPage = ({
       localColumns.some((c) => Array.isArray(c) && c.length);
 
     if (hasColumns) {
-      const chunksToUse = Array.isArray(gridChunks) && gridChunks.length
-        ? gridChunks
-        : null;
+      const chunksToUse =
+        Array.isArray(gridChunks) && gridChunks.length ? gridChunks : null;
 
       if (chunksToUse) {
         chunksToUse.forEach((chunk, chunkIdx) => {
@@ -348,7 +342,7 @@ const ContinueDoingPage = ({
               onColumnsChange={setLocalColumns}
               rowOffset={0}
               items={chunk}
-            />
+            />,
           );
         });
       } else {
@@ -359,7 +353,7 @@ const ContinueDoingPage = ({
             columns={localColumns}
             onColumnsChange={setLocalColumns}
             rowOffset={0}
-          />
+          />,
         );
       }
     }
@@ -368,13 +362,13 @@ const ContinueDoingPage = ({
       out.push(
         <div key="cd-foot" className="cd-footnote">
           {footnote}
-        </div>
+        </div>,
       );
     }
 
     // if (footnote) {
     //   out.push(
-       
+
     //   );
     // }
 
@@ -482,7 +476,7 @@ const ContinueDoingPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1100}
+      pageHeight={950}
       pagePadding={0}
       HeaderComponent={Header}
       contentClassName="continue-doing-page"

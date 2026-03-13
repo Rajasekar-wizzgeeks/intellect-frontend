@@ -209,7 +209,7 @@ const StopDoingPage = ({
     }
 
     const pageWidth = 794;
-    const pageHeight = 990;
+    const pageHeight = 950;
     const pagePadding = 0;
 
     const measureHeights = async ({ start, end, includeHeader }) => {
@@ -439,7 +439,7 @@ const StopDoingPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={990}
+      pageHeight={950}
       pagePadding={0}
       contentClassName="stop-doing-page"
       componentId="stop-doing"

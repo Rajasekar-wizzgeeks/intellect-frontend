@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import FeedbackInitialPage from "../components/feedbackInitialPage";
 import SurveyFeedback from "../components/surveyFeedback";
 import "../styles/feedback360Report.scss";
@@ -18,11 +18,33 @@ import { useOutletContext } from "react-router-dom";
 
 const Feedback360Report = () => {
   const [feedbackOverallData, setFeedbackOverallData] = useState(null);
-  const { setIsHeader, setHeaderName } = useOutletContext();
-  const [excelFile, setExcelFile] = useState(null);
+  const { setHeaderName } = useOutletContext();
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
-  const [averageCompentency, setAverageCompentency] = useState({});
+  const currentYearFileInputRef = useRef(null);
+  const previousYearFileInputRef = useRef(null);
+  const previousSecondYearFileInputRef = useRef(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [currentYearExcelFile, setCurrentYearExcelFile] = useState(null);
+  const [previousYearExcelFile, setPreviousYearExcelFile] = useState(null);
+  const [previousSecondYearExcelFile, setPreviousSecondYearExcelFile] =
+    useState(null);
+  const [uploadError, setUploadError] = useState("");
+  const [averageCompentency, setAverageCompentency] = useState(null);
+
+  const currentYearLabel = new Date().getFullYear();
+  const previousYearLabel = currentYearLabel - 1;
+  const previousSecondYearLabel = currentYearLabel - 2;
+
+  const yearOptions = useMemo(() => {
+    const out = [];
+    for (let y = currentYearLabel; y >= currentYearLabel - 10; y -= 1) {
+      out.push(y);
+    }
+    return out;
+  }, [currentYearLabel]);
+
+  const [file2Year, setFile2Year] = useState(previousYearLabel);
+  const [file3Year, setFile3Year] = useState(previousSecondYearLabel);
 
   const buildCompetencyItemsFromApi = (summary) => {
     if (!summary) return [];
@@ -340,7 +362,6 @@ const Feedback360Report = () => {
       },
     ],
   );
-  
 
   useEffect(() => {
     if (!feedbackOverallData) return;
@@ -422,17 +443,17 @@ const Feedback360Report = () => {
       A: {
         color: "#20c6a2",
         pillColor: "#20c6a2",
-        cardColor:"#067a61"
+        cardColor: "#067a61",
       },
       B: {
         color: "#3a9ad9",
         pillColor: "#3a9ad9",
-        cardColor:"#13679e"
+        cardColor: "#13679e",
       },
       C: {
         color: "#ef4b3a",
         pillColor: "#ef4b3a",
-        cardColor:"#e82315"
+        cardColor: "#e82315",
       },
     };
     const orderedKeys = ["A", "B", "C"];
@@ -466,7 +487,6 @@ const Feedback360Report = () => {
     feedbackOverallData?.nominee_leadership,
   );
 
-
   const immediateActionAreasSummary = {
     title: "Immediate Action Areas - Summary",
     description:
@@ -479,28 +499,45 @@ const Feedback360Report = () => {
     },
   };
 
-  const handleExcelChange = (e) => {
-    const file = e.target.files?.[0] || null;
-    setExcelFile(file);
-    if (file) {
-      handleExcelUpload(file);
-      e.target.value = "";
-    }
+  // console.log("feedbackOverallData", averageCompentency);
+
+  const openUploadModal = () => {
+    if (isUploading) return;
+    setUploadError("");
+    setFile2Year(previousYearLabel);
+    setFile3Year(previousSecondYearLabel);
+    setIsUploadModalOpen(true);
   };
 
-  // console.log("feedbackOverallData", feedbackOverallData);
+  const closeUploadModal = () => {
+    if (isUploading) return;
+    setIsUploadModalOpen(false);
+  };
 
-  const handleExcelUpload = async (fileArg) => {
-    setAverageCompentency({});
-    setFeedbackOverallData({});
-    const fileToUpload = fileArg || excelFile;
-    if (!fileToUpload || isUploading) return;
+  const handleThreeFileUpload = async () => {
+    if (isUploading) return;
+
+    if (!currentYearExcelFile) {
+      setUploadError("Current Year file is required.");
+      return;
+    }
+
     try {
+      setUploadError("");
       setIsUploading(true);
-      const response = await excelSheetFeedback(fileToUpload);
+      const response = await excelSheetFeedback([
+        currentYearExcelFile,
+        previousYearExcelFile,
+        previousSecondYearExcelFile,
+      ]);
       setFeedbackOverallData(response);
+      setIsUploadModalOpen(false);
+      setCurrentYearExcelFile(null);
+      setPreviousYearExcelFile(null);
+      setPreviousSecondYearExcelFile(null);
     } catch (err) {
       console.error("Excel upload failed", err);
+      setUploadError("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -519,17 +556,9 @@ const Feedback360Report = () => {
         >
           Download PDF
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx,.xls,.csv"
-          onChange={handleExcelChange}
-          className="feedbackreport-file-input"
-          // disabled={!isUploading}
-        />
         <button
           type="button"
-          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+          onClick={openUploadModal}
           className={`feedbackreport-btn feedbackreport-btn--upload${
             isUploading ? " feedbackreport-btn--upload-disabled" : ""
           }`}
@@ -538,6 +567,205 @@ const Feedback360Report = () => {
           {isUploading ? "Uploading..." : "Upload Excel"}
         </button>
       </div>
+
+      {isUploadModalOpen ? (
+        <div
+          className="feedbackreport-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Upload Excel Sheets"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeUploadModal();
+          }}
+        >
+          <div className="feedbackreport-modal">
+            <div className="feedbackreport-modal__header">
+              <div className="feedbackreport-modal__title">
+                Upload Excel Sheets
+              </div>
+              <button
+                type="button"
+                className="feedbackreport-modal__close"
+                onClick={closeUploadModal}
+                disabled={isUploading}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="feedbackreport-modal__body">
+              <div className="feedbackreport-upload-grid">
+                <div className="feedbackreport-upload-item">
+                  <div className="feedbackreport-upload-item__label">
+                    File 1 
+                    {/* ({currentYearLabel}) */}
+                  </div>
+                  <input
+                    ref={currentYearFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="feedbackreport-file-input"
+                    onChange={(e) => {
+                      setCurrentYearExcelFile(e.target.files?.[0] || null);
+                      setUploadError("");
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="feedbackreport-btn feedbackreport-btn--upload"
+                    onClick={() =>
+                      currentYearFileInputRef.current &&
+                      currentYearFileInputRef.current.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {currentYearExcelFile ? "Change File" : "Choose File"}
+                  </button>
+                  <div className="feedbackreport-upload-item__filename">
+                    {currentYearExcelFile?.name || "No file selected"}
+                  </div>
+                </div>
+
+                <div className="feedbackreport-upload-item">
+                  <div className="feedbackreport-upload-item__label">
+                    File 2 
+                  </div>
+                  <select
+                    value={file2Year}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      if (!Number.isFinite(next)) return;
+                      setFile2Year(next);
+                      if (next === file3Year) {
+                        const candidate = next - 1;
+                        if (yearOptions.includes(candidate)) setFile3Year(candidate);
+                      }
+                    }}
+                    disabled={isUploading}
+                    style={{ width: "100%", marginBottom: 8, height: 34,borderRadius:5 }}
+                    aria-label="Select year for File 2"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    ref={previousYearFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="feedbackreport-file-input"
+                    onChange={(e) => {
+                      setPreviousYearExcelFile(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="feedbackreport-btn feedbackreport-btn--upload"
+                    onClick={() =>
+                      previousYearFileInputRef.current &&
+                      previousYearFileInputRef.current.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {previousYearExcelFile ? "Change File" : "Choose File"}
+                  </button>
+                  <div className="feedbackreport-upload-item__filename">
+                    {previousYearExcelFile?.name || "No file selected"}
+                  </div>
+                </div>
+
+                <div className="feedbackreport-upload-item">
+                  <div className="feedbackreport-upload-item__label">
+                    File 3
+                  </div>
+                  <select
+                    value={file3Year}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      if (!Number.isFinite(next)) return;
+                      setFile3Year(next);
+                      if (next === file2Year) {
+                        const candidate = next + 1;
+                        if (yearOptions.includes(candidate)) setFile2Year(candidate);
+                      }
+                    }}
+                    disabled={isUploading}
+                    style={{ width: "100%", marginBottom: 8, height: 34, borderRadius: 5 }}
+                    aria-label="Select year for File 3"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    ref={previousSecondYearFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="feedbackreport-file-input"
+                    onChange={(e) => {
+                      setPreviousSecondYearExcelFile(
+                        e.target.files?.[0] || null,
+                      );
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="feedbackreport-btn feedbackreport-btn--upload"
+                    onClick={() =>
+                      previousSecondYearFileInputRef.current &&
+                      previousSecondYearFileInputRef.current.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {previousSecondYearExcelFile
+                      ? "Change File"
+                      : "Choose File"}
+                  </button>
+                  <div className="feedbackreport-upload-item__filename">
+                    {previousSecondYearExcelFile?.name || "No file selected"}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+                Comparison files will be used to compute comparison data ({file3Year} vs {file2Year}).
+              </div>
+
+              {uploadError ? (
+                <div className="feedbackreport-upload-error">{uploadError}</div>
+              ) : null}
+            </div>
+
+            <div className="feedbackreport-modal__footer">
+              <button
+                type="button"
+                className="feedbackreport-btn feedbackreport-btn--upload feedbackreport-btn--secondary"
+                onClick={closeUploadModal}
+                disabled={isUploading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`feedbackreport-btn feedbackreport-btn--upload${
+                  isUploading ? " feedbackreport-btn--upload-disabled" : ""
+                }`}
+                onClick={handleThreeFileUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? "Uploading..." : "Upload"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="section-page pdf-section">
         <FeedbackInitialPage
           initialName={
@@ -595,6 +823,11 @@ const Feedback360Report = () => {
           feedbackOverallData?.engagement_with_management_competency || {},
         )}
         items={engagementWithManagementItems}
+        comparisonAverage={
+          feedbackOverallData?.comparision_average ||[]
+        }
+        file2Year={file2Year}
+        file3Year={file3Year}
         setAverageCompentency={setAverageCompentency}
       />
 
@@ -627,11 +860,9 @@ const Feedback360Report = () => {
       />
       <ContinueDoingPage
         title="Most Predominant Leadership Trait"
-        columns={
-          buildThreeTextColumns(
-            feedbackOverallData?.predominant_leader_thing,
-          ) 
-        }
+        columns={buildThreeTextColumns(
+          feedbackOverallData?.predominant_leader_thing,
+        )}
       />
       <ContinueDoingPage
         title={"Immediate Action Areas - Summary"}
