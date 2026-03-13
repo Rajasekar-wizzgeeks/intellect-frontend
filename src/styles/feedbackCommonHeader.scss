@@ -10,6 +10,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+    width: 75%;
   }
 
   &__title {
@@ -19,6 +20,15 @@
     line-height: 1.15;
     letter-spacing: 0.2px;
 
+  }
+
+  &__title-line1 {
+    display: block;
+  }
+
+  &__title-line2 {
+    display: block;
+    margin-top: 6px;
   }
 
   &__right {

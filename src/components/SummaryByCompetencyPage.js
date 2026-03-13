@@ -13,6 +13,7 @@ const SummaryByCompetencyPage = ({
   setAverageCompentency,
   setFeedbackOverallData,
 }) => {
+  
   const [
     rightCultureCompetencyOverallScore,
     setRightCultureCompetencyOverallScore,
@@ -23,6 +24,24 @@ const SummaryByCompetencyPage = ({
   ] = useState(leadershipOverallScore);
   const [rightCultureRows, setRightCultureRows] = useState(items);
   const [leadershipRows, setLeadershipRows] = useState(leadershipItems);
+
+  const sortRowsByGroupMeanDesc = (rows) => {
+    if (!Array.isArray(rows)) return rows;
+    const cloned = [...rows];
+    cloned.sort((a, b) => {
+      const av = Number(a?.groupMean);
+      const bv = Number(b?.groupMean);
+
+      const aMissing = !Number.isFinite(av) || av === -1;
+      const bMissing = !Number.isFinite(bv) || bv === -1;
+
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      return bv - av;
+    });
+    return cloned;
+  };
 
   const handleOverallScore = (rows) => {
     if (!Array.isArray(rows) || !rows.length) return 0;
@@ -45,22 +64,23 @@ const SummaryByCompetencyPage = ({
   };
 
   const handleItemsChange = (rows, competency) => {
-    const overallScore = handleOverallScore(rows);
+    const sortedRows = sortRowsByGroupMeanDesc(rows);
+    const overallScore = handleOverallScore(sortedRows);
 
     if (competency === "right_culture_competency") {
       setRightCultureCompetencyOverallScore(overallScore);
-      setRightCultureRows(rows);
+      setRightCultureRows(sortedRows);
       setAverageCompentency((prev) => ({
         ...prev,
-        right_culture_competency: rows,
+        right_culture_competency: sortedRows,
       }));
     }
     if (competency === "leadership_style_competency") {
       setLeadershipCompetencyOverallScore(overallScore);
-      setLeadershipRows(rows);
+      setLeadershipRows(sortedRows);
       setAverageCompentency((prev) => ({
         ...prev,
-        leadership_style_competency: rows,
+        leadership_style_competency: sortedRows,
       }));
     }
   };
@@ -124,7 +144,16 @@ const SummaryByCompetencyPage = ({
       <div className="sbc-hdr-chart-wrapper" key="sbc-wrapper-1">
         <FeedbackCommonHeader
           key="sbc-hdr-1"
-          title={title}
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                Summary by Competency -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Creating the Right Culture
+              </div>
+            </>
+          }
           right={
             overallScore !== undefined && overallScore !== null ? (
               <div className="sbc-header__pill">
@@ -168,7 +197,16 @@ const SummaryByCompetencyPage = ({
       <div>
         <FeedbackCommonHeader
           key="sbc-hdr-2"
-          title={"Summary by Competency – Leadership Personality & Style"}
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                Summary by Competency -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Leadership Personality & Style
+              </div>
+            </>
+          }
           right={
             leadershipOverallScore !== undefined &&
             leadershipOverallScore !== null ? (
@@ -233,7 +271,7 @@ const SummaryByCompetencyPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1123}
+      pageHeight={1103}
       pagePadding={0}
       contentClassName="summary-by-competency-page"
       componentId="summary-by-competency"

@@ -30,6 +30,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   items = [],
   barHeight = 12,
   comparisonTitle = "Comparison of Average Scores – 2024 Vs 2025",
+  comparisonAverage,
   comparisonNotes = [
     "No significant differences in Team scores and Manager scores between 2024 and 2025",
     "The table highlights areas where there is a slight increase or decrease in scores compared to last year. Only those areas with an increase or decrease above 0.1 in Team Score are shown, while differences smaller than those indicated have been excluded.",
@@ -67,6 +68,8 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     },
   ],
   setAverageCompentency,
+  file2Year,
+  file3Year,
 }) => {
   const [localOverallScore, setLocalOverallScore] = useState(overallScore);
   const [rows, setRows] = useState(items);
@@ -110,11 +113,41 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       selfRating: Number(it.selfRating),
     }));
 
+    const computedComparisonRows = (() => {
+      const src =
+        comparisonAverage && typeof comparisonAverage === "object"
+          ? comparisonAverage
+          : null;
+      if (!src) return comparisonRows;
+
+      const entries = Object.entries(src);
+      if (!entries.length) return comparisonRows;
+
+      const mapped = entries
+        .map(([label, diff]) => ({
+          label,
+          diff: Number(diff),
+        }))
+        .filter((r) => r.label && Number.isFinite(r.diff));
+
+      mapped.sort((a, b) => b.diff - a.diff);
+      return mapped;
+    })();
+
     out.push(
       <div className="sbc-hdr-chart-wrapper" key="ewm-hdr-chart">
         <FeedbackCommonHeader
           key="ewm-hdr"
-          title={title}
+          title={
+            <>
+              <div className="feedback-common-header__title-line1">
+                Summary by Competency -
+              </div>
+              <div className="feedback-common-header__title-line2">
+                Engagement With Management
+              </div>
+            </>
+          }
           right={
             localOverallScore !== undefined && localOverallScore !== null ? (
               <div className="sbc-header__pill">
@@ -158,7 +191,8 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       <div key="ewm-compare" className="sbc-compare">
         <FeedbackCommonHeader
           key="ewm-compare-hdr"
-          title={comparisonTitle}
+          title={`Comparison of Average Scores – ${file3Year} Vs ${file2Year}`}
+          titleWidth={100}
           className="sbc-compare__header"
         />
 
@@ -187,13 +221,13 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
                 className="sbc-compare__th sbc-compare__th--right"
                 role="columnheader"
               >
-                Difference - 2025 Vs 2024
+                Difference - {file3Year} Vs {file2Year}
               </div>
             </div>
           </div>
 
           <div className="sbc-compare__tbody" role="rowgroup">
-            {comparisonRows.map((r, i) => {
+            {computedComparisonRows.map((r, i) => {
               const n = Number(r?.diff);
               const isPos = Number.isFinite(n) && n > 0;
               const isNeg = Number.isFinite(n) && n < 0;
@@ -242,7 +276,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     title,
     comparisonTitle,
     comparisonNotes,
-    comparisonRows,
+    comparisonAverage,
   ]);
 
   useEffect(() => {

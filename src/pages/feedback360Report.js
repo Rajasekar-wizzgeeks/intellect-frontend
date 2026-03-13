@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import FeedbackInitialPage from "../components/feedbackInitialPage";
 import SurveyFeedback from "../components/surveyFeedback";
 import "../styles/feedback360Report.scss";
@@ -30,6 +30,21 @@ const Feedback360Report = () => {
     useState(null);
   const [uploadError, setUploadError] = useState("");
   const [averageCompentency, setAverageCompentency] = useState(null);
+
+  const currentYearLabel = new Date().getFullYear();
+  const previousYearLabel = currentYearLabel - 1;
+  const previousSecondYearLabel = currentYearLabel - 2;
+
+  const yearOptions = useMemo(() => {
+    const out = [];
+    for (let y = currentYearLabel; y >= currentYearLabel - 10; y -= 1) {
+      out.push(y);
+    }
+    return out;
+  }, [currentYearLabel]);
+
+  const [file2Year, setFile2Year] = useState(previousYearLabel);
+  const [file3Year, setFile3Year] = useState(previousSecondYearLabel);
 
   const buildCompetencyItemsFromApi = (summary) => {
     if (!summary) return [];
@@ -80,8 +95,12 @@ const Feedback360Report = () => {
     if (!cleaned.length) return [];
 
     const cols = [[], [], []];
+
+    const rowsPerCol = Math.ceil(cleaned.length / 3);
+
     cleaned.forEach((text, idx) => {
-      cols[idx % 3].push(text);
+      const colIdx = Math.min(2, Math.floor(idx / rowsPerCol));
+      cols[colIdx].push(text);
     });
     return cols;
   };
@@ -96,11 +115,14 @@ const Feedback360Report = () => {
       )
       .filter((t) => t && t !== "-" && t !== "--" && t !== "---");
     if (!cleaned.length) return [];
-    const columnCount = cleaned.length > 40 ? 3 : 2;
+    const columnCount = cleaned.length > 300 ? 3 : 2;
     const cols = Array.from({ length: columnCount }, () => []);
 
+    const rowsPerCol = Math.ceil(cleaned.length / columnCount);
+
     cleaned.forEach((text, idx) => {
-      cols[idx % columnCount].push(text);
+      const colIdx = Math.min(columnCount - 1, Math.floor(idx / rowsPerCol));
+      cols[colIdx].push(text);
     });
 
     return cols;
@@ -138,12 +160,27 @@ const Feedback360Report = () => {
 
   const buildThreeWayCompetencyItems = (obj, fallbackItems) => {
     if (!obj) return fallbackItems;
-    return Object.entries(obj).map(([label, vals]) => ({
+    const rows = Object.entries(obj).map(([label, vals]) => ({
       label,
       groupMean: vals?.Subordinates === null ? -1 : vals?.Subordinates,
       managerRating: vals?.Manager === null ? -1 : vals?.Manager,
       selfRating: vals?.Self === null ? -1 : vals?.Self,
     }));
+
+    // rows.sort((a, b) => {
+    //   const av = Number(a?.groupMean);
+    //   const bv = Number(b?.groupMean);
+
+    //   const aValid = Number.isFinite(av) && av !== -1;
+    //   const bValid = Number.isFinite(bv) && bv !== -1;
+
+    //   if (aValid && bValid) return bv - av;
+    //   if (aValid && !bValid) return -1;
+    //   if (!aValid && bValid) return 1;
+    //   return 0;
+    // });
+
+    return rows;
   };
 
   const competencyBiggerPictureItems = buildCompetencyItemsFromApi(
@@ -329,24 +366,12 @@ const Feedback360Report = () => {
   useEffect(() => {
     if (!feedbackOverallData) return;
 
-    setAverageCompentency((prev) => {
-      const next = { ...(prev || {}) };
-
-      const initial = {
-        right_culture_competency: summaryByCompetencyItems,
-        leadership_style_competency: summaryByCompetencyLeadershipItems,
-        leadership_staff_dev_competency: staffPerformanceCompetencyItems,
-        educational_quality_competency: educationalQualityCompetencyItems,
-        engagement_with_management_competency: engagementWithManagementItems,
-      };
-
-      Object.entries(initial).forEach(([k, rows]) => {
-        if (!Array.isArray(next[k]) || next[k].length === 0) {
-          next[k] = rows;
-        }
-      });
-
-      return next;
+    setAverageCompentency({
+      right_culture_competency: summaryByCompetencyItems,
+      leadership_style_competency: summaryByCompetencyLeadershipItems,
+      leadership_staff_dev_competency: staffPerformanceCompetencyItems,
+      educational_quality_competency: educationalQualityCompetencyItems,
+      engagement_with_management_competency: engagementWithManagementItems,
     });
   }, [feedbackOverallData]);
 
@@ -418,14 +443,17 @@ const Feedback360Report = () => {
       A: {
         color: "#20c6a2",
         pillColor: "#20c6a2",
+        cardColor: "#067a61",
       },
       B: {
         color: "#3a9ad9",
         pillColor: "#3a9ad9",
+        cardColor: "#13679e",
       },
       C: {
         color: "#ef4b3a",
         pillColor: "#ef4b3a",
+        cardColor: "#e82315",
       },
     };
     const orderedKeys = ["A", "B", "C"];
@@ -450,6 +478,7 @@ const Feedback360Report = () => {
           color: style.color,
           pillText: `${labelText} – ${count} respondent${count === 1 ? "" : "s"}`,
           pillColor: style.pillColor,
+          cardColor: style.cardColor,
         };
       });
   };
@@ -458,63 +487,11 @@ const Feedback360Report = () => {
     feedbackOverallData?.nominee_leadership,
   );
 
-  const mostPredominantLeadershipTraitColumns = [
-    [
-      "Humble.",
-      "**Very humble, Good Team spirit, Motivation**",
-      "Always kind to all , appreciation, motivation to build good citizens.",
-      "**Kindness and respect** to all",
-      "As a newcomer, I feel he consistently shows **respect** for the staff, listens **attentively** to our concerns , and takes **thoughtful steps** to address any issues.",
-      "Being **respectful** to co-workers, his commitment towards the school and enthusiasm.",
-      "Giving respect to all and easily approachable.",
-      "He respects every individual in the organization **without any bias**",
-      "His commitment and dedication towards the school and the respect given to everyone in the school with **dignity**.",
-      "His way of making work environment a **happy and peaceful place** with a lot of **respect and dignity**.",
-      "**Respectful, accountable, reliable, committed, team spirit.**",
-      "Valuing the Teachers and **Equality**",
-      "**Giving direction** and guiding to do activities like education",
-      "By **encouraging** and guiding us with lot of positive words",
-    ],
-    [
-      "**Encouraging and guiding** us in the right path",
-      "**Advising and guiding** us the right part",
-      "He is highly approachable & provide necessary guidance whenever needed. So, I can say he is mostly having participative style of leadership which I like very well.",
-      "Provides **opportunities for growth (2)** and trustworthy",
-      "Providing more **professional development**",
-      "**Vision**, and passionate about education and is approachable, communicative skills strong and able to lead by example",
-      "**Great motivator** and inspires staff and students all the time.",
-      "Keeps encouraging and motivating the staff to do activities in the school/class apart from teaching.",
-      "His willingness to **listen** makes him a good leader.",
-      "**Observation, Listening, analyzing each person and problem from all angles**, simply approaching everything 360 degrees.",
-      "Principal sir is very calm and good listener . And very passionate",
-      "**Emotionally stable**, Balancing with teachers ,Parents and students as well.",
-      "**Self-discipline**",
-      "**Delegates the work well**",
-    ],
-    [
-      'A Principal should possess the ability to analyze situations thoroughly and foresee potential challenges. He/she must prepare to address issues before they escalate, and ensure he/she is well-informed about matters within the school. He/she should say "NO" firmly when required.',
-      "**Impartial**",
-      "**Non partial (2)**",
-      "**Unbiased**",
-      "**patience (2)**",
-      "Keeps his schedule flexible",
-      "Integrity must be at the core of leadership",
-      "His belief in students and staff.",
-      "Should be able to coach, delegate, communicate and be proactive, Leader should influence and guide the people.",
-      "Tensionless work culture, developing confidence in staff, keeping full confidence in teachers. handling diplomatically the situations",
-      "The one thing that can make a principal stand out as a leader is their ability to **inspire and empower** others.",
-      "Effective leaders develop the art and skill of being truly coachable.",
-      "Leaders should seek to take the road in situation.",
-    ],
-  ];
-
   const immediateActionAreasSummary = {
     title: "Immediate Action Areas - Summary",
     description:
       "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
     note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
-    // Use the API-provided action_areas_thing object directly
-    // Structure: { continue: [...], start: [...], stop: [...] }
     columns: feedbackOverallData?.action_areas_thing || {
       continue: [],
       start: [],
@@ -527,6 +504,8 @@ const Feedback360Report = () => {
   const openUploadModal = () => {
     if (isUploading) return;
     setUploadError("");
+    setFile2Year(previousYearLabel);
+    setFile3Year(previousSecondYearLabel);
     setIsUploadModalOpen(true);
   };
 
@@ -538,12 +517,8 @@ const Feedback360Report = () => {
   const handleThreeFileUpload = async () => {
     if (isUploading) return;
 
-    if (
-      !currentYearExcelFile 
-      // !previousYearExcelFile ||
-      // !previousSecondYearExcelFile
-    ) {
-      setUploadError("Please select all 3 Excel files.");
+    if (!currentYearExcelFile) {
+      setUploadError("Current Year file is required.");
       return;
     }
 
@@ -571,7 +546,6 @@ const Feedback360Report = () => {
   useEffect(() => {
     setHeaderName("Feedback");
   }, []);
-
   return (
     <div className="feedbackreport-main-container">
       <GlobalLoader visible={isUploading} />
@@ -623,7 +597,8 @@ const Feedback360Report = () => {
               <div className="feedbackreport-upload-grid">
                 <div className="feedbackreport-upload-item">
                   <div className="feedbackreport-upload-item__label">
-                    Current Year
+                    File 1 
+                    {/* ({currentYearLabel}) */}
                   </div>
                   <input
                     ref={currentYearFileInputRef}
@@ -632,6 +607,7 @@ const Feedback360Report = () => {
                     className="feedbackreport-file-input"
                     onChange={(e) => {
                       setCurrentYearExcelFile(e.target.files?.[0] || null);
+                      setUploadError("");
                       e.target.value = "";
                     }}
                   />
@@ -653,8 +629,29 @@ const Feedback360Report = () => {
 
                 <div className="feedbackreport-upload-item">
                   <div className="feedbackreport-upload-item__label">
-                    Previous Year
+                    File 2 
                   </div>
+                  <select
+                    value={file2Year}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      if (!Number.isFinite(next)) return;
+                      setFile2Year(next);
+                      if (next === file3Year) {
+                        const candidate = next - 1;
+                        if (yearOptions.includes(candidate)) setFile3Year(candidate);
+                      }
+                    }}
+                    disabled={isUploading}
+                    style={{ width: "100%", marginBottom: 8, height: 34,borderRadius:5 }}
+                    aria-label="Select year for File 2"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     ref={previousYearFileInputRef}
                     type="file"
@@ -683,8 +680,29 @@ const Feedback360Report = () => {
 
                 <div className="feedbackreport-upload-item">
                   <div className="feedbackreport-upload-item__label">
-                    Previous 2nd Year
+                    File 3
                   </div>
+                  <select
+                    value={file3Year}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      if (!Number.isFinite(next)) return;
+                      setFile3Year(next);
+                      if (next === file2Year) {
+                        const candidate = next + 1;
+                        if (yearOptions.includes(candidate)) setFile2Year(candidate);
+                      }
+                    }}
+                    disabled={isUploading}
+                    style={{ width: "100%", marginBottom: 8, height: 34, borderRadius: 5 }}
+                    aria-label="Select year for File 3"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     ref={previousSecondYearFileInputRef}
                     type="file"
@@ -714,6 +732,10 @@ const Feedback360Report = () => {
                     {previousSecondYearExcelFile?.name || "No file selected"}
                   </div>
                 </div>
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+                Comparison files will be used to compute comparison data ({file3Year} vs {file2Year}).
               </div>
 
               {uploadError ? (
@@ -751,7 +773,7 @@ const Feedback360Report = () => {
           }
         />
       </div>
-      <SurveyFeedback />
+      <SurveyFeedback overviewData={feedbackOverallData} />
 
       <SuggestedGuidelines
         items={biggerPictureItems}
@@ -801,6 +823,11 @@ const Feedback360Report = () => {
           feedbackOverallData?.engagement_with_management_competency || {},
         )}
         items={engagementWithManagementItems}
+        comparisonAverage={
+          feedbackOverallData?.comparision_average ||[]
+        }
+        file2Year={file2Year}
+        file3Year={file3Year}
         setAverageCompentency={setAverageCompentency}
       />
 
@@ -833,11 +860,9 @@ const Feedback360Report = () => {
       />
       <ContinueDoingPage
         title="Most Predominant Leadership Trait"
-        columns={
-          buildThreeTextColumns(
-            feedbackOverallData?.predominant_leader_thing,
-          ) || mostPredominantLeadershipTraitColumns
-        }
+        columns={buildThreeTextColumns(
+          feedbackOverallData?.predominant_leader_thing,
+        )}
       />
       <ContinueDoingPage
         title={"Immediate Action Areas - Summary"}
