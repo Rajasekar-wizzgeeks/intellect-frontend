@@ -176,7 +176,7 @@ const ContinueDoingPage = ({
     }
 
     const pageWidth = 794;
-    const pageHeight = 900;
+    const pageHeight = 930;
     const pagePadding = 0;
     const performMeasure = async ({ slice, includeFootnote }) => {
       return new Promise((resolve) => {
@@ -193,18 +193,13 @@ const ContinueDoingPage = ({
         document.body.appendChild(container);
         const root = createRoot(container);
 
-        const Header = () => (
-          <FeedbackCommonHeader
-            key="cd-hdr"
-            title={title}
-            titleWidth="100"
-            className="cd-header"
-          />
-        );
-
         root.render(
           <div className="continue-doing-page">
-            <Header />
+            <FeedbackCommonHeader
+              title={title}
+              titleWidth="100"
+              className="cd-header"
+            />
             <div data-measure-block="1">
               <ContinueDoingGrid
                 title={title}
@@ -273,13 +268,18 @@ const ContinueDoingPage = ({
       await measurementManager.addToQueue(
         `continue-doing-chunk-${measurementId.current}`,
         async () => {
-          const headerMeasure = await performMeasure({
-            slice: items.slice(0, 1),
-            includeFootnote: false,
+          const initialMeasure = await performMeasure({
+            slice: items,
+            includeFootnote: !!footnote,
           });
 
-          const headerHeight = headerMeasure.headerHeightPx;
+          const headerHeight = initialMeasure.headerHeightPx;
           const usableHeight = pageHeight - pagePadding * 2 - headerHeight;
+
+          if (initialMeasure.blockHeightPx <= usableHeight) {
+            setGridChunks([items]);
+            return;
+          }
 
           const chunks = [];
           let start = 0;
@@ -293,13 +293,19 @@ const ContinueDoingPage = ({
               const mid = Math.floor((low + high) / 2);
               const { blockHeightPx } = await performMeasure({
                 slice: items.slice(start, start + mid),
-                includeFootnote: false,
+                includeFootnote: start + mid === items.length && !!footnote,
               });
 
               if (blockHeightPx <= usableHeight && blockHeightPx > 0) {
                 best = mid;
                 low = mid + 1;
               } else {
+                if (mid === 1) {
+                  // If even one item doesn't fit, we must include it and move on
+                  // otherwise we get stuck in an infinite loop or skip data
+                  best = 1;
+                  break;
+                }
                 high = mid - 1;
               }
             }
@@ -328,49 +334,63 @@ const ContinueDoingPage = ({
       Array.isArray(localColumns) &&
       localColumns.some((c) => Array.isArray(c) && c.length);
 
-    if (hasColumns) {
-      const chunksToUse =
-        Array.isArray(gridChunks) && gridChunks.length ? gridChunks : null;
+//     if (hasColumns) {
+//     const chunksToUse =
+//   Array.isArray(gridChunks) && gridChunks.length ? gridChunks : [items];
 
-      if (chunksToUse) {
-        chunksToUse.forEach((chunk, chunkIdx) => {
-          out.push(
-            <ContinueDoingGrid
-              key={`cd-grid-${chunkIdx}`}
-              title={title}
-              columns={localColumns}
-              onColumnsChange={setLocalColumns}
-              rowOffset={0}
-              items={chunk}
-            />,
-          );
-        });
-      } else {
-        out.push(
-          <ContinueDoingGrid
-            key="cd-grid"
-            title={title}
-            columns={localColumns}
-            onColumnsChange={setLocalColumns}
-            rowOffset={0}
-          />,
-        );
-      }
-    }
+// if (chunksToUse && chunksToUse.length) {
+//         let currentOffset = 0;
+//         chunksToUse.forEach((chunk, chunkIdx) => {
+//           out.push(
+//             <div key={`cd-chunk-wrapper-${chunkIdx}`}>
+//               <ContinueDoingGrid
+//                 key={`cd-grid-${chunkIdx}`}
+//                 title={title}
+//                 columns={localColumns}
+//                 onColumnsChange={setLocalColumns}
+//                 rowOffset={currentOffset}
+//                 items={chunk}
+//               />
+//               {chunkIdx === chunksToUse.length - 1 && footnote && (
+//                 <div className="cd-footnote">{footnote}</div>
+//               )}
+//             </div>,
+//           );
+//           currentOffset += chunk.length;
+//         });
+//       } 
+//     }
 
-    if (footnote) {
-      out.push(
-        <div key="cd-foot" className="cd-footnote">
-          {footnote}
-        </div>,
-      );
-    }
+if (hasColumns) {
+  if (!Array.isArray(gridChunks)) {
+    return out; // wait until measurement completes
+  }
 
-    // if (footnote) {
-    //   out.push(
+  const chunksToUse = gridChunks.length ? gridChunks : [items];
 
-    //   );
-    // }
+  let currentOffset = 0;
+
+  chunksToUse.forEach((chunk, chunkIdx) => {
+    out.push(
+      <div key={`cd-chunk-wrapper-${chunkIdx}`}>
+        <ContinueDoingGrid
+          key={`cd-grid-${chunkIdx}`}
+          title={title}
+          columns={localColumns}
+          onColumnsChange={setLocalColumns}
+          rowOffset={currentOffset}
+          items={chunk}
+        />
+
+        {chunkIdx === chunksToUse.length - 1 && footnote && (
+          <div className="cd-footnote">{footnote}</div>
+        )}
+      </div>
+    );
+
+    currentOffset += chunk.length;
+  });
+}
 
     if (immediateActionSummary) {
       const {
@@ -485,5 +505,7 @@ const ContinueDoingPage = ({
     // </div>
   );
 };
+
+
 
 export default ContinueDoingPage;

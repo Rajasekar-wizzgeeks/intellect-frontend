@@ -1031,6 +1031,7 @@ const Feedback360Report = () => {
         }
       />
       <ContinueDoingPage
+      continue={true}
         columns={
           buildThreeTextColumns(feedbackOverallData?.continue_doing_thing) || []
         }
