@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/continueDoingPage.scss";
+import { createRoot } from "react-dom/client";
+import measurementManager from "./measurementManager";
 
 const EditableCell = ({ value, onSave }) => {
   const [editValue, setEditValue] = useState(String(value ?? ""));
@@ -30,12 +32,33 @@ const EditableCell = ({ value, onSave }) => {
   );
 };
 
-const ContinueDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 }) => {
+const ContinueDoingGrid = ({
+  title,
+  columns,
+  onColumnsChange,
+  rowOffset = 0,
+  items,
+}) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+
+  const rows = useMemo(() => {
+    if (Array.isArray(items) && items.length) {
+      return items;
+    }
+    if (!Array.isArray(columns)) return [];
+    const out = [];
+    columns.forEach((col, colIdx) => {
+      if (!Array.isArray(col)) return;
+      col.forEach((row, rowIdx) => {
+        out.push({ colIdx, rowIdx });
+      });
+    });
+    return out;
+  }, [items, columns]);
 
   return (
     <div className="cd-grid" role="table" aria-label={title}>
-      {columns.map((col, colIdx) => (
+      {/* {columns.map((col, colIdx) => (
         <div key={colIdx} className="cd-col" role="rowgroup">
           {col.map((row, rowIdx) => (
             <div key={rowIdx} className="cd-row" role="row">
@@ -72,6 +95,49 @@ const ContinueDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 }) =
             </div>
           ))}
         </div>
+      ))} */}
+      {rows.map((row) => (
+        <div
+          key={`${row.colIdx}-${row.rowIdx}`}
+          className="cd-row"
+          role="row"
+        >
+          <div
+            className="cd-cell"
+            role="cell"
+            onDoubleClick={() =>
+              setEditing({ colIdx: row.colIdx, rowIdx: row.rowIdx })
+            }
+            style={{ cursor: "pointer" }}
+          >
+            {editing?.colIdx === row.colIdx &&
+            editing?.rowIdx === row.rowIdx ? (
+              <EditableCell
+                value={columns?.[row.colIdx]?.[row.rowIdx]}
+                onSave={(newValue) => {
+                  const absoluteRowIdx = rowOffset + row.rowIdx;
+                  onColumnsChange((prevColumns) => {
+                    const nextColumns = Array.isArray(prevColumns)
+                      ? [...prevColumns]
+                      : [];
+                    if (!Array.isArray(nextColumns[row.colIdx])) {
+                      nextColumns[row.colIdx] = [];
+                    } else {
+                      nextColumns[row.colIdx] = [...nextColumns[row.colIdx]];
+                    }
+                    nextColumns[row.colIdx][absoluteRowIdx] = newValue;
+                    return nextColumns;
+                  });
+                  setEditing(null);
+                }}
+              />
+            ) : (
+              <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                {String(columns?.[row.colIdx]?.[row.rowIdx] ?? "")}
+              </ReactMarkdown>
+            )}
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -84,10 +150,181 @@ const ContinueDoingPage = ({
   immediateActionSummary,
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
+  const [gridChunks, setGridChunks] = useState(null);
+
+  const isBrowser =
+    typeof window !== "undefined" && typeof document !== "undefined";
+
+  const measurementId = useRef(`continue-doing-${Date.now()}`);
 
   useEffect(() => {
     setLocalColumns(columns);
   }, [columns]);
+
+  const items = useMemo(() => {
+    if (!Array.isArray(localColumns)) return [];
+    const out = [];
+    localColumns.forEach((col, colIdx) => {
+      if (!Array.isArray(col)) return;
+      col.forEach((row, rowIdx) => {
+        out.push({ colIdx, rowIdx });
+      });
+    });
+    return out;
+  }, [localColumns]);
+
+  useEffect(() => {
+    if (!isBrowser) {
+      setGridChunks(null);
+      return;
+    }
+
+    const pageWidth = 794;
+    const pageHeight = 970;
+    const pagePadding = 0;
+
+    const performMeasure = async ({ slice, includeFootnote }) => {
+      return new Promise((resolve) => {
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.visibility = "hidden";
+        container.style.width = `${pageWidth}px`;
+        container.style.left = "-100000px";
+        container.style.top = "0";
+        container.style.zIndex = "-9999";
+        container.style.pointerEvents = "none";
+        container.id = `measurement-${measurementId.current}`;
+
+        document.body.appendChild(container);
+        const root = createRoot(container);
+
+        const Header = () => (
+          <FeedbackCommonHeader
+            key="cd-hdr"
+            title={title}
+            titleWidth="100"
+            className="cd-header"
+          />
+        );
+
+        root.render(
+          <div className="continue-doing-page">
+            <Header />
+            <div data-measure-block="1">
+              <ContinueDoingGrid
+                title={title}
+                columns={localColumns}
+                onColumnsChange={setLocalColumns}
+                rowOffset={0}
+                items={slice}
+              />
+              {includeFootnote && footnote ? (
+                <div className="cd-footnote">{footnote}</div>
+              ) : null}
+            </div>
+          </div>
+        );
+
+        const measure = async () => {
+          try {
+            if (document.fonts?.ready) {
+              await document.fonts.ready;
+            }
+            await new Promise((resolveFrame) => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(resolveFrame);
+                });
+              });
+            });
+
+            const content = container.firstElementChild;
+            if (!content) {
+              resolve({ headerHeightPx: 0, blockHeightPx: 0 });
+              return;
+            }
+
+            const children = Array.from(content.children);
+            const headerEl = children[0];
+            const blockEl = children[1];
+            const headerHeightPx = headerEl
+              ? Math.ceil(headerEl.getBoundingClientRect().height)
+              : 0;
+            const blockHeightPx = blockEl
+              ? Math.ceil(blockEl.getBoundingClientRect().height)
+              : 0;
+
+            resolve({ headerHeightPx, blockHeightPx });
+          } catch {
+            resolve({ headerHeightPx: 0, blockHeightPx: 0 });
+          } finally {
+            try {
+              root.unmount();
+            } catch {}
+            container.remove();
+          }
+        };
+
+        setTimeout(measure, 30);
+      });
+    };
+
+    const buildChunks = async () => {
+      if (!items.length) {
+        setGridChunks([]);
+        return;
+      }
+
+      await measurementManager.addToQueue(
+        `continue-doing-chunk-${measurementId.current}`,
+        async () => {
+          const headerMeasure = await performMeasure({
+            slice: items.slice(0, 1),
+            includeFootnote: false,
+          });
+
+          const headerHeight = headerMeasure.headerHeightPx;
+          const usableHeight = pageHeight - pagePadding * 2 - headerHeight;
+
+          const chunks = [];
+          let start = 0;
+
+          while (start < items.length) {
+            let low = 1;
+            let high = items.length - start;
+            let best = 1;
+
+            while (low <= high) {
+              const mid = Math.floor((low + high) / 2);
+              const { blockHeightPx } = await performMeasure({
+                slice: items.slice(start, start + mid),
+                includeFootnote: false,
+              });
+
+              if (blockHeightPx <= usableHeight && blockHeightPx > 0) {
+                best = mid;
+                low = mid + 1;
+              } else {
+                high = mid - 1;
+              }
+            }
+
+            chunks.push(items.slice(start, start + best));
+            start += best;
+          }
+
+          setGridChunks(chunks);
+        }
+      );
+    };
+
+    buildChunks();
+    return () => {
+      measurementManager.removeFromQueue(
+        `continue-doing-chunk-${measurementId.current}`
+      );
+    };
+  }, [isBrowser, items, localColumns, footnote, title]);
 
   const blocks = useMemo(() => {
     const out = [];
@@ -97,28 +334,32 @@ const ContinueDoingPage = ({
       localColumns.some((c) => Array.isArray(c) && c.length);
 
     if (hasColumns) {
-      const maxRows = Math.max(
-        0,
-        ...localColumns.map((c) => (Array.isArray(c) ? c.length : 0)),
-      );
-      const rowsPerChunk = 10;
-      const chunkCount = Math.max(1, Math.ceil(maxRows / rowsPerChunk));
+      const chunksToUse = Array.isArray(gridChunks) && gridChunks.length
+        ? gridChunks
+        : null;
 
-      for (let chunkIdx = 0; chunkIdx < chunkCount; chunkIdx += 1) {
-        const start = chunkIdx * rowsPerChunk;
-        const end = start + rowsPerChunk;
-        const chunkColumns = localColumns.map((col) =>
-          Array.isArray(col) ? col.slice(start, end) : [],
-        );
-
+      if (chunksToUse) {
+        chunksToUse.forEach((chunk, chunkIdx) => {
+          out.push(
+            <ContinueDoingGrid
+              key={`cd-grid-${chunkIdx}`}
+              title={title}
+              columns={localColumns}
+              onColumnsChange={setLocalColumns}
+              rowOffset={0}
+              items={chunk}
+            />
+          );
+        });
+      } else {
         out.push(
           <ContinueDoingGrid
-            key={`cd-grid-${chunkIdx}`}
+            key="cd-grid"
             title={title}
-            columns={chunkColumns}
+            columns={localColumns}
             onColumnsChange={setLocalColumns}
-            rowOffset={start}
-          />,
+            rowOffset={0}
+          />
         );
       }
     }
@@ -127,9 +368,15 @@ const ContinueDoingPage = ({
       out.push(
         <div key="cd-foot" className="cd-footnote">
           {footnote}
-        </div>,
+        </div>
       );
     }
+
+    // if (footnote) {
+    //   out.push(
+       
+    //   );
+    // }
 
     if (immediateActionSummary) {
       const {
@@ -217,11 +464,16 @@ const ContinueDoingPage = ({
     }
 
     return out;
-  }, [localColumns, footnote, immediateActionSummary, title]);
+  }, [localColumns, footnote, immediateActionSummary, title, gridChunks]);
 
   const Header = useMemo(() => {
     return () => (
-      <FeedbackCommonHeader key="cd-hdr" title={title} titleWidth="100" className="cd-header" />
+      <FeedbackCommonHeader
+        key="cd-hdr"
+        title={title}
+        titleWidth="100"
+        className="cd-header"
+      />
     );
   }, [title]);
 

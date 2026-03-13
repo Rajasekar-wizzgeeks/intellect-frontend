@@ -320,6 +320,9 @@ const AutoPaginatedSections = ({
               <div
                 key={`block-${measurementId.current}-${pageIndex}-${i}`}
                 style={{ paddingLeft }}
+                data-page-index={pageIndex}
+                data-block-index={i}
+                data-last-on-page={i === pageBlocks.length - 1 ? "true" : "false"}
               >
                 {block}
               </div>
