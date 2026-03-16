@@ -2,15 +2,19 @@
   width: 100%;
   height: 100%;
   background: var(--color-white);
-  padding: 0 40px 52px;
+  padding: 58px 40px 52px;
   box-sizing: border-box;
 
-  .sd-traits-container{
-    padding-top: 58px;
+  // .sd-traits-container{
+  //   padding-top: 58px;
+  // }
+
+  .sd-traits-:first-child{
+    padding-top: 0;
   }
 
   .sd-grid-wrapper{
-    // min-height: 900px;
+    // min-height: 900px;container
   }
 }
 
@@ -24,7 +28,7 @@
     color: var(--color-black);
     line-height: 1.1;
     letter-spacing: 0;
-    padding-top: 58px;
+    // padding-top: 58px;
   }
 
   .feedback-common-header__underline {
