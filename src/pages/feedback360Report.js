@@ -179,20 +179,48 @@ const Feedback360Report = () => {
   };
 
   const computeOverallScore = (d) => {
-    let total = 0;
-    let total_no_of_count = 0;
-    if (Object.entries(d).length === 0) {
-      return 0;
-    }
-    Object.entries(d).map(([key, value]) => {
-      Object.entries(value).map(([subKey, subValue]) => {
-        if (subKey !== "Self") {
-          total += subValue;
-          total_no_of_count += 1;
-        }
-      });
+    if (!d || Object.entries(d).length === 0) return 0;
+
+    const totalResponse = feedbackOverallData?.total_response || {
+      total: 1,
+      Self: 0,
+      Manager: 0,
+      Subordinates: 0,
+    };
+
+    const subCount = Number(totalResponse.Subordinates) || 0;
+    const mgrCount = Number(totalResponse.Manager) || 0;
+    
+    let totalSubScore = 0;
+    let totalMgrScore = 0;
+    let subQuestionsCount = 0;
+    let mgrQuestionsCount = 0;
+
+    Object.values(d).forEach((vals) => {
+      if (vals.Subordinates !== undefined && vals.Subordinates !== null) {
+        totalSubScore += vals.Subordinates;
+        subQuestionsCount += 1;
+      }
+      if (vals.Manager !== undefined && vals.Manager !== null) {
+        totalMgrScore += vals.Manager;
+        mgrQuestionsCount += 1;
+      }
     });
-    return Number((total / total_no_of_count).toFixed(2));
+
+    const avgSub = subQuestionsCount > 0 ? totalSubScore / subQuestionsCount : 0;
+    const avgMgr = mgrQuestionsCount > 0 ? totalMgrScore / mgrQuestionsCount : 0;
+
+    // Adjusted totalMinusSelf based on available data in 'd'
+    let effectiveTotalCount = 0;
+    if (subQuestionsCount > 0) effectiveTotalCount += subCount;
+    if (mgrQuestionsCount > 0) effectiveTotalCount += mgrCount;
+
+    if (effectiveTotalCount <= 0) return 0;
+
+    // Formula: (Avg Subordinates * total_response.Subordinates) + (avg manger * total_response.Manager) / (effective total count)
+    const weightedScore = (avgSub * subCount + avgMgr * mgrCount) / effectiveTotalCount;
+
+    return Number(weightedScore.toFixed(2));
   };
 
   const buildThreeWayCompetencyItems = (obj, fallbackItems) => {
@@ -990,6 +1018,7 @@ const Feedback360Report = () => {
         leadershipItems={summaryByCompetencyLeadershipItems}
         barHeight={12}
         setAverageCompentency={setAverageCompentency}
+        totalResponse={feedbackOverallData?.total_response}
       />
 
       <StaffPerformanceSummaryByCompetencyPage
@@ -1004,6 +1033,7 @@ const Feedback360Report = () => {
         items2={educationalQualityCompetencyItems}
         barHeight={6}
         setAverageCompentency={setAverageCompentency}
+        totalResponse={feedbackOverallData?.total_response}
       />
 
       <EngagementWithManagementSummaryByCompetencyPage
@@ -1014,9 +1044,11 @@ const Feedback360Report = () => {
         comparisonAverage={
           feedbackOverallData?.comparision_average ||[]
         }
+        currentYear={currentYearLabel}
         file2Year={file2Year}
         file3Year={file3Year}
         setAverageCompentency={setAverageCompentency}
+        totalResponse={feedbackOverallData?.total_response}
       />
 
       <div className="section-page pdf-section">

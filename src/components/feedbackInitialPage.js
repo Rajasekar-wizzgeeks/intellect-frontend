@@ -33,13 +33,17 @@ const FeedbackInitialPage = ({ initialName = "" }) => {
 
           <div>
             <div className="feedback-initial-name">
-              <span>Name -</span>
-              <input
-                type="text"
+              {/* <span>Name -</span> */}
+              <textarea
                 className="feedback-initial-name-field"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 aria-label="Name"
+                rows={1}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
               />
               <span
                 className="feedback-initial-name-fallback"

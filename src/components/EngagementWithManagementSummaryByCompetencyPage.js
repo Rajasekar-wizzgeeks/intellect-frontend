@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import CompetencyThreeBarChart from "./CompetencyThreeBarChart";
+import ComparisonTable from "./ComparisonTable";
 import "../styles/summaryByCompetencyPage.scss";
 import AutoPaginatedPptSections from "./AutoPaginatedPptSections";
 
@@ -70,29 +71,74 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   setAverageCompentency,
   file2Year,
   file3Year,
+  currentYear,
+  totalResponse = {
+    total: 1,
+    Self: 0,
+    Manager: 0,
+    Subordinates: 0,
+  },
 }) => {
   const [localOverallScore, setLocalOverallScore] = useState(overallScore);
   const [rows, setRows] = useState(items);
+  const [localComparisonAverage, setLocalComparisonAverage] = useState(comparisonAverage);
+
+  useEffect(() => {
+    setLocalComparisonAverage(comparisonAverage);
+  }, [comparisonAverage]);
+
+  const handleCellBlur = (rowIndex, fieldKey, newValue) => {
+    const numValue = Number(newValue);
+    const updatedComparison = { ...localComparisonAverage };
+    const labels = Object.keys(updatedComparison);
+    const targetLabel = labels[rowIndex];
+
+    if (targetLabel) {
+      if (typeof updatedComparison[targetLabel] === "object") {
+        updatedComparison[targetLabel] = {
+          ...updatedComparison[targetLabel],
+          [fieldKey]: numValue,
+        };
+      } else {
+        updatedComparison[targetLabel] = numValue;
+      }
+      setLocalComparisonAverage(updatedComparison);
+    }
+  };
 
   const computeOverallFromRows = (rowsArg) => {
     if (!Array.isArray(rowsArg) || !rowsArg.length) return 0;
 
-    let total = 0;
-    let count = 0;
+    const subCount = Number(totalResponse?.Subordinates) || 0;
+    const mgrCount = Number(totalResponse?.Manager) || 0;
+
+    let totalSubScore = 0;
+    let totalMgrScore = 0;
+    let subQuestionsCount = 0;
+    let mgrQuestionsCount = 0;
 
     rowsArg.forEach((row) => {
-      Object.entries(row).forEach(([key, value]) => {
-        if (key === "label" || key === "callout") return;
-        const num = Number(value);
-        if (Number.isFinite(num) && value) {
-          total += num;
-          count += 1;
-        }
-      });
+      if (row.groupMean !== undefined && row.groupMean !== null && row.groupMean !== -1) {
+        totalSubScore += Number(row.groupMean);
+        subQuestionsCount += 1;
+      }
+      if (row.managerRating !== undefined && row.managerRating !== null && row.managerRating !== -1) {
+        totalMgrScore += Number(row.managerRating);
+        mgrQuestionsCount += 1;
+      }
     });
 
-    if (!count) return 0;
-    return Number((total / count).toFixed(2));
+    const avgSub = subQuestionsCount > 0 ? totalSubScore / subQuestionsCount : 0;
+    const avgMgr = mgrQuestionsCount > 0 ? totalMgrScore / mgrQuestionsCount : 0;
+
+    let effectiveTotalCount = 0;
+    if (subQuestionsCount > 0) effectiveTotalCount += subCount;
+    if (mgrQuestionsCount > 0) effectiveTotalCount += mgrCount;
+
+    if (effectiveTotalCount <= 0) return 0;
+
+    const weightedScore = (avgSub * subCount + avgMgr * mgrCount) / effectiveTotalCount;
+    return Number(weightedScore.toFixed(2));
   };
 
   const handleRowsChange = (newRows) => {
@@ -115,24 +161,67 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
 
     const computedComparisonRows = (() => {
       const src =
-        comparisonAverage && typeof comparisonAverage === "object"
-          ? comparisonAverage
+        localComparisonAverage && typeof localComparisonAverage === "object"
+          ? localComparisonAverage
           : null;
-      if (!src) return comparisonRows;
+      if (!src) {
+        return (Array.isArray(comparisonRows) ? comparisonRows : [])
+          .map((r) => ({
+            label: r?.label,
+            team_diff1: Number(r?.diff),
+          }))
+          .filter((r) => r.label && Number.isFinite(r.team_diff1));
+      }
 
       const entries = Object.entries(src);
       if (!entries.length) return comparisonRows;
 
       const mapped = entries
-        .map(([label, diff]) => ({
-          label,
-          diff: Number(diff),
-        }))
-        .filter((r) => r.label && Number.isFinite(r.diff));
+        .map(([label, value]) => {
+          if (!label) return null;
+          if (value && typeof value === "object") {
+            return {
+              label,
+              team_diff1: Number(value.team_diff1),
+              team_diff2: Number(value.team_diff2),
+            };
+          }
+          return {
+            label,
+            team_diff1: Number(value),
+          };
+        })
+        .filter(Boolean)
+        .filter(
+          (r) =>
+            r.label &&
+            (Number.isFinite(r.team_diff1) || Number.isFinite(r.team_diff2)),
+        );
 
-      mapped.sort((a, b) => b.diff - a.diff);
+      mapped.sort((a, b) => {
+        const aKey = Number.isFinite(a.team_diff1) ? a.team_diff1 : 0;
+        const bKey = Number.isFinite(b.team_diff1) ? b.team_diff1 : 0;
+        return bKey - aKey;
+      });
       return mapped;
     })();
+
+    const comparisonHasDiff1 = computedComparisonRows.some((r) =>
+      Number.isFinite(Number(r?.team_diff1)),
+    );
+    const comparisonHasDiff2 = computedComparisonRows.some((r) =>
+      Number.isFinite(Number(r?.team_diff2)),
+    );
+
+    const formatDiff = (v) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return "";
+      const isPos = n > 0;
+      return `${isPos ? "+" : ""}${n
+        .toFixed(2)
+        .replace(/0$/, "")
+        .replace(/\.0$/, "")}`;
+    };
 
     out.push(
       <div className="sbc-hdr-chart-wrapper" key="ewm-hdr-chart">
@@ -172,10 +261,10 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       </div>,
     );
 
-    if (comparisonAverage && Object.keys(comparisonAverage).length > 0) {
+    if (localComparisonAverage && Object.keys(localComparisonAverage).length > 0) {
     out.push(
       <>
-      {comparisonAverage && Object.keys(comparisonAverage).length > 0 && <div key="ewm-compare" className="sbc-compare">
+      {localComparisonAverage && Object.keys(localComparisonAverage).length > 0 && <div key="ewm-compare" className="sbc-compare">
         <FeedbackCommonHeader
           key="ewm-compare-hdr"
           title={`Comparison of Average Scores – ${file3Year} Vs ${file2Year}`}
@@ -194,56 +283,15 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
           ))}
         </div>
 
-        <div
-          className="sbc-compare__table"
-          role="table"
-          aria-label="Comparison table"
-        >
-          <div className="sbc-compare__thead" role="rowgroup">
-            <div className="sbc-compare__tr" role="row">
-              <div className="sbc-compare__th" role="columnheader">
-                Comparison of Team Scores
-              </div>
-              <div
-                className="sbc-compare__th sbc-compare__th--right"
-                role="columnheader"
-              >
-                Difference - {file3Year} Vs {file2Year}
-              </div>
-            </div>
-          </div>
-
-          <div className="sbc-compare__tbody" role="rowgroup">
-            {computedComparisonRows.map((r, i) => {
-              const n = Number(r?.diff);
-              const isPos = Number.isFinite(n) && n > 0;
-              const isNeg = Number.isFinite(n) && n < 0;
-              const diffText = Number.isFinite(n)
-                ? `${isPos ? "+" : ""}${n.toFixed(2).replace(/0$/, "").replace(/\.0$/, "")}`
-                : "";
-
-              return (
-                <div key={i} className="sbc-compare__tr" role="row">
-                  <div className="sbc-compare__td" role="cell">
-                    {r.label}
-                  </div>
-                  <div
-                    className={`sbc-compare__td sbc-compare__td--right ${
-                      isPos
-                        ? "sbc-compare__td--pos"
-                        : isNeg
-                          ? "sbc-compare__td--neg"
-                          : ""
-                    }`.trim()}
-                    role="cell"
-                  >
-                    {diffText}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <ComparisonTable
+          computedComparisonRows={computedComparisonRows}
+          comparisonHasDiff1={comparisonHasDiff1}
+          comparisonHasDiff2={comparisonHasDiff2}
+          currentYear={currentYear}
+          file2Year={file2Year}
+          file3Year={file3Year}
+          onCellBlur={handleCellBlur}
+        />
 
         <div className="sbc-compare__legend">
           <div className="sbc-compare__legend-item sbc-compare__legend-item--pos">
@@ -264,7 +312,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     title,
     comparisonTitle,
     comparisonNotes,
-    comparisonAverage,
+    localComparisonAverage,
   ]);
 
   useEffect(() => {
@@ -276,7 +324,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1123}
+      pageHeight={1050}
       pagePadding={0}
       contentClassName="summary-by-competency-page"
       componentId="engagement-with-management-summary-by-competency"

@@ -35,6 +35,12 @@ const StaffPerformanceSummaryByCompetencyPage = ({
   items2 = [],
   barHeight = 12,
   setAverageCompentency,
+  totalResponse = {
+    total: 1,
+    Self: 0,
+    Manager: 0,
+    Subordinates: 0,
+  },
 }) => {
   const [leftOverallScore, setLeftOverallScore] = useState(overallScore);
   const [rightOverallScore, setRightOverallScore] = useState(overallScore2);
@@ -62,22 +68,36 @@ const StaffPerformanceSummaryByCompetencyPage = ({
 
   const computeOverallFromRows = (rows) => {
     if (!Array.isArray(rows) || !rows.length) return 0;
-    let total = 0;
-    let count = 0;
+
+    const subCount = Number(totalResponse?.Subordinates) || 0;
+    const mgrCount = Number(totalResponse?.Manager) || 0;
+
+    let totalSubScore = 0;
+    let totalMgrScore = 0;
+    let subQuestionsCount = 0;
+    let mgrQuestionsCount = 0;
 
     rows.forEach((row) => {
-      Object.entries(row).forEach(([key, value]) => {
-        if (key === "label" || key === "selfRating") return;
-        const num = Number(value);
-        if (Number.isFinite(num) && value) {
-          total += num;
-          count += 1;
-        }
-      });
+      if (row.groupMean !== undefined && row.groupMean !== null && row.groupMean !== -1) {
+        totalSubScore += Number(row.groupMean);
+        subQuestionsCount += 1;
+      }
+      if (row.managerRating !== undefined && row.managerRating !== null && row.managerRating !== -1) {
+        totalMgrScore += Number(row.managerRating);
+        mgrQuestionsCount += 1;
+      }
     });
 
-    if (!count) return 0;
-    return Number((total / count).toFixed(2));
+    const avgSub = subQuestionsCount > 0 ? totalSubScore / subQuestionsCount : 0;
+    const avgMgr = mgrQuestionsCount > 0 ? totalMgrScore / mgrQuestionsCount : 0;
+
+    let effectiveTotalCount = 0;
+    if (subQuestionsCount > 0) effectiveTotalCount += subCount;
+    if (mgrQuestionsCount > 0) effectiveTotalCount += mgrCount;    
+    if (effectiveTotalCount <= 0) return 0;
+
+    const weightedScore = (avgSub * subCount + avgMgr * mgrCount) / effectiveTotalCount;
+    return Number(weightedScore.toFixed(2));
   };
 
   const handleRowsChange = (rows, section) => {
