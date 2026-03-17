@@ -92,13 +92,12 @@
   margin: 36px 0 0;
   font-family: Georgia, "Times New Roman", Times, serif;
   font-style: italic;
-  font-size: 42px;
+  font-size: 30px;
   font-weight: 600;
   color: var(--feedback-initial-name-color);
-  display: inline-flex;
-  align-items: center;
-  line-height: 1;
-  gap: 0;
+  display: block;
+  line-height: 1.2;
+  width: 100%;
 }
 
 .feedback-initial-name-field {
@@ -108,22 +107,33 @@
   outline: none;
   color: var(--feedback-initial-name-color);
   font-style: inherit;
-  display: inline-block;
-  line-height: 1;
-  padding: 0 0 0 6px;
-  vertical-align: baseline;
-  max-width: 400px;
-  font: inherit;
-  // width: 140px;
+  font-family: inherit;
+  display: block;
+  line-height: inherit;
+  padding: 0;
+  width: 100%;
+  max-width: 600px;
+  font-size: inherit;
+  font-weight: inherit;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .feedback-initial-name-fallback {
   display: none;
-  font: inherit;
-  line-height: 1;
-  padding-left: 6px;
+  font-style: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  padding: 0;
   color: var(--feedback-initial-name-color);
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 400px;
+  max-width: 400px;
 }
 
 .feedback-initial-date {
@@ -168,7 +178,7 @@
   }
 
   .feedback-initial-name {
-    font-size: 38px;
+    font-size: 30px;
   }
 }
 
@@ -192,5 +202,5 @@ body.pdf-exporting .feedback-initial-name-field {
 }
 
 body.pdf-exporting .feedback-initial-name-fallback {
-  display: inline-block !important;
+  display: block !important;
 }

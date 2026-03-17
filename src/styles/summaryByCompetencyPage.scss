@@ -121,18 +121,58 @@ div[data-last-on-page="true"] > .sbc-hdr-chart-wrapper {
 }
 
 .sbc-compare__td {
-  padding: 6px 14px;
+  padding: 4px 14px;
   font-size: 13px;
   color: var(--color-text);
   background: #fff;
   border-top: 0.1px dashed rgba(214, 90, 90, 0.6);
   border-right: 0.1px dashed rgba(214, 90, 90, 0.6);
+  position: relative;
+  min-height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sbc-compare__td--right,
+.sbc-compare__td--center {
+  justify-content: center;
+}
+
+.sbc-compare__input {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--feedback-initial-underline-color);
+  border-radius: 2px;
+  padding: 2px 4px;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: 900;
+  color: inherit;
+  background: #fdf2f2;
+  text-align: center;
+  outline: none;
+  box-sizing: border-box;
+
+  /* Remove arrows from number input */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  appearance: textfield;
 }
 
 .sbc-compare__td--right {
   text-align: center;
   font-weight: 900;
   border-right: none;
+}
+
+.sbc-compare__td--center {
+  text-align: center;
+  font-weight: 900;
+  // border-right: none;
 }
 
 .sbc-compare__td--pos {
