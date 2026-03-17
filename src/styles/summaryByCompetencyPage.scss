@@ -121,14 +121,14 @@ div[data-last-on-page="true"] > .sbc-hdr-chart-wrapper {
 }
 
 .sbc-compare__td {
-  padding: 6px 14px;
+  padding: 4px 14px;
   font-size: 13px;
   color: var(--color-text);
   background: #fff;
   border-top: 0.1px dashed rgba(214, 90, 90, 0.6);
   border-right: 0.1px dashed rgba(214, 90, 90, 0.6);
   position: relative;
-  min-height: 32px;
+  min-height: 21px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
