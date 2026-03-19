@@ -88,9 +88,16 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
                 key={idx}
                 value={t}
                 onSave={(newValue) => {
-                  const updated = [...traits];
-                  updated[idx] = newValue;
-                  onTraitsChange(updated);
+                  const next = Array.isArray(traits) ? [...traits] : [];
+                  const cleaned = String(newValue ?? "").trim();
+
+                  if (!cleaned) {
+                    next.splice(idx, 1);
+                  } else {
+                    next[idx] = newValue;
+                  }
+
+                  onTraitsChange(next);
                   setEditing(null);
                 }}
               />
@@ -135,7 +142,15 @@ const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChu
                           : [];
                         if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
                         nextColumns[colIdx] = [...nextColumns[colIdx]];
-                        nextColumns[colIdx][absoluteRowIdx] = newValue;
+
+                        const cleaned = String(newValue ?? "").trim();
+                        if (!cleaned) {
+                          if (absoluteRowIdx >= 0 && absoluteRowIdx < nextColumns[colIdx].length) {
+                            nextColumns[colIdx].splice(absoluteRowIdx, 1);
+                          }
+                        } else {
+                          nextColumns[colIdx][absoluteRowIdx] = newValue;
+                        }
                         return nextColumns;
                       });
                       setEditing(null);
