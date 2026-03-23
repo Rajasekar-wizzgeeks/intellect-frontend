@@ -602,7 +602,7 @@ const Feedback360Report = () => {
       setPreviousSecondYearExcelFile(null);
     } catch (err) {
       console.error("Excel upload failed", err);
-      setUploadError("Upload failed. Please try again.");
+      setUploadError(`Upload failed: ${err.message || "Please try again."}`);
     } finally {
       setIsUploading(false);
     }

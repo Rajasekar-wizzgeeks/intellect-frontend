@@ -78,9 +78,18 @@ export const excelSheetFeedback = async (fileOrFiles) => {
     }
 
     const [base, cont, stop] = await Promise.all([
-      parseSSEStream(baseRes),
-      parseSSEStream(contRes),
-      parseSSEStream(stopRes),
+      parseSSEStream(baseRes).catch((e) => {
+        console.error("BASE stream error:", e);
+        throw new Error(`BASE stream failed: ${e.message}`);
+      }),
+      parseSSEStream(contRes).catch((e) => {
+        console.error("CONTINUE stream error:", e);
+        throw new Error(`CONTINUE stream failed: ${e.message}`);
+      }),
+      parseSSEStream(stopRes).catch((e) => {
+        console.error("STOP stream error:", e);
+        throw new Error(`STOP stream failed: ${e.message}`);
+      }),
     ]);
 
     return {
