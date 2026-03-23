@@ -32,6 +32,35 @@ const EditableCell = ({ value, onSave }) => {
   );
 };
 
+const EditableIaCell = ({ value, onSave, onCancel }) => {
+  const [editValue, setEditValue] = useState(String(value ?? ""));
+
+  useEffect(() => {
+    setEditValue(String(value ?? ""));
+  }, [value]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSave(editValue);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel?.();
+    }
+  };
+
+  return (
+    <textarea
+      value={editValue}
+      onChange={(e) => setEditValue(e.target.value)}
+      onBlur={() => onSave(editValue)}
+      onKeyDown={handleKeyDown}
+      autoFocus
+      className="cd-edit-textarea"
+    />
+  );
+};
+
 const ContinueDoingGrid = ({
   title,
   columns,
@@ -151,6 +180,36 @@ const ContinueDoingPage = ({
   const [gridChunks, setGridChunks] = useState(null);
   const [measureTick, setMeasureTick] = useState(0);
 
+  const serializeIaColumns = (cols) => {
+    const c = cols || {};
+    const safe = {
+      continue: Array.isArray(c.continue) ? c.continue : [],
+      start: Array.isArray(c.start) ? c.start : [],
+      stop: Array.isArray(c.stop) ? c.stop : [],
+    };
+    try {
+      return JSON.stringify(safe);
+    } catch {
+      return "";
+    }
+  };
+
+  const [iaColumns, setIaColumns] = useState(() => {
+    const cols = immediateActionSummary?.columns;
+    return {
+      continue: Array.isArray(cols?.continue) ? cols.continue : [],
+      start: Array.isArray(cols?.start) ? cols.start : [],
+      stop: Array.isArray(cols?.stop) ? cols.stop : [],
+    };
+  });
+
+  const [iaEditing, setIaEditing] = useState(null); // { key: 'continue'|'start'|'stop', idx: number }
+
+  const iaDirtyRef = useRef(false);
+  const lastIaSerializedRef = useRef(
+    serializeIaColumns(immediateActionSummary?.columns),
+  );
+
   const isBrowser =
     typeof window !== "undefined" && typeof document !== "undefined";
 
@@ -171,6 +230,25 @@ const ContinueDoingPage = ({
   useEffect(() => {
     setLocalColumns(columns);
   }, [columns]);
+
+  useEffect(() => {
+    const cols = immediateActionSummary?.columns;
+    const nextSerialized = serializeIaColumns(cols);
+    const prevSerialized = lastIaSerializedRef.current;
+
+    if (nextSerialized && nextSerialized !== prevSerialized) {
+      lastIaSerializedRef.current = nextSerialized;
+      iaDirtyRef.current = false;
+    }
+
+    if (iaDirtyRef.current) return;
+
+    setIaColumns({
+      continue: Array.isArray(cols?.continue) ? cols.continue : [],
+      start: Array.isArray(cols?.start) ? cols.start : [],
+      stop: Array.isArray(cols?.stop) ? cols.stop : [],
+    });
+  }, [immediateActionSummary?.columns]);
 
   const items = useMemo(() => {
     if (!Array.isArray(localColumns)) return [];
@@ -412,12 +490,34 @@ const ContinueDoingPage = ({
         title: iaTitle = "Immediate Action Areas - Summary",
         description = "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
         note = "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
-        columns: iaCols = {
-          continue: [],
-          start: [],
-          stop: [],
-        },
       } = immediateActionSummary;
+
+      const iaCols = iaColumns;
+
+      const saveIaItem = (key, idx, newValue) => {
+        const cleaned = String(newValue ?? "").trim();
+        iaDirtyRef.current = true;
+        setIaColumns((prev) => {
+          const next = {
+            continue: Array.isArray(prev?.continue) ? [...prev.continue] : [],
+            start: Array.isArray(prev?.start) ? [...prev.start] : [],
+            stop: Array.isArray(prev?.stop) ? [...prev.stop] : [],
+          };
+
+          const list = Array.isArray(next[key]) ? next[key] : [];
+
+          if (idx === -1) {
+            if (cleaned) list.push(newValue);
+          } else if (!cleaned) {
+            if (idx >= 0 && idx < list.length) list.splice(idx, 1);
+          } else {
+            list[idx] = newValue;
+          }
+
+          next[key] = list;
+          return next;
+        });
+      };
 
       out.push(
         <div key="cd-ia" className="cd-ia">
@@ -438,13 +538,53 @@ const ContinueDoingPage = ({
               <div
                 className="cd-ia-col__body cd-ia-col__body--continue"
                 role="row"
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (!Array.isArray(iaCols.continue) || iaCols.continue.length === 0) {
+                    setIaEditing({ key: "continue", idx: -1 });
+                  }
+                }}
+                style={{ cursor: "pointer" }}
               >
+                {iaEditing?.key === "continue" && iaEditing?.idx === -1 ? (
+                  <EditableIaCell
+                    value={""}
+                    onSave={(newValue) => {
+                      saveIaItem("continue", -1, newValue);
+                      setIaEditing(null);
+                    }}
+                    onCancel={() => setIaEditing(null)}
+                  />
+                ) : null}
+
                 {iaCols.continue.map((t, i) => (
-                  <div key={i} className="cd-ia-bullet" role="row">
-                    <span className="cd-ia-bullet__dot" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="cd-ia-bullet__text">{t}</span>
+                  <div
+                    key={i}
+                    className="cd-ia-bullet"
+                    role="row"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setIaEditing({ key: "continue", idx: i });
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {iaEditing?.key === "continue" && iaEditing?.idx === i ? (
+                      <EditableIaCell
+                        value={t}
+                        onSave={(newValue) => {
+                          saveIaItem("continue", i, newValue);
+                          setIaEditing(null);
+                        }}
+                        onCancel={() => setIaEditing(null)}
+                      />
+                    ) : (
+                      <>
+                        <span className="cd-ia-bullet__dot" aria-hidden="true">
+                          •
+                        </span>
+                        <span className="cd-ia-bullet__text">{t}</span>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -460,13 +600,53 @@ const ContinueDoingPage = ({
               <div
                 className="cd-ia-col__body cd-ia-col__body--start"
                 role="row"
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (!Array.isArray(iaCols.start) || iaCols.start.length === 0) {
+                    setIaEditing({ key: "start", idx: -1 });
+                  }
+                }}
+                style={{ cursor: "pointer" }}
               >
+                {iaEditing?.key === "start" && iaEditing?.idx === -1 ? (
+                  <EditableIaCell
+                    value={""}
+                    onSave={(newValue) => {
+                      saveIaItem("start", -1, newValue);
+                      setIaEditing(null);
+                    }}
+                    onCancel={() => setIaEditing(null)}
+                  />
+                ) : null}
+
                 {iaCols.start.map((t, i) => (
-                  <div key={i} className="cd-ia-bullet" role="row">
-                    <span className="cd-ia-bullet__dot" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="cd-ia-bullet__text">{t}</span>
+                  <div
+                    key={i}
+                    className="cd-ia-bullet"
+                    role="row"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setIaEditing({ key: "start", idx: i });
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {iaEditing?.key === "start" && iaEditing?.idx === i ? (
+                      <EditableIaCell
+                        value={t}
+                        onSave={(newValue) => {
+                          saveIaItem("start", i, newValue);
+                          setIaEditing(null);
+                        }}
+                        onCancel={() => setIaEditing(null)}
+                      />
+                    ) : (
+                      <>
+                        <span className="cd-ia-bullet__dot" aria-hidden="true">
+                          •
+                        </span>
+                        <span className="cd-ia-bullet__text">{t}</span>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -476,13 +656,56 @@ const ContinueDoingPage = ({
               <div className="cd-ia-col__head cd-ia-col__head--stop" role="row">
                 STOP
               </div>
-              <div className="cd-ia-col__body cd-ia-col__body--stop" role="row">
+              <div
+                className="cd-ia-col__body cd-ia-col__body--stop"
+                role="row"
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (!Array.isArray(iaCols.stop) || iaCols.stop.length === 0) {
+                    setIaEditing({ key: "stop", idx: -1 });
+                  }
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                {iaEditing?.key === "stop" && iaEditing?.idx === -1 ? (
+                  <EditableIaCell
+                    value={""}
+                    onSave={(newValue) => {
+                      saveIaItem("stop", -1, newValue);
+                      setIaEditing(null);
+                    }}
+                    onCancel={() => setIaEditing(null)}
+                  />
+                ) : null}
+
                 {iaCols.stop.map((t, i) => (
-                  <div key={i} className="cd-ia-bullet" role="row">
-                    <span className="cd-ia-bullet__dot" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="cd-ia-bullet__text">{t}</span>
+                  <div
+                    key={i}
+                    className="cd-ia-bullet"
+                    role="row"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setIaEditing({ key: "stop", idx: i });
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {iaEditing?.key === "stop" && iaEditing?.idx === i ? (
+                      <EditableIaCell
+                        value={t}
+                        onSave={(newValue) => {
+                          saveIaItem("stop", i, newValue);
+                          setIaEditing(null);
+                        }}
+                        onCancel={() => setIaEditing(null)}
+                      />
+                    ) : (
+                      <>
+                        <span className="cd-ia-bullet__dot" aria-hidden="true">
+                          •
+                        </span>
+                        <span className="cd-ia-bullet__text">{t}</span>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -493,7 +716,7 @@ const ContinueDoingPage = ({
     }
 
     return out;
-  }, [localColumns, footnote, immediateActionSummary, title, gridChunks]);
+  }, [localColumns, footnote, immediateActionSummary, title, gridChunks, iaColumns, iaEditing]);
   const Header = useMemo(() => {
     return () => (
       <FeedbackCommonHeader
