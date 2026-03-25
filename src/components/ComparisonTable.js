@@ -22,8 +22,8 @@ const ComparisonTable = ({
       .replace(/\.0$/, "")}`;
   };
 
-  const handleBlur = (rowIndex, fieldKey, value) => {
-    onCellBlur(rowIndex, fieldKey, value);
+  const handleBlur = (rowIndex, fieldKey, value, label) => {
+    onCellBlur(rowIndex, fieldKey, value, label);
     setEditingCell(null);
   };
 
@@ -104,6 +104,7 @@ const ComparisonTable = ({
                       rowIndex: i,
                       fieldKey: "team_diff1",
                       value: String(n1 || ""),
+                      label: r.label,
                     })
                   }
                 >
@@ -122,7 +123,7 @@ const ComparisonTable = ({
                         }))
                       }
                       onBlur={(e) =>
-                        handleBlur(i, "team_diff1", e.target.value)
+                        handleBlur(i, "team_diff1", e.target.value, r.label)
                       }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") e.currentTarget.blur();
@@ -149,6 +150,7 @@ const ComparisonTable = ({
                       rowIndex: i,
                       fieldKey: "team_diff2",
                       value: String(n2 || ""),
+                      label: r.label,
                     })
                   }
                 >
@@ -167,7 +169,7 @@ const ComparisonTable = ({
                         }))
                       }
                       onBlur={(e) =>
-                        handleBlur(i, "team_diff2", e.target.value)
+                        handleBlur(i, "team_diff2", e.target.value, r.label)
                       }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") e.currentTarget.blur();

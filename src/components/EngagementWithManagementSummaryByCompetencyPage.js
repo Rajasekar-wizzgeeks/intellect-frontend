@@ -82,6 +82,9 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   const [localOverallScore, setLocalOverallScore] = useState(overallScore);
   const [rows, setRows] = useState(items);
   const [localComparisonAverage, setLocalComparisonAverage] = useState(comparisonAverage);
+  const [localManagerComparisonAverage, setLocalManagerComparisonAverage] = useState(
+    managerComparisonAverage,
+  );
   const [localComparisonNotes, setLocalComparisonNotes] = useState(comparisonNotes);
   const [editingNoteIndex, setEditingNoteIndex] = useState(null);
   const editingNoteDraftRef = useRef("");
@@ -89,7 +92,23 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   const lastOverallScoreRef = useRef(undefined);
   const lastItemsSigRef = useRef("");
   const lastComparisonAvgSigRef = useRef("");
+  const lastManagerComparisonAvgSigRef = useRef("");
   const lastComparisonNotesSigRef = useRef("");
+
+  const normalizeAverageMap = useCallback((src) => {
+    if (!src) return {};
+    if (Array.isArray(src)) {
+      const out = {};
+      src.forEach((it) => {
+        const label = it?.label || it?.question || it?.name;
+        if (!label) return;
+        out[label] = it;
+      });
+      return out;
+    }
+    if (typeof src === "object") return src;
+    return {};
+  }, []);
 
   useEffect(() => {
     const next = overallScore;
@@ -114,38 +133,55 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   }, [items]);
 
   useEffect(() => {
+    const normalized = normalizeAverageMap(comparisonAverage);
     const sig = (() => {
       try {
-        return JSON.stringify(comparisonAverage ?? null);
+        return JSON.stringify(normalized ?? null);
       } catch {
         return "";
       }
     })();
     if (lastComparisonAvgSigRef.current !== sig) {
       lastComparisonAvgSigRef.current = sig;
-      setLocalComparisonAverage(comparisonAverage);
+      setLocalComparisonAverage(normalized);
     }
-  }, [comparisonAverage]);
+  }, [comparisonAverage, normalizeAverageMap]);
+
+  useEffect(() => {
+    const normalized = normalizeAverageMap(managerComparisonAverage);
+    const sig = (() => {
+      try {
+        return JSON.stringify(normalized ?? null);
+      } catch {
+        return "";
+      }
+    })();
+    if (lastManagerComparisonAvgSigRef.current !== sig) {
+      lastManagerComparisonAvgSigRef.current = sig;
+      setLocalManagerComparisonAverage(normalized);
+    }
+  }, [managerComparisonAverage, normalizeAverageMap]);
 
   useEffect(() => {
     const sig = (() => {
       try {
-        return JSON.stringify(comparisonNotes ?? []);
+        const filtered = (comparisonNotes ?? []).filter(n => n && String(n).trim().length > 0);
+        return JSON.stringify(filtered);
       } catch {
         return "";
       }
     })();
     if (lastComparisonNotesSigRef.current !== sig) {
       lastComparisonNotesSigRef.current = sig;
-      setLocalComparisonNotes(comparisonNotes);
+      const filtered = (comparisonNotes ?? []).filter(n => n && String(n).trim().length > 0);
+      setLocalComparisonNotes(filtered);
     }
   }, [comparisonNotes]);
 
-  const handleCellBlur = useCallback((rowIndex, fieldKey, newValue) => {
+  const handleCellBlur = useCallback((rowIndex, fieldKey, newValue, label) => {
     const numValue = Number(newValue);
-    const updatedComparison = { ...localComparisonAverage };
-    const labels = Object.keys(updatedComparison);
-    const targetLabel = labels[rowIndex];
+    const updatedComparison = { ...normalizeAverageMap(localComparisonAverage) };
+    const targetLabel = label;
 
     if (targetLabel) {
       if (typeof updatedComparison[targetLabel] === "object") {
@@ -158,33 +194,31 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       }
       setLocalComparisonAverage(updatedComparison);
     }
-  }, [localComparisonAverage]);
+  }, [localComparisonAverage, normalizeAverageMap]);
 
   const handleNoteCommit = useCallback((noteIndex, value) => {
     const nextValue = String(value ?? "");
-    const isEmpty = nextValue.trim().length === 0;
     setLocalComparisonNotes((prev) => {
       const next = Array.isArray(prev) ? [...prev] : [];
       if (noteIndex < 0 || noteIndex >= next.length) return prev;
-      if (isEmpty) {
-        next.splice(noteIndex, 1);
-      } else {
-        next[noteIndex] = nextValue;
-      }
-      return next;
+      
+      next[noteIndex] = nextValue;
+      
+      return next.filter(n => n && String(n).trim().length > 0);
     });
     setEditingNoteIndex(null);
   }, []);
 
   const handleAddNoteAfter = useCallback((noteIndex) => {
+    const insertAt = Math.max(noteIndex + 1, 0);
     setLocalComparisonNotes((prev) => {
       const next = Array.isArray(prev) ? [...prev] : [];
-      const insertAt = Math.min(Math.max(noteIndex + 1, 0), next.length);
-      next.splice(insertAt, 0, "");
+      const boundedInsertAt = Math.min(insertAt, next.length);
+      next.splice(boundedInsertAt, 0, "");
       return next;
     });
     editingNoteDraftRef.current = "";
-    setEditingNoteIndex(noteIndex + 1);
+    setEditingNoteIndex(insertAt);
   }, []);
 
   const computeOverallFromRows = useCallback((rowsArg) => {
@@ -244,8 +278,8 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
 
     const computedManagerComparisonRows = (() => {
       const src =
-        managerComparisonAverage && typeof managerComparisonAverage === "object"
-          ? managerComparisonAverage
+        localManagerComparisonAverage && typeof localManagerComparisonAverage === "object"
+          ? localManagerComparisonAverage
           : null;
       if (!src) return [];
       
@@ -498,21 +532,28 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
                 currentYear={currentYear}
                 file2Year={file2Year}
                 file3Year={file3Year}
-                onCellBlur={(rowIndex, fieldKey, newValue) => {
+                onCellBlur={(rowIndex, fieldKey, newValue, label) => {
                   const numValue = Number(newValue);
-                  const updated = { ...managerComparisonAverage };
-                  const labels = Object.keys(updated);
-                  const targetLabel = labels[rowIndex];
+                  const updated = {
+                    ...normalizeAverageMap(localManagerComparisonAverage),
+                  };
+                  const targetLabel = label;
                   if (targetLabel) {
                     if (typeof updated[targetLabel] === "object") {
+                      const nextKey = fieldKey.replace("team_", "manager_");
+                      const nextUnderscoreKey = nextKey
+                        .replace(/manager_diff1$/, "manager_diff_1")
+                        .replace(/manager_diff2$/, "manager_diff_2");
                       updated[targetLabel] = {
                         ...updated[targetLabel],
-                        [fieldKey.replace("team_", "manager_")]: numValue,
+                        [nextKey]: numValue,
+                        [nextUnderscoreKey]: numValue,
                       };
                     } else {
                       updated[targetLabel] = numValue;
                     }
                   }
+                  setLocalManagerComparisonAverage(updated);
                 }}
                 title="Comparison of Manager Scores"
               />
@@ -539,7 +580,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     comparisonTitle,
     localComparisonNotes,
     localComparisonAverage,
-    managerComparisonAverage,
+    localManagerComparisonAverage,
     handleCellBlur,
     handleNoteCommit,
     file2Year,
