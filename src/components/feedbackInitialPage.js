@@ -2,12 +2,15 @@ import React, { useEffect, useState } from "react";
 import "../styles/feedbackInitialPage.scss";
 import ReportCycle from "../assets/png/ReportCycle.png";
 
-const FeedbackInitialPage = ({ initialName = "" }) => {
+const FeedbackInitialPage = ({ initialName = "", date = "" }) => {
   const [name, setName] = useState(initialName);
+  const [dateValue, setDateValue] = useState(date);
+
 
   useEffect(() => {
     setName(initialName);
-  }, [initialName]);
+    setDateValue(date);
+  }, [initialName, date]);
 
   return (
     <div className="feedback-initial-viewport">
@@ -52,7 +55,7 @@ const FeedbackInitialPage = ({ initialName = "" }) => {
                 {name && name.trim().length > 0 ? name : "\u00A0"}
               </span>
             </div>
-            <div className="feedback-initial-date">Feb 2025</div>
+            <div className="feedback-initial-date">{dateValue || ""}</div>
           </div>
           </div>
         </div>

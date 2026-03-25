@@ -36,10 +36,27 @@ const parseSSEStream = async (response) => {
           switch (json.type) {
             case "meta":
               result.name = json.name || json.data?.name;
+              result.date= json.date || json?.data?.date;
               break;
 
             case "comparision_average":
-              result.comparision_average = json.comparision_average || json.data?.comparision_average || json.data;
+              result.comparision_average =
+                json.comparision_average || json.data?.comparision_average || json.data;
+
+              if (json.manager_comparision_average !== undefined || json.data?.manager_comparision_average !== undefined) {
+                result.manager_comparision_average =
+                  json.manager_comparision_average || json.data?.manager_comparision_average;
+              }
+              break;
+
+            case "manager_comparision_average":
+              result.manager_comparision_average =
+                json.manager_comparision_average || json.data?.manager_comparision_average || json.data;
+
+              if (json.comparision_average !== undefined || json.data?.comparision_average !== undefined) {
+                result.comparision_average =
+                  json.comparision_average || json.data?.comparision_average;
+              }
               break;
 
             case "total_response":
@@ -154,9 +171,8 @@ export const excelSheetFeedback = async (fileOrFiles) => {
     const [base, cont, stop] = await Promise.all([
       parseSSEStream(baseRes).catch((e) => {
         console.error("BASE stream error:", e);
-        // Special case for network error/termination which might happen if connection is closed after data
         if (e.message.includes("network error") || e.message.includes("Reader has been released")) {
-           return {}; // Try to proceed if we have partial data
+           return {}; 
         }
         throw new Error(`BASE stream failed: ${e.message}`);
       }),

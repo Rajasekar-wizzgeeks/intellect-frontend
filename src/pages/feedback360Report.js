@@ -987,6 +987,9 @@ const Feedback360Report = () => {
           initialName={
             feedbackOverallData?.name ? feedbackOverallData?.name : ""
           }
+          date={
+            feedbackOverallData?.date ? feedbackOverallData?.date : ""
+          }
         />
       </div>
       <SurveyFeedback overviewData={feedbackOverallData} />
@@ -1042,7 +1045,10 @@ const Feedback360Report = () => {
         )}
         items={engagementWithManagementItems}
         comparisonAverage={
-          feedbackOverallData?.comparision_average ||[]
+          feedbackOverallData?.comparision_average || []
+        }
+        managerComparisonAverage={
+          feedbackOverallData?.manager_comparision_average || []
         }
         currentYear={currentYearLabel}
         file2Year={file2Year}

@@ -67,6 +67,7 @@ const ContinueDoingGrid = ({
   onColumnsChange,
   rowOffset = 0,
   items,
+  setMeasureTick,
 }) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
 
@@ -141,18 +142,38 @@ const ContinueDoingGrid = ({
                 value={columns?.[row.colIdx]?.[row.rowIdx]}
                 onSave={(newValue) => {
                   const absoluteRowIdx = rowOffset + row.rowIdx;
-                  onColumnsChange((prevColumns) => {
-                    const nextColumns = Array.isArray(prevColumns)
-                      ? [...prevColumns]
-                      : [];
-                    if (!Array.isArray(nextColumns[row.colIdx])) {
-                      nextColumns[row.colIdx] = [];
-                    } else {
-                      nextColumns[row.colIdx] = [...nextColumns[row.colIdx]];
-                    }
-                    nextColumns[row.colIdx][absoluteRowIdx] = newValue;
-                    return nextColumns;
-                  });
+                  const cleaned = String(newValue ?? "").trim();
+                  if (!cleaned) {
+                    onColumnsChange((prevColumns) => {
+                      const nextColumns = Array.isArray(prevColumns)
+                        ? [...prevColumns]
+                        : [];
+                      if (
+                        Array.isArray(nextColumns[row.colIdx]) &&
+                        absoluteRowIdx >= 0 &&
+                        absoluteRowIdx < nextColumns[row.colIdx].length
+                      ) {
+                        const updatedCol = [...nextColumns[row.colIdx]];
+                        updatedCol.splice(absoluteRowIdx, 1);
+                        nextColumns[row.colIdx] = updatedCol;
+                      }
+                      return nextColumns;
+                    });
+                  } else {
+                    onColumnsChange((prevColumns) => {
+                      const nextColumns = Array.isArray(prevColumns)
+                        ? [...prevColumns]
+                        : [];
+                      if (!Array.isArray(nextColumns[row.colIdx])) {
+                        nextColumns[row.colIdx] = [];
+                      } else {
+                        nextColumns[row.colIdx] = [...nextColumns[row.colIdx]];
+                      }
+                      nextColumns[row.colIdx][absoluteRowIdx] = newValue;
+                      return nextColumns;
+                    });
+                  }
+                  setMeasureTick((t) => t + 1);
                   setEditing(null);
                 }}
               />
@@ -300,6 +321,7 @@ const ContinueDoingPage = ({
                 onColumnsChange={setLocalColumns}
                 rowOffset={0}
                 items={slice}
+                setMeasureTick={setMeasureTick}
               />
               {includeFootnote && footnote ? (
                 <div className="cd-footnote">{footnote}</div>
@@ -473,6 +495,7 @@ const ContinueDoingPage = ({
               onColumnsChange={setLocalColumns}
               rowOffset={currentOffset}
               items={chunk}
+              setMeasureTick={setMeasureTick}
             />
 
             {chunkIdx === chunksToUse.length - 1 && footnote && (
@@ -509,7 +532,9 @@ const ContinueDoingPage = ({
           if (idx === -1) {
             if (cleaned) list.push(newValue);
           } else if (!cleaned) {
-            if (idx >= 0 && idx < list.length) list.splice(idx, 1);
+            if (idx >= 0 && idx < list.length) {
+              list.splice(idx, 1);
+            }
           } else {
             list[idx] = newValue;
           }
