@@ -7,7 +7,8 @@ const ComparisonTable = ({
   currentYear, 
   file2Year, 
   file3Year,
-  onCellBlur 
+  onCellBlur,
+  title
 }) => {
   const [editingCell, setEditingCell] = useState(null);
 
@@ -43,7 +44,7 @@ const ComparisonTable = ({
           }}
         >
           <div className="sbc-compare__th" role="columnheader">
-            Comparison of Team Scores
+            {title}
           </div>
           {comparisonHasDiff1 ? (
             <div

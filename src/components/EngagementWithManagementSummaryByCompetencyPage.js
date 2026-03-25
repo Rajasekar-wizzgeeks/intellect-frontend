@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import CompetencyThreeBarChart from "./CompetencyThreeBarChart";
@@ -32,8 +32,8 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   barHeight = 12,
   comparisonTitle = "Comparison of Average Scores – 2024 Vs 2025",
   comparisonAverage,
+  managerComparisonAverage,
   comparisonNotes = [
-    "No significant differences in Team scores and Manager scores between 2024 and 2025",
     "The table highlights areas where there is a slight increase or decrease in scores compared to last year. Only those areas with an increase or decrease above 0.1 in Team Score are shown, while differences smaller than those indicated have been excluded.",
   ],
   comparisonRows = [
@@ -82,12 +82,66 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   const [localOverallScore, setLocalOverallScore] = useState(overallScore);
   const [rows, setRows] = useState(items);
   const [localComparisonAverage, setLocalComparisonAverage] = useState(comparisonAverage);
+  const [localComparisonNotes, setLocalComparisonNotes] = useState(comparisonNotes);
+  const [editingNoteIndex, setEditingNoteIndex] = useState(null);
+  const editingNoteDraftRef = useRef("");
+
+  const lastOverallScoreRef = useRef(undefined);
+  const lastItemsSigRef = useRef("");
+  const lastComparisonAvgSigRef = useRef("");
+  const lastComparisonNotesSigRef = useRef("");
 
   useEffect(() => {
-    setLocalComparisonAverage(comparisonAverage);
+    const next = overallScore;
+    if (lastOverallScoreRef.current !== next) {
+      lastOverallScoreRef.current = next;
+      setLocalOverallScore(next);
+    }
+  }, [overallScore]);
+
+  useEffect(() => {
+    const sig = (() => {
+      try {
+        return JSON.stringify(items ?? []);
+      } catch {
+        return "";
+      }
+    })();
+    if (lastItemsSigRef.current !== sig) {
+      lastItemsSigRef.current = sig;
+      setRows(items ?? []);
+    }
+  }, [items]);
+
+  useEffect(() => {
+    const sig = (() => {
+      try {
+        return JSON.stringify(comparisonAverage ?? null);
+      } catch {
+        return "";
+      }
+    })();
+    if (lastComparisonAvgSigRef.current !== sig) {
+      lastComparisonAvgSigRef.current = sig;
+      setLocalComparisonAverage(comparisonAverage);
+    }
   }, [comparisonAverage]);
 
-  const handleCellBlur = (rowIndex, fieldKey, newValue) => {
+  useEffect(() => {
+    const sig = (() => {
+      try {
+        return JSON.stringify(comparisonNotes ?? []);
+      } catch {
+        return "";
+      }
+    })();
+    if (lastComparisonNotesSigRef.current !== sig) {
+      lastComparisonNotesSigRef.current = sig;
+      setLocalComparisonNotes(comparisonNotes);
+    }
+  }, [comparisonNotes]);
+
+  const handleCellBlur = useCallback((rowIndex, fieldKey, newValue) => {
     const numValue = Number(newValue);
     const updatedComparison = { ...localComparisonAverage };
     const labels = Object.keys(updatedComparison);
@@ -104,9 +158,36 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       }
       setLocalComparisonAverage(updatedComparison);
     }
-  };
+  }, [localComparisonAverage]);
 
-  const computeOverallFromRows = (rowsArg) => {
+  const handleNoteCommit = useCallback((noteIndex, value) => {
+    const nextValue = String(value ?? "");
+    const isEmpty = nextValue.trim().length === 0;
+    setLocalComparisonNotes((prev) => {
+      const next = Array.isArray(prev) ? [...prev] : [];
+      if (noteIndex < 0 || noteIndex >= next.length) return prev;
+      if (isEmpty) {
+        next.splice(noteIndex, 1);
+      } else {
+        next[noteIndex] = nextValue;
+      }
+      return next;
+    });
+    setEditingNoteIndex(null);
+  }, []);
+
+  const handleAddNoteAfter = useCallback((noteIndex) => {
+    setLocalComparisonNotes((prev) => {
+      const next = Array.isArray(prev) ? [...prev] : [];
+      const insertAt = Math.min(Math.max(noteIndex + 1, 0), next.length);
+      next.splice(insertAt, 0, "");
+      return next;
+    });
+    editingNoteDraftRef.current = "";
+    setEditingNoteIndex(noteIndex + 1);
+  }, []);
+
+  const computeOverallFromRows = useCallback((rowsArg) => {
     if (!Array.isArray(rowsArg) || !rowsArg.length) return 0;
 
     const subCount = Number(totalResponse?.Subordinates) || 0;
@@ -139,16 +220,18 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
 
     const weightedScore = (avgSub * subCount + avgMgr * mgrCount) / effectiveTotalCount;
     return Number(weightedScore.toFixed(2));
-  };
+  }, [totalResponse]);
 
-  const handleRowsChange = (newRows) => {
+  const handleRowsChange = useCallback((newRows) => {
     setRows(newRows);
     setLocalOverallScore(computeOverallFromRows(newRows));
-    setAverageCompentency((prev) => ({
-      ...prev,
-      engagement_with_management_competency: newRows,
-    }));
-  };
+    if (typeof setAverageCompentency === "function") {
+      setAverageCompentency((prev) => ({
+        ...prev,
+        engagement_with_management_competency: newRows,
+      }));
+    }
+  }, [computeOverallFromRows, setAverageCompentency]);
 
   const blocks = useMemo(() => {
     const out = [];
@@ -158,6 +241,85 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       managerRating: Number(it.managerRating),
       selfRating: Number(it.selfRating),
     }));
+
+    const computedManagerComparisonRows = (() => {
+      const src =
+        managerComparisonAverage && typeof managerComparisonAverage === "object"
+          ? managerComparisonAverage
+          : null;
+      if (!src) return [];
+      
+
+      const getNumber = (obj, keys) => {
+        for (const k of keys) {
+          const v = obj?.[k];
+          const n = Number(v);
+          if (v !== undefined && v !== null && Number.isFinite(n)) return n;
+        }
+        return NaN;
+      };
+
+      const mapEntry = (label, value) => {
+        if (!label) return null;
+
+        if (value && typeof value === "object") {
+          const d1 = getNumber(value, [
+            "manager_diff_1",
+            "manager_diff1",
+            "team_diff1",
+            "diff1",
+            "diff",
+          ]);
+          const d2 = getNumber(value, [
+            "manager_diff_2",
+            "manager_diff2",
+            "team_diff2",
+            "diff2",
+          ]);
+          return {
+            label,
+            team_diff1: d1,
+            team_diff2: d2,
+          };
+        }
+
+        return {
+          label,
+          team_diff1: Number(value),
+        };
+      };
+
+      const mapped = (Array.isArray(src) ? src : Object.entries(src))
+        .map((entry) => {
+          if (Array.isArray(entry)) {
+            const [label, value] = entry;
+            return mapEntry(label, value);
+          }
+
+          const label = entry?.label || entry?.question || entry?.name;
+          return mapEntry(label, entry);
+        })
+        .filter(Boolean)
+        .filter(
+          (r) =>
+            r.label &&
+            (Number.isFinite(r.team_diff1) || Number.isFinite(r.team_diff2)),
+        );
+
+      mapped.sort((a, b) => {
+        const aKey = Number.isFinite(a.team_diff1) ? a.team_diff1 : 0;
+        const bKey = Number.isFinite(b.team_diff1) ? b.team_diff1 : 0;
+        return bKey - aKey;
+      });
+      return mapped;
+    })();
+
+    const managerHasDiff1 = computedManagerComparisonRows.some((r) =>
+      Number.isFinite(Number(r?.team_diff1)),
+    );
+    const managerHasDiff2 = computedManagerComparisonRows.some((r) =>
+      Number.isFinite(Number(r?.team_diff2)),
+    );
 
     const computedComparisonRows = (() => {
       const src =
@@ -213,16 +375,6 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       Number.isFinite(Number(r?.team_diff2)),
     );
 
-    const formatDiff = (v) => {
-      const n = Number(v);
-      if (!Number.isFinite(n)) return "";
-      const isPos = n > 0;
-      return `${isPos ? "+" : ""}${n
-        .toFixed(2)
-        .replace(/0$/, "")
-        .replace(/\.0$/, "")}`;
-    };
-
     out.push(
       <div className="sbc-hdr-chart-wrapper" key="ewm-hdr-chart">
         <FeedbackCommonHeader
@@ -261,49 +413,123 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
       </div>,
     );
 
-    if (localComparisonAverage && Object.keys(localComparisonAverage).length > 0) {
-    out.push(
-      <>
-      {localComparisonAverage && Object.keys(localComparisonAverage).length > 0 && <div key="ewm-compare" className="sbc-compare">
-        <FeedbackCommonHeader
-          key="ewm-compare-hdr"
-          title={`Comparison of Average Scores – ${file3Year} Vs ${file2Year}`}
-          titleWidth={100}
-          className="sbc-compare__header"
-        />
+    if (
+      (localComparisonAverage &&
+        Object.keys(localComparisonAverage).length > 0) ||
+      (managerComparisonAverage &&
+        Object.keys(managerComparisonAverage).length > 0)
+    ) {
+      out.push(
+        <div key="ewm-compare" className="sbc-compare">
+          <FeedbackCommonHeader
+            key="ewm-compare-hdr"
+            title={`Comparison of Average Scores – ${file3Year} Vs ${file2Year}`}
+            titleWidth={100}
+            className="sbc-compare__header"
+          />
 
-        <div className="sbc-compare__notes">
-          {comparisonNotes.map((t, i) => (
-            <div key={i} className="sbc-compare__note">
-              <span className="sbc-compare__note-bullet" aria-hidden="true">
-                ▪
-              </span>
-              <span className="sbc-compare__note-text">{t}</span>
+          <div className="sbc-compare__notes">
+            {localComparisonNotes.map((t, i) => (
+              <div key={i} className="sbc-compare__note">
+                <span className="sbc-compare__note-bullet" aria-hidden="true">
+                  ▪
+                </span>
+                <span
+                  className="sbc-compare__note-text"
+                  onDoubleClick={() =>
+                    (() => {
+                      editingNoteDraftRef.current = String(t ?? "");
+                      setEditingNoteIndex(i);
+                    })()
+                  }
+                >
+                  {editingNoteIndex === i ? (
+                    <div className="sbc-compare__note-edit">
+                      <textarea
+                        defaultValue={editingNoteDraftRef.current}
+                        autoFocus
+                        onChange={(e) => {
+                          editingNoteDraftRef.current = e.target.value;
+                        }}
+                        onBlur={() => handleNoteCommit(i, editingNoteDraftRef.current)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) e.currentTarget.blur();
+                          if (e.key === "Escape") setEditingNoteIndex(null);
+                        }}
+                        rows={2}
+                        className="sbc-compare__note-textarea"
+                      />
+                      <button
+                        type="button"
+                        className="sbc-compare__note-add"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleAddNoteAfter(i)}
+                        aria-label="Add note"
+                        title="Add note"
+                      >
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    t
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <ComparisonTable
+            computedComparisonRows={computedComparisonRows}
+            comparisonHasDiff1={comparisonHasDiff1}
+            comparisonHasDiff2={comparisonHasDiff2}
+            currentYear={currentYear}
+            file2Year={file2Year}
+            file3Year={file3Year}
+            onCellBlur={handleCellBlur}
+            title="Comparison of Team Scores"
+          />
+
+          {computedManagerComparisonRows.length > 0 && (
+            <div className="sbc-compare__manager-table-wrapper">
+              <ComparisonTable
+                computedComparisonRows={computedManagerComparisonRows}
+                comparisonHasDiff1={managerHasDiff1}
+                comparisonHasDiff2={managerHasDiff2}
+                currentYear={currentYear}
+                file2Year={file2Year}
+                file3Year={file3Year}
+                onCellBlur={(rowIndex, fieldKey, newValue) => {
+                  const numValue = Number(newValue);
+                  const updated = { ...managerComparisonAverage };
+                  const labels = Object.keys(updated);
+                  const targetLabel = labels[rowIndex];
+                  if (targetLabel) {
+                    if (typeof updated[targetLabel] === "object") {
+                      updated[targetLabel] = {
+                        ...updated[targetLabel],
+                        [fieldKey.replace("team_", "manager_")]: numValue,
+                      };
+                    } else {
+                      updated[targetLabel] = numValue;
+                    }
+                  }
+                }}
+                title="Comparison of Manager Scores"
+              />
             </div>
-          ))}
-        </div>
+          )}
 
-        <ComparisonTable
-          computedComparisonRows={computedComparisonRows}
-          comparisonHasDiff1={comparisonHasDiff1}
-          comparisonHasDiff2={comparisonHasDiff2}
-          currentYear={currentYear}
-          file2Year={file2Year}
-          file3Year={file3Year}
-          onCellBlur={handleCellBlur}
-        />
-
-        <div className="sbc-compare__legend">
-          <div className="sbc-compare__legend-item sbc-compare__legend-item--pos">
-            (+) Indicates increase in score this year when compared to last year
-          </div>
-          <div className="sbc-compare__legend-item sbc-compare__legend-item--neg">
-            (-) Indicates decrease in score this year when compared to last year
+          <div className="sbc-compare__legend">
+            <div className="sbc-compare__legend-item sbc-compare__legend-item--pos">
+              (+) Indicates increase in score this year when compared to last year
+            </div>
+            <div className="sbc-compare__legend-item sbc-compare__legend-item--neg">
+              (-) Indicates decrease in score this year when compared to last year
+            </div>
           </div>
         </div>
-      </div>}
-      </>
-    );}
+      );
+    }
 
     return out;
   }, [
@@ -311,14 +537,18 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     localOverallScore,
     title,
     comparisonTitle,
-    comparisonNotes,
+    localComparisonNotes,
     localComparisonAverage,
+    managerComparisonAverage,
+    handleCellBlur,
+    handleNoteCommit,
+    file2Year,
+    file3Year,
+    currentYear,
+    barHeight,
+    handleRowsChange,
+    editingNoteIndex,
   ]);
-
-  useEffect(() => {
-    setLocalOverallScore(overallScore);
-    setRows(items);
-  }, [overallScore]);
 
   return (
     <AutoPaginatedSections

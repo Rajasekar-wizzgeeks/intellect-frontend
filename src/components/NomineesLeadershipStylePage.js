@@ -225,11 +225,14 @@ const NomineesLeadershipStyleAdjectives = React.memo(
                   }}
                 />
               ) : (
-                String(a ?? "")
+
+                <p className="sd-trait-card-text">
+                {String(a ?? "")
                   .trim()
                   .split(/\s+/)
                   .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                  .join(" ")
+                  .join(" ")}
+                </p>
               )}
             </div>
           ))}
