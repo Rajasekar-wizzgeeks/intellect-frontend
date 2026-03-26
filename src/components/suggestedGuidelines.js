@@ -8,7 +8,7 @@ import "../styles/competencyBiggerPicture.scss";
 const SuggestedGuidelines = ({
   title = "Your Competency Summary: The Bigger Picture",
   overallScore,
-  note = "Snapshot of average / mean for each Competency based on inputs from respondent's vis-a vis your self-rating (Remember this is not a score but the respondent’s extent of agreement)",
+  note = "Snapshot of average / mean for each Competency based on inputs from respondent's vis-a vis your self-rating \n(Remember this is not a score but the respondent’s extent of agreement)",
   items = [],
   averageCompentency,
 }) => {
