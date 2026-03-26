@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/surveyFeedback.scss";
@@ -7,6 +7,71 @@ import personality from "../assets/png/personality.png";
 import educationalQulaity from "../assets/png/educationalQulaity.png";
 import culture from "../assets/png/culture.png";
 import management from "../assets/png/management.png";
+
+const EditableCount = ({ value, onChange }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value ?? ""));
+
+  const commit = () => {
+    const raw = String(draft ?? "").trim();
+    const next = raw === "" ? null : Number.parseInt(raw, 10);
+    if (next === null) {
+      onChange(null);
+    } else if (Number.isFinite(next) && next >= 0) {
+      onChange(next);
+    }
+    setIsEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(String(value ?? ""));
+    setIsEditing(false);
+  };
+
+  if (!isEditing) {
+    return (
+      <span
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          setDraft(String(value ?? ""));
+          setIsEditing(true);
+        }}
+        style={{ cursor: "pointer" }}
+      >
+        {value}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancel();
+        }
+      }}
+      autoFocus
+      inputMode="numeric"
+      style={{
+        width: "3ch",
+        border: "none",
+        outline: "none",
+        background: "transparent",
+        padding: 0,
+        margin: 0,
+        font: "inherit",
+        color: "inherit",
+      }}
+    />
+  );
+};
 
 const SurveyFeedback = ({ overviewData }) => {
   const totalSurveyQuestion = useMemo(() => {
@@ -23,6 +88,30 @@ const SurveyFeedback = ({ overviewData }) => {
   }, [overviewData]);
 
   const qualitativeQuestionCount = 6;
+
+  const [surveyQuestionOverride, setSurveyQuestionOverride] = useState(null);
+  const [qualitativeQuestionOverride, setQualitativeQuestionOverride] =
+    useState(null);
+
+  const effectiveSurveyQuestionCount =
+    surveyQuestionOverride ?? totalSurveyQuestion;
+  const effectiveQualitativeQuestionCount =
+    qualitativeQuestionOverride ?? qualitativeQuestionCount;
+  const effectiveTotalQuestionCount =
+    effectiveSurveyQuestionCount + effectiveQualitativeQuestionCount;
+
+  const setTotalQuestionCount = (nextTotal) => {
+    if (nextTotal === null || nextTotal === undefined) {
+      setSurveyQuestionOverride(null);
+      setQualitativeQuestionOverride(null);
+      return;
+    }
+
+    const baseQual =
+      qualitativeQuestionOverride ?? qualitativeQuestionCount;
+    const nextSurvey = Math.max(0, Number(nextTotal) - Number(baseQual));
+    setSurveyQuestionOverride(nextSurvey);
+  };
 
   const leadershipStaffDevQuestionCount = useMemo(() => {
     return Object.keys(overviewData?.leadership_staff_dev_competency || {})
@@ -105,14 +194,12 @@ const SurveyFeedback = ({ overviewData }) => {
 
           <ul className="survey-feedback-bullets">
             <li>
-              Feedback provided by each Respondent is a combination of scores
-              and comments -
+              Feedback provided by each Respondent -
             </li>
           </ul>
           <ul className="survey-feedback-subpoints">
             <li>
-              Ratings on a scale of 1 to 5 (1- Strongly Disagree, 2-Disagree, 3-
-              No View, 4-Agree, 5-Strongly Agree)
+              Extent of agreement on a scale of 1 to 5 (1- Strongly Disagree, 2-Disagree, 3- No View, 4-Agree, 5-Strongly Agree)
             </li>
             <li>Qualitative Comments</li>
           </ul>
@@ -139,15 +226,29 @@ const SurveyFeedback = ({ overviewData }) => {
             </li>
             <li>
               Total number of questions –{" "}
-              <strong>{totalSurveyQuestion + qualitativeQuestionCount}</strong>{" "}
-              ({totalSurveyQuestion} survey questions +{" "}
-              {qualitativeQuestionCount} qualitative questions)
+              <strong>
+                <EditableCount
+                  value={effectiveTotalQuestionCount}
+                  onChange={setTotalQuestionCount}
+                />
+              </strong>{" "}
+              (
+              <EditableCount
+                value={effectiveSurveyQuestionCount}
+                onChange={setSurveyQuestionOverride}
+              />{" "}
+              survey questions +{" "}
+              <EditableCount
+                value={effectiveQualitativeQuestionCount}
+                onChange={setQualitativeQuestionOverride}
+              />{" "}
+              qualitative questions)
             </li>
           </ul>
 
           <ul className="survey-feedback-subpoints survey-structure__sub">
             <li>
-              The <strong>{totalSurveyQuestion} survey questions</strong> were
+              The <strong>{effectiveSurveyQuestionCount} survey questions</strong> were
               clustered into
               <strong> 5 competencies</strong> as indicated below
             </li>
@@ -243,7 +344,13 @@ const SurveyFeedback = ({ overviewData }) => {
     );
 
     return out;
-  }, [overviewData?.total_response, totalSurveyQuestion]);
+  }, [
+    overviewData?.total_response,
+    totalSurveyQuestion,
+    effectiveSurveyQuestionCount,
+    effectiveQualitativeQuestionCount,
+    effectiveTotalQuestionCount,
+  ]);
 
   return (
     // <div className="section-page-container">

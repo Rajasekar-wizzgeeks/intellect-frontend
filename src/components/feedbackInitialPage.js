@@ -6,10 +6,14 @@ const FeedbackInitialPage = ({ initialName = "", date = "" }) => {
   const [name, setName] = useState(initialName);
   const [dateValue, setDateValue] = useState(date);
 
+  const [isDateEditing, setIsDateEditing] = useState(false);
+  const [dateDraft, setDateDraft] = useState(date);
+
 
   useEffect(() => {
     setName(initialName);
     setDateValue(date);
+    setDateDraft(date);
   }, [initialName, date]);
 
   return (
@@ -55,7 +59,50 @@ const FeedbackInitialPage = ({ initialName = "", date = "" }) => {
                 {name && name.trim().length > 0 ? name : "\u00A0"}
               </span>
             </div>
-            <div className="feedback-initial-date">{dateValue || ""}</div>
+            <div
+              className="feedback-initial-date"
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setDateDraft(dateValue || "");
+                setIsDateEditing(true);
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              {isDateEditing ? (
+                <input
+                  value={dateDraft}
+                  onChange={(e) => setDateDraft(e.target.value)}
+                  onBlur={() => {
+                    setDateValue(dateDraft);
+                    setIsDateEditing(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      setDateValue(dateDraft);
+                      setIsDateEditing(false);
+                    } else if (e.key === "Escape") {
+                      e.preventDefault();
+                      setDateDraft(dateValue || "");
+                      setIsDateEditing(false);
+                    }
+                  }}
+                  autoFocus
+                  style={{
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    padding: 0,
+                    margin: 0,
+                    font: "inherit",
+                    color: "inherit",
+                    width: "100%",
+                  }}
+                />
+              ) : (
+                dateValue || ""
+              )}
+            </div>
           </div>
           </div>
         </div>

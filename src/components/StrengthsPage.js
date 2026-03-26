@@ -15,7 +15,7 @@ const StrengthsPage = ({
   managerTitle = "Manager Rating",
   managerSubTitle = "(Ratings > 4 Only)",
   arcColor = "var(--color-green-mid)",
-  improvementsTitle = "Areas of Improvement",
+  improvementsTitle = "Opportunities For Further Development",
   improvementsGroupTitle = "Teachers and Office Staff",
   improvementsGroupSubTitle = "(Ratings < 4.5 Only)",
   improvementsManagerTitle = "Manager Rating",
@@ -220,7 +220,7 @@ const StrengthsPage = ({
                       <div className="sp-col__header">
                         <div className="sp-col__header-title">{groupTitle}</div>
                       </div>
-                      <div className="sp-col__header-sub">{groupSubTitle}</div>
+                      {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
                       <div className="sp-col__body" style={{ height: 330 }}>
                         {includeGroup && groupToRender.length ? (
@@ -240,7 +240,7 @@ const StrengthsPage = ({
                       <div className="sp-col__header sp-col__header--manager">
                         <div className="sp-col__header-title">{managerTitle}</div>
                       </div>
-                      <div className="sp-col__header-sub">{managerSubTitle}</div>
+                      {/* <div className="sp-col__header-sub">{managerSubTitle}</div> */}
 
                       <div className="sp-col__body sp-col__body--manager">
                         {slice.map((it, idx) => (
@@ -416,7 +416,7 @@ const StrengthsPage = ({
                   <div className="sp-col__header">
                     <div className="sp-col__header-title">{groupTitle}</div>
                   </div>
-                  <div className="sp-col__header-sub">{groupSubTitle}</div>
+                  {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
                   <div className="sp-col__body" style={{ height: bodyHeight }}>
                     {showGroup &&
@@ -451,7 +451,7 @@ const StrengthsPage = ({
                   <div className="sp-col__header sp-col__header--manager">
                     <div className="sp-col__header-title">{managerTitle}</div>
                   </div>
-                  <div className="sp-col__header-sub">{managerSubTitle}</div>
+                  {/* <div className="sp-col__header-sub">{managerSubTitle}</div> */}
 
                   <div className="sp-col__body sp-col__body--manager">
                     {managerSlice.map((it, idx) => (
@@ -506,9 +506,9 @@ const StrengthsPage = ({
                     {improvementsGroupTitle}
                   </div>
                 </div>
-                <div className="sp-col__header-sub">
+                {/* <div className="sp-col__header-sub">
                   {improvementsGroupSubTitle}
-                </div>
+                </div> */}
 
                 <div className="sp-col__body" style={{ height: bodyHeight }}>
                   {improvementPoints.length ===
@@ -547,9 +547,9 @@ const StrengthsPage = ({
                     {improvementsManagerTitle}
                   </div>
                 </div>
-                <div className="sp-col__header-sub">
+                {/* <div className="sp-col__header-sub">
                   {improvementsManagerSubTitle}
-                </div>
+                </div> */}
 
                 <div className="sp-col__body sp-col__body--manager">
                   {effectiveImprovementsManagerItems.map((it, idx) => (

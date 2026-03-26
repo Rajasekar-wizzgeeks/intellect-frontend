@@ -13,6 +13,10 @@ const ImmediateActionSummary = memo(function ImmediateActionSummary({
   onSaveItem,
 }) {
   const [editing, setEditing] = useState(null); 
+  const [isStopHeaderEditing, setIsStopHeaderEditing] = useState(false);
+  const [stopHeaderText, setStopHeaderText] = useState(
+    immediateActionSummary?.stopHeaderText || "WATCH-FORS - SUGGESTIONS TO MINIMIZE",
+  );
 
   if (!immediateActionSummary) return null;
 
@@ -154,8 +158,27 @@ const ImmediateActionSummary = memo(function ImmediateActionSummary({
         </div>
 
         <div className="cd-ia-col" role="rowgroup">
-          <div className="cd-ia-col__head cd-ia-col__head--stop" role="row">
-            STOP
+          <div
+            className="cd-ia-col__head cd-ia-col__head--stop"
+            role="row"
+            style={{ textTransform: "capitalize", cursor: "pointer" }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setIsStopHeaderEditing(true);
+            }}
+          >
+            {isStopHeaderEditing ? (
+              <EditableIaCell
+                value={stopHeaderText}
+                onSave={(newValue) => {
+                  setStopHeaderText(String(newValue ?? ""));
+                  setIsStopHeaderEditing(false);
+                }}
+                onCancel={() => setIsStopHeaderEditing(false)}
+              />
+            ) : (
+              stopHeaderText
+            )}
           </div>
           <div
             className="cd-ia-col__body cd-ia-col__body--stop"
@@ -400,6 +423,7 @@ const ContinueDoingGrid = ({
 
 const ContinueDoingPage = ({
   title = "What the Nominee Should “Continue Doing”…",
+  subtitle,
   columns = [],
   footnote = "* This excludes self feedback",
   immediateActionSummary,
@@ -545,6 +569,7 @@ const ContinueDoingPage = ({
           <div className="continue-doing-page">
             <FeedbackCommonHeader
               title={title}
+              subtitle={subtitle}
               titleWidth="100"
               className="cd-header"
             />
@@ -759,11 +784,12 @@ const ContinueDoingPage = ({
       <FeedbackCommonHeader
         key="cd-hdr"
         title={title}
+        subtitle={subtitle}
         titleWidth="100"
         className="cd-header"
       />
     );
-  }, [title]);
+  }, [title, subtitle]);
 
   return (
     // <div className="section-page-container">

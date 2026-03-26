@@ -173,10 +173,15 @@
   letter-spacing: 0.8px;
 }
 
+
+
+
 .cd-ia-col__head--continue,
 .cd-ia-col__head--start,
 .cd-ia-col__head--stop {
   background: linear-gradient(90deg, #0d6fb3 0%, #0a3a73 100%);
+  padding: 8px;
+  text-align: center;
 }
 
 .cd-ia-col__body {
