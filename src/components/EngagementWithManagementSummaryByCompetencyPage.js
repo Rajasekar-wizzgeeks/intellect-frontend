@@ -33,6 +33,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
   comparisonTitle = "Comparison of Average Scores – 2024 Vs 2025",
   comparisonAverage,
   managerComparisonAverage,
+  showComparisonTable = true,
   comparisonNotes = [
     "The table highlights areas where there is a slight increase or decrease in scores compared to last year. Only those areas with an increase or decrease above 0.1 in Team Score are shown, while differences smaller than those indicated have been excluded.",
   ],
@@ -448,10 +449,11 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     );
 
     if (
-      (localComparisonAverage &&
+      showComparisonTable &&
+      ((localComparisonAverage &&
         Object.keys(localComparisonAverage).length > 0) ||
-      (managerComparisonAverage &&
-        Object.keys(managerComparisonAverage).length > 0)
+        (managerComparisonAverage &&
+          Object.keys(managerComparisonAverage).length > 0))
     ) {
       out.push(
         <div key="ewm-compare" className="sbc-compare">
@@ -581,6 +583,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     localComparisonNotes,
     localComparisonAverage,
     localManagerComparisonAverage,
+    showComparisonTable,
     handleCellBlur,
     handleNoteCommit,
     file2Year,

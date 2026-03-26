@@ -21,6 +21,7 @@ const Feedback360Report = () => {
   const [feedbackOverallData, setFeedbackOverallData] = useState(null);
   const { setHeaderName } = useOutletContext();
   const [isUploading, setIsUploading] = useState(false);
+  const [showComparisonTable, setShowComparisonTable] = useState(true);
   const currentYearFileInputRef = useRef(null);
   const previousYearFileInputRef = useRef(null);
   const previousSecondYearFileInputRef = useRef(null);
@@ -615,6 +616,17 @@ const Feedback360Report = () => {
     <div className="feedbackreport-main-container">
       <GlobalLoader visible={isUploading} />
       <div className="feedbackreport-toolbar">
+        <label className="feedbackreport-switch" title="Show comparison table">
+          <input
+            type="checkbox"
+            checked={showComparisonTable}
+            onChange={(e) => setShowComparisonTable(e.target.checked)}
+          />
+          <span className="feedbackreport-switch__track" aria-hidden="true">
+            <span className="feedbackreport-switch__thumb" />
+          </span>
+          <span className="feedbackreport-switch__label">Show comparison table</span>
+        </label>
         <button
           onClick={downloadPdfSplitByHeader}
           className="feedbackreport-btn feedbackreport-btn--download"
@@ -1055,6 +1067,7 @@ const Feedback360Report = () => {
         file3Year={file3Year}
         setAverageCompentency={setAverageCompentency}
         totalResponse={feedbackOverallData?.total_response}
+        showComparisonTable={showComparisonTable}
       />
 
       <div className="section-page pdf-section">
