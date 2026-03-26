@@ -1086,7 +1086,8 @@ const Feedback360Report = () => {
         }
       />
       <ContinueDoingPage
-        title="Most Predominant Leadership Trait"
+        title={"Predominant Leadership Trait"}
+        subtitle={"- All Comments"}
         columns={buildThreeTextColumns(
           feedbackOverallData?.predominant_leader_thing,
         )}

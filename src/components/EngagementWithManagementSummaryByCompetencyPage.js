@@ -423,13 +423,13 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
               </div>
             </>
           }
-          right={
-            localOverallScore !== undefined && localOverallScore !== null ? (
-              <div className="sbc-header__pill">
-                Overall Score – {formatOverallScore(localOverallScore)}/5
-              </div>
-            ) : null
-          }
+          // right={
+          //   localOverallScore !== undefined && localOverallScore !== null ? (
+          //     <div className="sbc-header__pill">
+          //       Overall Score – {formatOverallScore(localOverallScore)}/5
+          //     </div>
+          //   ) : null
+          // }
           className="sbc-header"
         />
         <div key="ewm-chart" className="sbc-chart">

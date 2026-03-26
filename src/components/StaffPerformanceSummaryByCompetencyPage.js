@@ -230,13 +230,13 @@ const StaffPerformanceSummaryByCompetencyPage = ({
           <FeedbackCommonHeader
             key={`${keyPrefix}-hdr`}
             title={buildHeaderTitleNode(sectionTitle)}
-            right={
-              currentOverall !== null && currentOverall !== undefined ? (
-                <div className="sbc-header__pill">
-                  Overall Score – {formatOverallScore2(currentOverall)}/5
-                </div>
-              ) : null
-            }
+            // right={
+            //   currentOverall !== null && currentOverall !== undefined ? (
+            //     <div className="sbc-header__pill">
+            //       Overall Score – {formatOverallScore2(currentOverall)}/5
+            //     </div>
+            //   ) : null
+            // }
             className={`sbc-header  `}
           />
 

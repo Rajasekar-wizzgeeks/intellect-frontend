@@ -178,13 +178,13 @@ const SummaryByCompetencyPage = ({
               </div>
             </>
           }
-          right={
-            overallScore !== undefined && overallScore !== null ? (
-              <div className="sbc-header__pill">
-                Overall Score – {rightCultureCompetencyOverallScore}/5
-              </div>
-            ) : null
-          }
+          // right={
+          //   overallScore !== undefined && overallScore !== null ? (
+          //     <div className="sbc-header__pill">
+          //       Overall Score – {rightCultureCompetencyOverallScore}/5
+          //     </div>
+          //   ) : null
+          // }
           className="sbc-header"
         />
         <div key="sbc-chart-1" className="sbc-chart">
@@ -231,14 +231,14 @@ const SummaryByCompetencyPage = ({
               </div>
             </>
           }
-          right={
-            leadershipOverallScore !== undefined &&
-            leadershipOverallScore !== null ? (
-              <div className="sbc-header__pill">
-                Overall Score – {leadershipCompetencyOverallScore}/5
-              </div>
-            ) : null
-          }
+          // right={
+          //   leadershipOverallScore !== undefined &&
+          //   leadershipOverallScore !== null ? (
+          //     <div className="sbc-header__pill">
+          //       Overall Score – {leadershipCompetencyOverallScore}/5
+          //     </div>
+          //   ) : null
+          // }
           className="sbc-header-leadership"
         />
         <div key="sbc-chart-2" className="sbc-chart">

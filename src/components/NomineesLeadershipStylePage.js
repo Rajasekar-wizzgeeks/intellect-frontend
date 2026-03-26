@@ -199,7 +199,7 @@ const NomineesLeadershipStyleAdjectives = React.memo(
           <div className="nls-adj__title-2">
             {"Frequently Mentioned Adjectives"}
           </div>
-          <div className="nls-adj__subtitle">{adjectivesSubtitle}</div>
+          {/* <div className="nls-adj__subtitle">{adjectivesSubtitle}</div> */}
           <div className="nls-adj__underline" aria-hidden="true" />
         </div>
 

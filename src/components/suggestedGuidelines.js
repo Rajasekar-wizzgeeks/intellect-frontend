@@ -8,7 +8,7 @@ import "../styles/competencyBiggerPicture.scss";
 const SuggestedGuidelines = ({
   title = "Your Competency Summary: The Bigger Picture",
   overallScore,
-  note = "Snapshot of average / mean score for each Competency based on inputs from respondent's vis-a vis your self-rating",
+  note = "Snapshot of average / mean for each Competency based on inputs from respondent's vis-a vis your self-rating (Remember this is not a score but the respondent’s extent of agreement)",
   items = [],
   averageCompentency,
 }) => {
@@ -191,9 +191,7 @@ const SuggestedGuidelines = ({
               action
             </li>
             <li>
-              To gain more clarity on the report or get more ideas to grow, feel
-              free to speak to a mentor or even a professional you may consider
-              a role model in specific leadership competencies
+              To gain more clarity on the report or get more ideas to grow, feel free to speak to HR / a mentor or even a professional you may consider a role model in specific leadership competencies
             </li>
           </ul>
         </div>
@@ -214,14 +212,14 @@ const SuggestedGuidelines = ({
             </div>
           </>
         }
-        right={
-          averageCompentencyOverallScore !== undefined &&
-          averageCompentencyOverallScore !== null ? (
-            <div className="cbp-header__pill">
-              Overall Score – {averageCompentencyOverallScore}/5
-            </div>
-          ) : null
-        }
+        // right={
+        //   averageCompentencyOverallScore !== undefined &&
+        //   averageCompentencyOverallScore !== null ? (
+        //     <div className="cbp-header__pill">
+        //       Overall Score – {averageCompentencyOverallScore}/5
+        //     </div>
+        //   ) : null
+        // }
       />,
     );
 

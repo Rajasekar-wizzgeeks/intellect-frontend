@@ -188,9 +188,9 @@ const StopDoingPage = ({
   left = [],
   right = [],
   traitsTitle = "Most Predominant Leadership Trait",
-  traitsSubtitle = "(Traits that occur more than once)",
+  traitsSubtitle = "(Most frequently occurring leadership traits are shown here)",
   traits = [],
-  footnote = "* This excludes self feedback",
+  footnote = "* This excludes self feedback ; The larger fonts indicate more number of responses",
 }) => {
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
