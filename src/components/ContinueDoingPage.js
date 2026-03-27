@@ -65,7 +65,7 @@ const ImmediateActionSummary = memo(function ImmediateActionSummary({
               />
             ) : null}
 
-            {iaCols.continue.map((t, i) => (
+            {iaCols.continue?.slice(0,3).map((t, i) => (
               <div
                 key={i}
                 className="cd-ia-bullet"
@@ -124,7 +124,7 @@ const ImmediateActionSummary = memo(function ImmediateActionSummary({
               />
             ) : null}
 
-            {iaCols.start.map((t, i) => (
+            {iaCols.start?.slice(0,3).map((t, i) => (
               <div
                 key={i}
                 className="cd-ia-bullet"
@@ -202,7 +202,7 @@ const ImmediateActionSummary = memo(function ImmediateActionSummary({
               />
             ) : null}
 
-            {iaCols.stop.map((t, i) => (
+            {iaCols.stop?.slice(0,3).map((t, i) => (
               <div
                 key={i}
                 className="cd-ia-bullet"
