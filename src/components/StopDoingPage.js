@@ -4,7 +4,6 @@ import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/stopDoingPage.scss";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import GroupCommentsPopup from "./GroupCommentsPopup";
 import { createRoot } from "react-dom/client";
 import measurementManager from "./measurementManager";
 
@@ -61,26 +60,7 @@ const EditableTrait = ({ value, onSave }) => {
 };
 
 const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }) => {
-  const [editing, setEditing] = useState(null); // { idx, isNew? }
-
-  const displayTraits = useMemo(() => {
-    const base = Array.isArray(traits) ? traits : [];
-    const out = base.map((value, actualIdx) => ({
-      value,
-      actualIdx,
-      isVirtual: false,
-    }));
-
-    if (editing?.isNew && typeof editing?.idx === "number") {
-      const insertAt = Math.min(Math.max(editing.idx, 0), out.length);
-      out.splice(insertAt, 0, {
-        value: "",
-        actualIdx: -1,
-        isVirtual: true,
-      });
-    }
-    return out;
-  }, [traits, editing]);
+  const [editing, setEditing] = useState(null); // { idx }
 
   return (
     <div className="sd-traits">
@@ -95,73 +75,35 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
         role="list"
         aria-label="Most predominant traits"
       >
-        {displayTraits.map((it, displayIdx) => (
+        {traits.map((t, idx) => (
           <div
-            key={`${String(it?.value ?? "")}-${displayIdx}-${it?.isVirtual ? "v" : "r"}`}
-            className={`sd-trait-card sd-trait-card--${displayIdx < 4 ? "lg" : displayIdx < 8 ? "md" : "sm"}`.trim()}
+            key={`${String(t ?? "")}-${idx}`}
+            className={`sd-trait-card sd-trait-card--${idx < 4 ? "lg" : idx < 8 ? "md" : "sm"}`.trim()}
             role="listitem"
-            onDoubleClick={() => {
-              if (it?.isVirtual) return;
-              setEditing({ idx: it.actualIdx, isNew: false });
-            }}
+            onDoubleClick={() => setEditing({ idx })}
             style={{ cursor: "pointer" }}
           >
-            {(editing?.isNew
-              ? it?.isVirtual
-              : editing?.idx === it.actualIdx) ? (
-              <>
-                <EditableTrait
-                  key={displayIdx}
-                  value={editing?.isNew ? "" : it.value}
-                  onSave={(newValue) => {
-                    const next = Array.isArray(traits) ? [...traits] : [];
-                    const cleaned = String(newValue ?? "").trim();
+            {editing?.idx === idx ? (
+              <EditableTrait
+                key={idx}
+                value={t}
+                onSave={(newValue) => {
+                  const next = Array.isArray(traits) ? [...traits] : [];
+                  const cleaned = String(newValue ?? "").trim();
 
-                    if (editing?.isNew) {
-                      if (!cleaned) {
-                        setEditing(null);
-                        return;
-                      }
-                      const insertAt = Math.min(
-                        Math.max(editing.idx, 0),
-                        next.length,
-                      );
-                      next.splice(insertAt, 0, newValue);
-                      onTraitsChange(next);
-                      setEditing(null);
-                      return;
-                    }
+                  if (!cleaned) {
+                    next.splice(idx, 1);
+                  } else {
+                    next[idx] = newValue;
+                  }
 
-                    if (!cleaned) {
-                      next.splice(it.actualIdx, 1);
-                    } else {
-                      next[it.actualIdx] = newValue;
-                    }
-
-                    onTraitsChange(next);
-                    setEditing(null);
-                  }}
-                />
-                {!editing?.isNew ? (
-                  <button
-                    type="button"
-                    className="sd-trait-add"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const insertAt = it.actualIdx + 1;
-                      setEditing({ idx: insertAt, isNew: true });
-                    }}
-                    aria-label="Add trait"
-                    title="Add trait"
-                  >
-                    +
-                  </button>
-                ) : null}
-              </>
+                  onTraitsChange(next);
+                  setEditing(null);
+                }}
+              />
             ) : (
-              <p className="sd-trait-card-text" title={capitalize(it.value)}>
-                {formatTraitText(it.value)}
+              <p className="sd-trait-card-text" title={capitalize(t)}>
+                {formatTraitText(t)}
               </p>
             )}
           </div>
@@ -172,7 +114,7 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
 };
 
 const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChunk, renderCell}) => {
-  const [editing, setEditing] = useState(null); // { colIdx, rowIdx, isNew? }
+  const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
 
   return (
     <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 50 :0}} aria-label={title}>
@@ -185,79 +127,38 @@ const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChu
               <div
                 className="sd-cell"
                 role="cell"
-                onDoubleClick={() => setEditing({ colIdx, rowIdx, isNew: false })}
+                onDoubleClick={() => setEditing({ colIdx, rowIdx })}
                 style={{ cursor: "pointer" }}
               >
                 {editing?.colIdx === colIdx && editing?.rowIdx === rowIdx ? (
-                  <>
-                    <EditableCell
-                      key={`${colIdx}-${rowIdx}`}
-                      value={editing?.isNew ? "" : columns[colIdx]?.[rowIdx]}
-                      onSave={(newValue) => {
-                        const absoluteRowIdx = rowOffset + rowIdx;
+                  <EditableCell
+                    key={`${colIdx}-${rowIdx}`}
+                    value={columns[colIdx]?.[rowIdx]}
+                    onSave={(newValue) => {
+                      const absoluteRowIdx = rowOffset + rowIdx;
+                      onColumnsChange((prevColumns) => {
+                        const nextColumns = Array.isArray(prevColumns)
+                          ? [...prevColumns]
+                          : [];
+                        if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
+                        nextColumns[colIdx] = [...nextColumns[colIdx]];
+
                         const cleaned = String(newValue ?? "").trim();
-
-                        if (editing?.isNew) {
-                          if (!cleaned) {
-                            setEditing(null);
-                            return;
+                        if (!cleaned) {
+                          if (
+                            absoluteRowIdx >= 0 &&
+                            absoluteRowIdx < nextColumns[colIdx].length
+                          ) {
+                            nextColumns[colIdx].splice(absoluteRowIdx, 1);
                           }
-                          onColumnsChange((prevColumns) => {
-                            const nextColumns = Array.isArray(prevColumns)
-                              ? [...prevColumns]
-                              : [];
-                            const col = Array.isArray(nextColumns[colIdx])
-                              ? [...nextColumns[colIdx]]
-                              : [];
-                            const boundedInsertAt = Math.min(
-                              Math.max(absoluteRowIdx, 0),
-                              col.length,
-                            );
-                            col.splice(boundedInsertAt, 0, newValue);
-                            nextColumns[colIdx] = col;
-                            return nextColumns;
-                          });
-                          setEditing(null);
-                          return;
+                        } else {
+                          nextColumns[colIdx][absoluteRowIdx] = newValue;
                         }
-
-                        onColumnsChange((prevColumns) => {
-                          const nextColumns = Array.isArray(prevColumns)
-                            ? [...prevColumns]
-                            : [];
-                          if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
-                          nextColumns[colIdx] = [...nextColumns[colIdx]];
-
-                          if (!cleaned) {
-                            if (
-                              absoluteRowIdx >= 0 &&
-                              absoluteRowIdx < nextColumns[colIdx].length
-                            ) {
-                              nextColumns[colIdx].splice(absoluteRowIdx, 1);
-                            }
-                          } else {
-                            nextColumns[colIdx][absoluteRowIdx] = newValue;
-                          }
-                          return nextColumns;
-                        });
-                        setEditing(null);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="sd-row-add"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const insertAt = rowIdx + 1;
-                        setEditing({ colIdx, rowIdx: insertAt, isNew: true });
-                      }}
-                      aria-label="Add row"
-                      title="Add row"
-                    >
-                      +
-                    </button>
-                  </>
+                        return nextColumns;
+                      });
+                      setEditing(null);
+                    }}
+                  />
                 ) : (
                   (renderCell
                     ? renderCell({
@@ -329,18 +230,7 @@ const StopDoingPage = ({
   const [localGroups, setLocalGroups] = useState(() =>
     Array.isArray(groups) ? groups : [],
   );
-  const groupsDirtyRef = useRef(false);
   const lastGroupsSerializedRef = useRef(serializeGroups(groups));
-
-  const [popupGroupIdx, setPopupGroupIdx] = useState(null);
-
-  const popupGroup =
-    popupGroupIdx !== null &&
-    Array.isArray(localGroups) &&
-    popupGroupIdx >= 0 &&
-    popupGroupIdx < localGroups.length
-      ? localGroups[popupGroupIdx]
-      : null;
 
   const [rowRanges, setRowRanges] = useState(null);
 
@@ -356,57 +246,14 @@ const StopDoingPage = ({
   }, [columns]);
 
   useEffect(() => {
-    setPopupGroupIdx(null);
-  }, [groups]);
-
-  useEffect(() => {
     const nextSerialized = serializeGroups(groups);
     const prevSerialized = lastGroupsSerializedRef.current;
 
     if (!nextSerialized || nextSerialized === prevSerialized) return;
 
     lastGroupsSerializedRef.current = nextSerialized;
-    groupsDirtyRef.current = false;
     setLocalGroups(Array.isArray(groups) ? groups : []);
   }, [groups, serializeGroups]);
-
-  const addCommentToPopupGroup = useCallback(
-    (text) => {
-      if (popupGroupIdx === null) return;
-      groupsDirtyRef.current = true;
-      setLocalGroups((prev) => {
-        const next = Array.isArray(prev) ? [...prev] : [];
-        const g = next[popupGroupIdx];
-        if (!g) return prev;
-        const list = Array.isArray(g.comments_belong_to_this_group)
-          ? [...g.comments_belong_to_this_group]
-          : [];
-        list.push(text);
-        next[popupGroupIdx] = { ...g, comments_belong_to_this_group: list };
-        return next;
-      });
-    },
-    [popupGroupIdx],
-  );
-
-  const deleteCommentFromPopupGroup = useCallback(
-    (idx) => {
-      if (popupGroupIdx === null) return;
-      groupsDirtyRef.current = true;
-      setLocalGroups((prev) => {
-        const next = Array.isArray(prev) ? [...prev] : [];
-        const g = next[popupGroupIdx];
-        if (!g) return prev;
-        const list = Array.isArray(g.comments_belong_to_this_group)
-          ? [...g.comments_belong_to_this_group]
-          : [];
-        if (idx >= 0 && idx < list.length) list.splice(idx, 1);
-        next[popupGroupIdx] = { ...g, comments_belong_to_this_group: list };
-        return next;
-      });
-    },
-    [popupGroupIdx],
-  );
 
   const maxRows = useMemo(() => {
     if (!Array.isArray(localColumns)) return 0;
@@ -638,26 +485,12 @@ const StopDoingPage = ({
                       )
                         ? localGroups[grpIdx].comments_belong_to_this_group
                         : [];
-                      
-                      const countText = list.length > 0 ? `(x${list.length})` : "";
 
                       return (
                         <span className="cd-group-cell">
                           <ReactMarkdown rehypePlugins={[rehypeRaw]}>
                             {match ? String(match[1] ?? "").trim() : raw}
                           </ReactMarkdown>
-                          {countText && (
-                            <button
-                              type="button"
-                              className="cd-xcount-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPopupGroupIdx(grpIdx);
-                              }}
-                            >
-                              {countText}
-                            </button>
-                          )}
                         </span>
                       );
                     }
@@ -708,14 +541,6 @@ const StopDoingPage = ({
         pagePadding={0}
         contentClassName="stop-doing-page"
         componentId="stop-doing"
-      />
-      <GroupCommentsPopup
-        open={popupGroupIdx !== null}
-        group={popupGroup}
-        onClose={() => setPopupGroupIdx(null)}
-        onAddComment={addCommentToPopupGroup}
-        onDeleteComment={deleteCommentFromPopupGroup}
-        itemStyle={{ display: 'flex' }}
       />
     </>
     // </div>

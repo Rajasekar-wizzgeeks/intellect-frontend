@@ -71,28 +71,10 @@
   font-size: 11px;
   line-height: 1.25;
   color: #111;
-  position: relative;
 
   p{
     margin: 0;
   }
-}
-
-.cd-row-add {
-  position: absolute;
-  top: 50%;
-  right: -28px;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 1px solid var(--feedback-initial-underline-color, #d65a5a);
-  background: transparent;
-  color: var(--feedback-initial-underline-color, #d65a5a);
-  font-weight: 900;
-  line-height: 1;
-  padding: 0;
-  cursor: pointer;
 }
 .cd-edit-textarea {
   width: 100%;
@@ -131,18 +113,6 @@
 
 .cd-group-cell {
   display: inline;
-}
-
-.cd-xcount-btn {
-  border: none;
-  background: transparent;
-  padding: 0;
-  margin-left: 4px;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-  font-weight: 800;
 }
 
 .cd-group-modal-overlay {
