@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
+import GroupCommentsPopup from "./GroupCommentsPopup";
 import "../styles/continueDoingPage.scss";
 import { createRoot } from "react-dom/client";
 import measurementManager from "./measurementManager";
@@ -300,8 +301,9 @@ const ContinueDoingGrid = ({
   rowOffset = 0,
   items,
   setMeasureTick,
+  renderCell,
 }) => {
-  const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+  const [editing, setEditing] = useState(null); // { colIdx, rowIdx, isNew? }
 
   const rows = useMemo(() => {
     if (Array.isArray(items) && items.length) {
@@ -315,8 +317,22 @@ const ContinueDoingGrid = ({
         out.push({ colIdx, rowIdx });
       });
     });
+
+    if (
+      editing?.isNew &&
+      typeof editing?.colIdx === "number" &&
+      typeof editing?.rowIdx === "number"
+    ) {
+      const exists = out.some(
+        (r) => r.colIdx === editing.colIdx && r.rowIdx === editing.rowIdx,
+      );
+      if (!exists) {
+        out.push({ colIdx: editing.colIdx, rowIdx: editing.rowIdx, isVirtual: true });
+        out.sort((a, b) => (a.colIdx - b.colIdx) || (a.rowIdx - b.rowIdx));
+      }
+    }
     return out;
-  }, [items, columns]);
+  }, [items, columns, editing]);
 
   return (
     <div className="cd-grid" role="table" aria-label={title}>
@@ -364,55 +380,104 @@ const ContinueDoingGrid = ({
             className="cd-cell"
             role="cell"
             onDoubleClick={() =>
-              setEditing({ colIdx: row.colIdx, rowIdx: row.rowIdx })
+              setEditing({ colIdx: row.colIdx, rowIdx: row.rowIdx, isNew: false })
             }
             style={{ cursor: "pointer" }}
           >
-            {editing?.colIdx === row.colIdx &&
-            editing?.rowIdx === row.rowIdx ? (
-              <EditableCell
-                value={columns?.[row.colIdx]?.[row.rowIdx]}
-                onSave={(newValue) => {
-                  const absoluteRowIdx = rowOffset + row.rowIdx;
-                  const cleaned = String(newValue ?? "").trim();
-                  if (!cleaned) {
-                    onColumnsChange((prevColumns) => {
-                      const nextColumns = Array.isArray(prevColumns)
-                        ? [...prevColumns]
-                        : [];
-                      if (
-                        Array.isArray(nextColumns[row.colIdx]) &&
-                        absoluteRowIdx >= 0 &&
-                        absoluteRowIdx < nextColumns[row.colIdx].length
-                      ) {
-                        const updatedCol = [...nextColumns[row.colIdx]];
-                        updatedCol.splice(absoluteRowIdx, 1);
-                        nextColumns[row.colIdx] = updatedCol;
+            {editing?.colIdx === row.colIdx && editing?.rowIdx === row.rowIdx ? (
+              <>
+                <EditableCell
+                  value={editing?.isNew ? "" : columns?.[row.colIdx]?.[row.rowIdx]}
+                  onSave={(newValue) => {
+                    const absoluteRowIdx = rowOffset + row.rowIdx;
+                    const cleaned = String(newValue ?? "").trim();
+
+                    if (editing?.isNew) {
+                      if (!cleaned) {
+                        setEditing(null);
+                        return;
                       }
-                      return nextColumns;
-                    });
-                  } else {
-                    onColumnsChange((prevColumns) => {
-                      const nextColumns = Array.isArray(prevColumns)
-                        ? [...prevColumns]
-                        : [];
-                      if (!Array.isArray(nextColumns[row.colIdx])) {
-                        nextColumns[row.colIdx] = [];
-                      } else {
-                        nextColumns[row.colIdx] = [...nextColumns[row.colIdx]];
-                      }
-                      nextColumns[row.colIdx][absoluteRowIdx] = newValue;
-                      return nextColumns;
-                    });
-                  }
-                  setMeasureTick((t) => t + 1);
-                  setEditing(null);
-                }}
-              />
+                      onColumnsChange((prevColumns) => {
+                        const nextColumns = Array.isArray(prevColumns)
+                          ? [...prevColumns]
+                          : [];
+                        const col = Array.isArray(nextColumns[row.colIdx])
+                          ? [...nextColumns[row.colIdx]]
+                          : [];
+                        const boundedInsertAt = Math.min(
+                          Math.max(absoluteRowIdx, 0),
+                          col.length,
+                        );
+                        col.splice(boundedInsertAt, 0, newValue);
+                        nextColumns[row.colIdx] = col;
+                        return nextColumns;
+                      });
+                      setMeasureTick((t) => t + 1);
+                      setEditing(null);
+                      return;
+                    }
+
+                    if (!cleaned) {
+                      onColumnsChange((prevColumns) => {
+                        const nextColumns = Array.isArray(prevColumns)
+                          ? [...prevColumns]
+                          : [];
+                        if (
+                          Array.isArray(nextColumns[row.colIdx]) &&
+                          absoluteRowIdx >= 0 &&
+                          absoluteRowIdx < nextColumns[row.colIdx].length
+                        ) {
+                          const updatedCol = [...nextColumns[row.colIdx]];
+                          updatedCol.splice(absoluteRowIdx, 1);
+                          nextColumns[row.colIdx] = updatedCol;
+                        }
+                        return nextColumns;
+                      });
+                    } else {
+                      onColumnsChange((prevColumns) => {
+                        const nextColumns = Array.isArray(prevColumns)
+                          ? [...prevColumns]
+                          : [];
+                        if (!Array.isArray(nextColumns[row.colIdx])) {
+                          nextColumns[row.colIdx] = [];
+                        } else {
+                          nextColumns[row.colIdx] = [...nextColumns[row.colIdx]];
+                        }
+                        nextColumns[row.colIdx][absoluteRowIdx] = newValue;
+                        return nextColumns;
+                      });
+                    }
+                    setMeasureTick((t) => t + 1);
+                    setEditing(null);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="cd-row-add"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const insertAt = row.rowIdx + 1;
+                    setEditing({ colIdx: row.colIdx, rowIdx: insertAt, isNew: true });
+                  }}
+                  aria-label="Add row"
+                  title="Add row"
+                >
+                  +
+                </button>
+              </>
             ) : (
-              <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                {String(columns?.[row.colIdx]?.[row.rowIdx] ?? "")}
-              </ReactMarkdown>
+              (renderCell
+                ? renderCell({
+                    colIdx: row.colIdx,
+                    rowIdx: row.rowIdx,
+                    value: columns?.[row.colIdx]?.[row.rowIdx],
+                  })
+                : (
+                    <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                      {String(columns?.[row.colIdx]?.[row.rowIdx] ?? "")}
+                    </ReactMarkdown>
+                  ))
             )}
           </div>
         </div>
@@ -425,14 +490,51 @@ const ContinueDoingPage = ({
   title = "What the Nominee Should “Continue Doing”…",
   subtitle,
   columns = [],
+  groups,
+  groupIndexMatrix,
   footnote = "* This excludes self feedback",
   immediateActionSummary,
   componentId,
   // continue: shouldReMeasure = false,
+  continue: isContinue = false,
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
   const [gridChunks, setGridChunks] = useState(null);
   const [measureTick, setMeasureTick] = useState(0);
+
+  const serializeGroups = useCallback((g) => {
+    const safe = Array.isArray(g)
+      ? g.map((row) => ({
+          representative_comment: String(row?.representative_comment ?? ""),
+          comments_belong_to_this_group: Array.isArray(
+            row?.comments_belong_to_this_group,
+          )
+            ? row.comments_belong_to_this_group.map((c) => String(c ?? ""))
+            : [],
+        }))
+      : [];
+    try {
+      return JSON.stringify(safe);
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const [localGroups, setLocalGroups] = useState(() =>
+    Array.isArray(groups) ? groups : [],
+  );
+  const groupsDirtyRef = useRef(false);
+  const lastGroupsSerializedRef = useRef(serializeGroups(groups));
+
+  const [popupGroupIdx, setPopupGroupIdx] = useState(null);
+
+  const popupGroup =
+    popupGroupIdx !== null &&
+    Array.isArray(localGroups) &&
+    popupGroupIdx >= 0 &&
+    popupGroupIdx < localGroups.length
+      ? localGroups[popupGroupIdx]
+      : null;
 
   const serializeIaColumns = (cols) => {
     const c = cols || {};
@@ -482,6 +584,59 @@ const ContinueDoingPage = ({
   useEffect(() => {
     setLocalColumns(columns);
   }, [columns]);
+
+  useEffect(() => {
+    setPopupGroupIdx(null);
+  }, [groups]);
+
+  useEffect(() => {
+    const nextSerialized = serializeGroups(groups);
+    const prevSerialized = lastGroupsSerializedRef.current;
+
+    if (!nextSerialized || nextSerialized === prevSerialized) return;
+
+    lastGroupsSerializedRef.current = nextSerialized;
+    groupsDirtyRef.current = false;
+    setLocalGroups(Array.isArray(groups) ? groups : []);
+  }, [groups, serializeGroups]);
+
+  const addCommentToPopupGroup = useCallback(
+    (text) => {
+      if (popupGroupIdx === null) return;
+      groupsDirtyRef.current = true;
+      setLocalGroups((prev) => {
+        const next = Array.isArray(prev) ? [...prev] : [];
+        const g = next[popupGroupIdx];
+        if (!g) return prev;
+        const list = Array.isArray(g.comments_belong_to_this_group)
+          ? [...g.comments_belong_to_this_group]
+          : [];
+        list.push(text);
+        next[popupGroupIdx] = { ...g, comments_belong_to_this_group: list };
+        return next;
+      });
+    },
+    [popupGroupIdx],
+  );
+
+  const deleteCommentFromPopupGroup = useCallback(
+    (idx) => {
+      if (popupGroupIdx === null) return;
+      groupsDirtyRef.current = true;
+      setLocalGroups((prev) => {
+        const next = Array.isArray(prev) ? [...prev] : [];
+        const g = next[popupGroupIdx];
+        if (!g) return prev;
+        const list = Array.isArray(g.comments_belong_to_this_group)
+          ? [...g.comments_belong_to_this_group]
+          : [];
+        if (idx >= 0 && idx < list.length) list.splice(idx, 1);
+        next[popupGroupIdx] = { ...g, comments_belong_to_this_group: list };
+        return next;
+      });
+    },
+    [popupGroupIdx],
+  );
 
   useEffect(() => {
     const cols = immediateActionSummary?.columns;
@@ -755,6 +910,58 @@ const ContinueDoingPage = ({
               rowOffset={currentOffset}
               items={chunk}
               setMeasureTick={setMeasureTick}
+              renderCell={
+                isContinue &&
+                Array.isArray(localGroups) &&
+                Array.isArray(groupIndexMatrix)
+                  ? ({ colIdx, rowIdx, value }) => {
+                      const raw = String(value ?? "");
+                      // Match the main text and the existing (xN) suffix
+                      const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
+                      const grpIdx = groupIndexMatrix?.[colIdx]?.[rowIdx];
+                      
+                      const list = Array.isArray(
+                        localGroups?.[grpIdx]?.comments_belong_to_this_group,
+                      )
+                        ? localGroups[grpIdx].comments_belong_to_this_group
+                        : [];
+                      
+                      const hasDynamicGroup = typeof grpIdx === "number" &&
+                        grpIdx >= 0 &&
+                        grpIdx < localGroups.length;
+
+                      if (!hasDynamicGroup) {
+                        return (
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                            {raw}
+                          </ReactMarkdown>
+                        );
+                      }
+
+                      const countText = list.length > 0 ? `(x${list.length})` : "";
+
+                      return (
+                        <span className="cd-group-cell">
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                            {match ? String(match[1] ?? "").trim() : raw}
+                          </ReactMarkdown>
+                          {countText && (
+                            <button
+                              type="button"
+                              className="cd-xcount-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPopupGroupIdx(grpIdx);
+                              }}
+                            >
+                              {countText}
+                            </button>
+                          )}
+                        </span>
+                      );
+                    }
+                  : undefined
+              }
             />
 
             {chunkIdx === chunksToUse.length - 1 && footnote && (
@@ -778,7 +985,7 @@ const ContinueDoingPage = ({
     }
 
     return out;
-  }, [localColumns, footnote, immediateActionSummary, title, gridChunks, iaColumns, saveIaItem]);
+  }, [localColumns, footnote, immediateActionSummary, title, gridChunks, iaColumns, saveIaItem, isContinue, localGroups, groupIndexMatrix]);
   const Header = useMemo(() => {
     return () => (
       <FeedbackCommonHeader
@@ -793,15 +1000,24 @@ const ContinueDoingPage = ({
 
   return (
     // <div className="section-page-container">
-    <AutoPaginatedSections
-      blocks={blocks}
-      pageWidth={794}
-      pageHeight={950}
-      pagePadding={0}
-      HeaderComponent={Header}
-      contentClassName="continue-doing-page"
-      componentId={autoPaginatedComponentId}
-    />
+    <>
+      <AutoPaginatedSections
+        blocks={blocks}
+        pageWidth={794}
+        pageHeight={950}
+        pagePadding={0}
+        HeaderComponent={Header}
+        contentClassName="continue-doing-page"
+        componentId={autoPaginatedComponentId}
+      />
+      <GroupCommentsPopup
+        open={popupGroupIdx !== null}
+        group={popupGroup}
+        onClose={() => setPopupGroupIdx(null)}
+        onAddComment={addCommentToPopupGroup}
+        onDeleteComment={deleteCommentFromPopupGroup}
+      />
+    </>
     // </div>
   );
 };

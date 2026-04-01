@@ -143,6 +143,35 @@ const Feedback360Report = () => {
     return cols;
   };
 
+  const buildThreeGroupColumns = (groups) => {
+    if (!Array.isArray(groups) || !groups.length) {
+      return { columns: [], indexMatrix: [] };
+    }
+
+    const cleaned = [];
+    groups.forEach((g, idx) => {
+      const t = String(g?.representative_comment || "")
+        .replace(/_x000D_\s*/gi, " ")
+        .trim();
+      if (!t || t === "-" || t === "--" || t === "---") return;
+      cleaned.push({ text: t, idx });
+    });
+
+    if (!cleaned.length) return { columns: [], indexMatrix: [] };
+
+    const columns = [[], [], []];
+    const indexMatrix = [[], [], []];
+    const rowsPerCol = Math.ceil(cleaned.length / 3);
+
+    cleaned.forEach((row, pos) => {
+      const colIdx = Math.min(2, Math.floor(pos / rowsPerCol));
+      columns[colIdx].push(row.text);
+      indexMatrix[colIdx].push(row.idx);
+    });
+
+    return { columns, indexMatrix };
+  };
+
   const buildDynamicStopDoingColumns = (items) => {
     if (!Array.isArray(items) || !items.length) return [];
     const cleaned = items
@@ -1083,15 +1112,30 @@ const Feedback360Report = () => {
       />
       <ContinueDoingPage
       continue={true}
-        columns={
-          buildThreeTextColumns(feedbackOverallData?.continue_doing_thing) || []
-        }
+        {...(() => {
+          const groups = Array.isArray(feedbackOverallData?.continue_doing_thing)
+            ? feedbackOverallData.continue_doing_thing
+            : [];
+          const built = buildThreeGroupColumns(groups);
+          return {
+            columns: built.columns || [],
+            groups,
+            groupIndexMatrix: built.indexMatrix || [],
+          };
+        })()}
       />
       <StopDoingPage
-        columns={
-          buildDynamicStopDoingColumns(feedbackOverallData?.stop_doing_thing) ||
-          []
-        }
+        {...(() => {
+          const groups = Array.isArray(feedbackOverallData?.stop_doing_thing)
+            ? feedbackOverallData.stop_doing_thing
+            : [];
+          const built = buildThreeGroupColumns(groups);
+          return {
+            columns: built.columns || [],
+            groups,
+            groupIndexMatrix: built.indexMatrix || [],
+          };
+        })()}
         traits={
           feedbackOverallData?.predominant_leader_most_thing
             ? feedbackOverallData?.predominant_leader_most_thing
@@ -1101,9 +1145,67 @@ const Feedback360Report = () => {
       <ContinueDoingPage
         title={"Predominant Leadership Trait"}
         subtitle={"- All Comments"}
-        columns={buildThreeTextColumns(
-          feedbackOverallData?.predominant_leader_thing,
-        )}
+        {...(() => {
+          const raw = Array.isArray(feedbackOverallData?.predominant_leader_thing)
+            ? feedbackOverallData.predominant_leader_thing
+            : [];
+
+          const hasGroupShape = raw.some(
+            (g) =>
+              g &&
+              typeof g === "object" &&
+              ("comments_belong_to_this_group" in g ||
+                "representative_comment" in g),
+          );
+
+          if (!hasGroupShape) {
+            return {
+              columns: buildThreeTextColumns(raw),
+            };
+          }
+
+          // Build columns + index matrix aligned to the original group indices.
+          // This enables the (xN) count click popup, same as Continue/Stop Doing.
+          const cleaned = [];
+          raw.forEach((g, idx) => {
+            const representative =
+              (g &&
+              typeof g === "object" &&
+              (g.representative_comment ??
+                g.representativeComment ??
+                g.comment ??
+                g.text)) ||
+              "";
+            const t = String(representative)
+              .replace(/_x000D_\s*/gi, " ")
+              .trim();
+            if (!t || t === "-" || t === "--" || t === "---") return;
+            cleaned.push({ text: t, idx });
+          });
+
+          if (!cleaned.length) {
+            return {
+              columns: buildThreeTextColumns([]),
+            };
+          }
+
+          const columns = [[], [], []];
+          const indexMatrix = [[], [], []];
+          const rowsPerCol = Math.ceil(cleaned.length / 3);
+
+          cleaned.forEach((row, pos) => {
+            const colIdx = Math.min(2, Math.floor(pos / rowsPerCol));
+            columns[colIdx].push(row.text);
+            indexMatrix[colIdx].push(row.idx);
+          });
+
+          return {
+            continue: true,
+            columns,
+            groups: raw,
+            groupIndexMatrix: indexMatrix,
+          };
+        })()}
       />
       <ContinueDoingPage
         title={"Immediate Action Areas - Summary"}
