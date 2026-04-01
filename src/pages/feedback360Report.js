@@ -148,9 +148,31 @@ const Feedback360Report = () => {
       return { columns: [], indexMatrix: [] };
     }
 
+    const hasGroupShape = groups.some(
+      (g) =>
+        g &&
+        typeof g === "object" &&
+        ("comments_belong_to_this_group" in g ||
+          "representative_comment" in g ||
+          "representativeComment" in g),
+    );
+
+    if (!hasGroupShape) {
+      return { columns: buildThreeTextColumns(groups), indexMatrix: [] };
+    }
+
     const cleaned = [];
     groups.forEach((g, idx) => {
-      const t = String(g?.representative_comment || "")
+      const representative =
+        (g &&
+          typeof g === "object" &&
+          (g.representative_comment ??
+            g.representativeComment ??
+            g.comment ??
+            g.text)) ||
+        "";
+
+      const t = String(representative)
         .replace(/_x000D_\s*/gi, " ")
         .trim();
       if (!t || t === "-" || t === "--" || t === "---") return;

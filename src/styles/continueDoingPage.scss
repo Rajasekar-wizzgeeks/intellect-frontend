@@ -35,10 +35,12 @@
 }
 
 .cd-grid { 
-  column-count: 3;
-  column-gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
   height: auto;
   overflow: visible;
+  align-items: stretch;
 
   // margin-top: 18px;
   // display: flex;
@@ -52,6 +54,7 @@
   background: #cfefff;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .cd-row {

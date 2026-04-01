@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Reorder } from "framer-motion";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/stopDoingPage.scss";
@@ -115,68 +116,143 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
 
 const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChunk, renderCell}) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+  const [dragState, setDragState] = useState(() => ({
+    colIdx: null,
+    valuesByCol: {},
+  }));
+
+  const applyReorder = useCallback(
+    (colIdx, nextKeys) => {
+      onColumnsChange((prevColumns) => {
+        const nextColumns = Array.isArray(prevColumns) ? [...prevColumns] : [];
+        const prevCol = Array.isArray(nextColumns[colIdx])
+          ? [...nextColumns[colIdx]]
+          : [];
+
+        const nextValues = Array.isArray(nextKeys)
+          ? nextKeys.map((k) => (k ? k.value : ""))
+          : [];
+
+        if (!nextValues.length) return prevColumns;
+
+        const sliceStart = Math.max(0, rowOffset);
+        const sliceEnd = Math.min(prevCol.length, rowOffset + nextValues.length);
+        const sliceLen = Math.max(0, sliceEnd - sliceStart);
+
+        if (!sliceLen) return prevColumns;
+
+        prevCol.splice(sliceStart, sliceLen, ...nextValues.slice(0, sliceLen));
+
+        nextColumns[colIdx] = prevCol;
+        return nextColumns;
+      });
+    },
+    [onColumnsChange, rowOffset],
+  );
 
   return (
     <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 50 :0}} aria-label={title}>
-      {columns.map((col, colIdx) => (
-        <div key={colIdx} className="sd-col" 
-        // style={{borderTop:lastChunk ? 1 : "none" }}
-         role="rowgroup">
-          {col.map((row, rowIdx) => (
-            <div key={rowIdx} className="sd-row" role="row">
-              <div
-                className="sd-cell"
-                role="cell"
-                onDoubleClick={() => setEditing({ colIdx, rowIdx })}
-                style={{ cursor: "pointer" }}
-              >
-                {editing?.colIdx === colIdx && editing?.rowIdx === rowIdx ? (
-                  <EditableCell
-                    key={`${colIdx}-${rowIdx}`}
-                    value={columns[colIdx]?.[rowIdx]}
-                    onSave={(newValue) => {
-                      const absoluteRowIdx = rowOffset + rowIdx;
-                      onColumnsChange((prevColumns) => {
-                        const nextColumns = Array.isArray(prevColumns)
-                          ? [...prevColumns]
-                          : [];
-                        if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
-                        nextColumns[colIdx] = [...nextColumns[colIdx]];
+      {columns.map((col, colIdx) => {
+        const values = Array.isArray(col)
+          ? col.map((row, rowIdx) => ({
+              key: rowOffset + rowIdx,
+              value: String(row ?? ""),
+            }))
+          : [];
 
-                        const cleaned = String(newValue ?? "").trim();
-                        if (!cleaned) {
-                          if (
-                            absoluteRowIdx >= 0 &&
-                            absoluteRowIdx < nextColumns[colIdx].length
-                          ) {
-                            nextColumns[colIdx].splice(absoluteRowIdx, 1);
-                          }
-                        } else {
-                          nextColumns[colIdx][absoluteRowIdx] = newValue;
-                        }
-                        return nextColumns;
-                      });
-                      setEditing(null);
-                    }}
-                  />
-                ) : (
-                  (renderCell
-                    ? renderCell({
+        const bufferedValues =
+          dragState.colIdx === colIdx && Array.isArray(dragState.valuesByCol[colIdx])
+            ? dragState.valuesByCol[colIdx]
+            : values;
+
+        return (
+          <Reorder.Group
+            key={colIdx}
+            as="div"
+            axis="y"
+            values={bufferedValues}
+            onReorder={(next) => {
+              setDragState((prev) => ({
+                colIdx,
+                valuesByCol: { ...prev.valuesByCol, [colIdx]: next },
+              }));
+            }}
+            className="sd-col"
+            role="rowgroup"
+          >
+            {bufferedValues.map((row) => {
+              const absoluteRowIdx = row.key;
+              const localRowIdx = absoluteRowIdx - rowOffset;
+              return (
+                <Reorder.Item
+                  key={`sd-item-${colIdx}-${absoluteRowIdx}`}
+                  as="div"
+                  value={row}
+                  className="sd-row"
+                  role="row"
+                  style={{ touchAction: "none" }}
+                  onDragEnd={() => {
+                    setDragState((prev) => {
+                      const nextBuffered = prev.valuesByCol?.[colIdx];
+                      if (Array.isArray(nextBuffered) && nextBuffered.length) {
+                        applyReorder(colIdx, nextBuffered);
+                      }
+                      return { colIdx: null, valuesByCol: {} };
+                    });
+                  }}
+                >
+                  <div
+                    className="sd-cell"
+                    role="cell"
+                    onDoubleClick={() => setEditing({ colIdx, rowIdx: absoluteRowIdx })}
+                    style={{ cursor: "grab" }}
+                  >
+                    {editing?.colIdx === colIdx && editing?.rowIdx === absoluteRowIdx ? (
+                      <EditableCell
+                        key={`${colIdx}-${absoluteRowIdx}`}
+                        value={columns[colIdx]?.[localRowIdx]}
+                        onSave={(newValue) => {
+                          onColumnsChange((prevColumns) => {
+                            const nextColumns = Array.isArray(prevColumns)
+                              ? [...prevColumns]
+                              : [];
+                            if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
+                            nextColumns[colIdx] = [...nextColumns[colIdx]];
+
+                            const cleaned = String(newValue ?? "").trim();
+                            if (!cleaned) {
+                              if (
+                                absoluteRowIdx >= 0 &&
+                                absoluteRowIdx < nextColumns[colIdx].length
+                              ) {
+                                nextColumns[colIdx].splice(absoluteRowIdx, 1);
+                              }
+                            } else {
+                              nextColumns[colIdx][absoluteRowIdx] = newValue;
+                            }
+                            return nextColumns;
+                          });
+                          setEditing(null);
+                        }}
+                      />
+                    ) : renderCell ? (
+                      renderCell({
                         colIdx,
-                        rowIdx,
-                        value: columns?.[colIdx]?.[rowIdx],
+                        rowIdx: localRowIdx,
+                        value: columns?.[colIdx]?.[localRowIdx],
                       })
-                    : (
-                        <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                          {String(row ?? "")}
-                        </ReactMarkdown>
-                      ))
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
+                    ) : (
+                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                        {String(columns?.[colIdx]?.[localRowIdx] ?? "")}
+                      </ReactMarkdown>
+                    )}
+                  </div>
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
+        );
+      })}
     </div>
   );
 };

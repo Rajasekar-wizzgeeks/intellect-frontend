@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import { Reorder } from "framer-motion";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/continueDoingPage.scss";
@@ -298,133 +299,161 @@ const ContinueDoingGrid = ({
   columns,
   onColumnsChange,
   rowOffset = 0,
-  items,
   setMeasureTick,
   renderCell,
 }) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+  const [dragState, setDragState] = useState(() => ({
+    colIdx: null,
+    valuesByCol: {},
+  }));
 
-  const rows = useMemo(() => {
-    if (Array.isArray(items) && items.length) {
-      return items;
-    }
-    if (!Array.isArray(columns)) return [];
-    const out = [];
-    columns.forEach((col, colIdx) => {
-      if (!Array.isArray(col)) return;
-      col.forEach((row, rowIdx) => {
-        out.push({ colIdx, rowIdx });
+  const applyReorder = useCallback(
+    (colIdx, nextKeys) => {
+      onColumnsChange((prevColumns) => {
+        const nextColumns = Array.isArray(prevColumns) ? [...prevColumns] : [];
+        const prevCol = Array.isArray(nextColumns[colIdx])
+          ? [...nextColumns[colIdx]]
+          : [];
+
+        const next = Array.isArray(nextKeys) ? nextKeys : [];
+        const nextValues = next.map((k) => (k ? k.value : ""));
+
+        if (!nextValues.length) return prevColumns;
+
+        const sliceStart = Math.max(0, rowOffset);
+        const sliceEnd = Math.min(prevCol.length, rowOffset + nextValues.length);
+        const sliceLen = Math.max(0, sliceEnd - sliceStart);
+
+        if (!sliceLen) return prevColumns;
+
+        prevCol.splice(sliceStart, sliceLen, ...nextValues.slice(0, sliceLen));
+        nextColumns[colIdx] = prevCol;
+        return nextColumns;
       });
-    });
-    return out;
-  }, [items, columns]);
+
+      setMeasureTick?.((t) => t + 1);
+    },
+    [onColumnsChange, rowOffset, setMeasureTick],
+  );
 
   return (
     <div className="cd-grid" role="table" aria-label={title}>
-      {/* {columns.map((col, colIdx) => (
-        <div key={colIdx} className="cd-col" role="rowgroup">
-          {col.map((row, rowIdx) => (
-            <div key={rowIdx} className="cd-row" role="row">
-              <div
-                className="cd-cell"
-                role="cell"
-                onDoubleClick={() => setEditing({ colIdx, rowIdx })}
-                style={{ cursor: "pointer" }}
-              >
-                {editing?.colIdx === colIdx && editing?.rowIdx === rowIdx ? (
-                  <EditableCell
-                    value={columns[colIdx]?.[rowIdx]}
-                    onSave={(newValue) => {
-                      const updated = [...columns];
-                      const absoluteRowIdx = rowOffset + rowIdx;
-                      onColumnsChange((prevColumns) => {
-                        const nextColumns = Array.isArray(prevColumns)
-                          ? [...prevColumns]
-                          : [];
-                        if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
-                        nextColumns[colIdx] = [...nextColumns[colIdx]];
-                        nextColumns[colIdx][absoluteRowIdx] = newValue;
-                        return nextColumns;
-                      });
-                      setEditing(null);
-                    }}
-                  />
-                ) : (
-                  <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                    {String(row ?? "")}
-                  </ReactMarkdown>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))} */}
-      {rows.map((row) => (
-        <div key={`${row.colIdx}-${row.rowIdx}`} className="cd-row" role="row">
-          <div
-            className="cd-cell"
-            role="cell"
-            onDoubleClick={() =>
-              setEditing({ colIdx: row.colIdx, rowIdx: row.rowIdx })
-            }
-            style={{ cursor: "pointer" }}
+      {(Array.isArray(columns) ? columns : [[], [], []]).map((col, colIdx) => {
+        const safeCol = Array.isArray(col) ? col : [];
+        const values = safeCol.map((row, rowIdx) => ({
+          key: rowOffset + rowIdx,
+          value: String(row ?? ""),
+        }));
+
+        const bufferedValues =
+          dragState.colIdx === colIdx &&
+          Array.isArray(dragState.valuesByCol[colIdx])
+            ? dragState.valuesByCol[colIdx]
+            : values;
+
+        return (
+          <Reorder.Group
+            key={`cd-col-${colIdx}`}
+            as="div"
+            axis="y"
+            values={bufferedValues}
+            onReorder={(next) => {
+              setDragState((prev) => ({
+                colIdx,
+                valuesByCol: { ...prev.valuesByCol, [colIdx]: next },
+              }));
+            }}
+            className="cd-col"
+            role="rowgroup"
           >
-            {editing?.colIdx === row.colIdx && editing?.rowIdx === row.rowIdx ? (
-              <EditableCell
-                value={columns?.[row.colIdx]?.[row.rowIdx]}
-                onSave={(newValue) => {
-                  const absoluteRowIdx = rowOffset + row.rowIdx;
-                  const cleaned = String(newValue ?? "").trim();
-                  if (!cleaned) {
-                    onColumnsChange((prevColumns) => {
-                      const nextColumns = Array.isArray(prevColumns)
-                        ? [...prevColumns]
-                        : [];
-                      if (
-                        Array.isArray(nextColumns[row.colIdx]) &&
-                        absoluteRowIdx >= 0 &&
-                        absoluteRowIdx < nextColumns[row.colIdx].length
-                      ) {
-                        const updatedCol = [...nextColumns[row.colIdx]];
-                        updatedCol.splice(absoluteRowIdx, 1);
-                        nextColumns[row.colIdx] = updatedCol;
+            {bufferedValues.map((row) => {
+              const absoluteRowIdx = row.key;
+              const localRowIdx = absoluteRowIdx - rowOffset;
+              return (
+                <Reorder.Item
+                  key={`cd-item-${colIdx}-${row.key}`}
+                  as="div"
+                  value={row}
+                  className="cd-row"
+                  role="row"
+                  style={{ touchAction: "none" }}
+                  onDragEnd={() => {
+                    setDragState((prev) => {
+                      const nextBuffered = prev.valuesByCol?.[colIdx];
+                      if (Array.isArray(nextBuffered) && nextBuffered.length) {
+                        applyReorder(colIdx, nextBuffered);
                       }
-                      return nextColumns;
+                      return { colIdx: null, valuesByCol: {} };
                     });
-                  } else {
-                    onColumnsChange((prevColumns) => {
-                      const nextColumns = Array.isArray(prevColumns)
-                        ? [...prevColumns]
-                        : [];
-                      if (!Array.isArray(nextColumns[row.colIdx])) {
-                        nextColumns[row.colIdx] = [];
-                      } else {
-                        nextColumns[row.colIdx] = [...nextColumns[row.colIdx]];
-                      }
-                      nextColumns[row.colIdx][absoluteRowIdx] = newValue;
-                      return nextColumns;
-                    });
-                  }
-                  setMeasureTick((t) => t + 1);
-                  setEditing(null);
-                }}
-              />
-            ) : (
-              (renderCell
-                ? renderCell({
-                    colIdx: row.colIdx,
-                    rowIdx: row.rowIdx,
-                    value: columns?.[row.colIdx]?.[row.rowIdx],
-                  })
-                : (
-                    <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                      {String(columns?.[row.colIdx]?.[row.rowIdx] ?? "")}
-                    </ReactMarkdown>
-                  ))
-            )}
-          </div>
-        </div>
-      ))}
+                  }}
+                >
+                  <div
+                    className="cd-cell"
+                    role="cell"
+                    onDoubleClick={() =>
+                      setEditing({ colIdx, rowIdx: absoluteRowIdx })
+                    }
+                    style={{ cursor: "grab" }}
+                  >
+                    {editing?.colIdx === colIdx &&
+                    editing?.rowIdx === absoluteRowIdx ? (
+                      <EditableCell
+                        value={safeCol?.[localRowIdx]}
+                        onSave={(newValue) => {
+                          const cleaned = String(newValue ?? "").trim();
+                          if (!cleaned) {
+                            onColumnsChange((prevColumns) => {
+                              const nextColumns = Array.isArray(prevColumns)
+                                ? [...prevColumns]
+                                : [];
+                              if (
+                                Array.isArray(nextColumns[colIdx]) &&
+                                absoluteRowIdx >= 0 &&
+                                absoluteRowIdx < nextColumns[colIdx].length
+                              ) {
+                                const updatedCol = [...nextColumns[colIdx]];
+                                updatedCol.splice(absoluteRowIdx, 1);
+                                nextColumns[colIdx] = updatedCol;
+                              }
+                              return nextColumns;
+                            });
+                          } else {
+                            onColumnsChange((prevColumns) => {
+                              const nextColumns = Array.isArray(prevColumns)
+                                ? [...prevColumns]
+                                : [];
+                              if (!Array.isArray(nextColumns[colIdx])) {
+                                nextColumns[colIdx] = [];
+                              } else {
+                                nextColumns[colIdx] = [...nextColumns[colIdx]];
+                              }
+                              nextColumns[colIdx][absoluteRowIdx] = newValue;
+                              return nextColumns;
+                            });
+                          }
+                          setMeasureTick((t) => t + 1);
+                          setEditing(null);
+                        }}
+                      />
+                    ) : renderCell ? (
+                      renderCell({
+                        colIdx,
+                        rowIdx: localRowIdx,
+                        value: safeCol?.[localRowIdx],
+                      })
+                    ) : (
+                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                        {String(safeCol?.[localRowIdx] ?? "")}
+                      </ReactMarkdown>
+                    )}
+                  </div>
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
+        );
+      })}
     </div>
   );
 };
@@ -442,7 +471,7 @@ const ContinueDoingPage = ({
   continue: isContinue = false,
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
-  const [gridChunks, setGridChunks] = useState(null);
+  const [rowRanges, setRowRanges] = useState(null);
   const [measureTick, setMeasureTick] = useState(0);
 
   const serializeGroups = useCallback((g) => {
@@ -573,28 +602,25 @@ const ContinueDoingPage = ({
     });
   }, []);
 
-  const items = useMemo(() => {
-    if (!Array.isArray(localColumns)) return [];
-    const out = [];
-    localColumns.forEach((col, colIdx) => {
-      if (!Array.isArray(col)) return;
-      col.forEach((row, rowIdx) => {
-        out.push({ colIdx, rowIdx });
-      });
-    });
-    return out;
+  const maxRows = useMemo(() => {
+    if (!Array.isArray(localColumns)) return 0;
+    return Math.max(
+      0,
+      ...localColumns.map((c) => (Array.isArray(c) ? c.length : 0)),
+    );
   }, [localColumns]);
 
   useEffect(() => {
     if (!isBrowser) {
-      setGridChunks(null);
+      setRowRanges(null);
       return;
     }
 
     const pageWidth = 794;
     const pageHeight = 930;
     const pagePadding = 0;
-    const performMeasure = async ({ slice, includeFootnote }) => {
+
+    const measureHeights = async ({ start, end }) => {
       return new Promise((resolve) => {
         const container = document.createElement("div");
         container.style.position = "absolute";
@@ -604,10 +630,14 @@ const ContinueDoingPage = ({
         container.style.top = "0";
         container.style.zIndex = "-9999";
         container.style.pointerEvents = "none";
-        container.id = `measurement-${measurementId.current}`;
-
         document.body.appendChild(container);
         const root = createRoot(container);
+
+        const sliceColumns = Array.isArray(localColumns)
+          ? localColumns.map((col) =>
+              Array.isArray(col) ? col.slice(start, end) : [],
+            )
+          : [];
 
         root.render(
           <div className="continue-doing-page">
@@ -620,13 +650,12 @@ const ContinueDoingPage = ({
             <div data-measure-block="1">
               <ContinueDoingGrid
                 title={title}
-                columns={localColumns}
+                columns={sliceColumns}
                 onColumnsChange={setLocalColumns}
-                rowOffset={0}
-                items={slice}
+                rowOffset={start}
                 setMeasureTick={setMeasureTick}
               />
-              {includeFootnote && footnote ? (
+              {end >= maxRows && footnote ? (
                 <div className="cd-footnote">{footnote}</div>
               ) : null}
             </div>
@@ -640,12 +669,9 @@ const ContinueDoingPage = ({
             }
             await new Promise((resolveFrame) => {
               requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  requestAnimationFrame(resolveFrame);
-                });
+                requestAnimationFrame(resolveFrame);
               });
             });
-
             const content = container.firstElementChild;
             if (!content) {
               resolve({ headerHeightPx: 0, blockHeightPx: 0 });
@@ -673,77 +699,67 @@ const ContinueDoingPage = ({
           }
         };
 
-        setTimeout(measure, 30);
+        setTimeout(measure, 10);
       });
     };
 
-    const buildChunks = async () => {
-      if (!items.length) {
-        setGridChunks([]);
+    const buildRanges = async () => {
+      if (!maxRows) {
+        setRowRanges([]);
         return;
       }
 
       await measurementManager.addToQueue(
         `continue-doing-chunk-${measurementId.current}`,
         async () => {
-          const initialMeasure = await performMeasure({
-            slice: items,
-            includeFootnote: !!footnote,
-          });
-
+          const initialMeasure = await measureHeights({ start: 0, end: maxRows });
           const headerHeight = initialMeasure.headerHeightPx;
           const usableHeight = pageHeight - pagePadding * 2 - headerHeight;
 
-          if (initialMeasure.blockHeightPx <= usableHeight) {
-            setGridChunks([items]);
+          if (initialMeasure.blockHeightPx > 0 && initialMeasure.blockHeightPx <= usableHeight) {
+            setRowRanges([{ start: 0, end: maxRows }]);
             return;
           }
 
-          const chunks = [];
+          const ranges = [];
           let start = 0;
 
-          while (start < items.length) {
+          while (start < maxRows) {
             let low = 1;
-            let high = items.length - start;
+            let high = maxRows - start;
             let best = 1;
 
             while (low <= high) {
               const mid = Math.floor((low + high) / 2);
-              const { blockHeightPx } = await performMeasure({
-                slice: items.slice(start, start + mid),
-                includeFootnote: start + mid === items.length && !!footnote,
+              const { blockHeightPx } = await measureHeights({
+                start,
+                end: start + mid,
               });
 
-              if (blockHeightPx <= usableHeight && blockHeightPx > 0) {
+              if (blockHeightPx > 0 && blockHeightPx <= usableHeight) {
                 best = mid;
                 low = mid + 1;
               } else {
-                if (mid === 1) {
-                  // If even one item doesn't fit, we must include it and move on
-                  // otherwise we get stuck in an infinite loop or skip data
-                  best = 1;
-                  break;
-                }
                 high = mid - 1;
               }
             }
 
-            chunks.push(items.slice(start, start + best));
+            ranges.push({ start, end: start + best });
             start += best;
           }
 
-          setGridChunks(chunks);
+          setRowRanges(ranges);
         },
       );
     };
 
-    buildChunks();
+    buildRanges();
     return () => {
       measurementManager.removeFromQueue(
         `continue-doing-chunk-${measurementId.current}`,
       );
     };
-  }, [isBrowser, items, localColumns, footnote, title, measureTick]);
+  }, [isBrowser, localColumns, footnote, title, subtitle, maxRows, measureTick]);
 
   const blocks = useMemo(() => {
     const out = [];
@@ -780,24 +796,24 @@ const ContinueDoingPage = ({
     //     }
 
     if (hasColumns) {
-      if (!Array.isArray(gridChunks)) {
-        return out; 
+      if (!Array.isArray(rowRanges)) {
+        return out;
       }
 
-      const chunksToUse = gridChunks.length ? gridChunks : [items];
+      const rangesToUse = rowRanges.length ? rowRanges : [{ start: 0, end: maxRows }];
 
-      let currentOffset = 0;
-
-      chunksToUse.forEach((chunk, chunkIdx) => {
+      rangesToUse.forEach((range, pageIdx) => {
+        const chunkColumns = localColumns.map((col) =>
+          Array.isArray(col) ? col.slice(range.start, range.end) : [],
+        );
         out.push(
-          <div key={`cd-chunk-wrapper-${chunkIdx}`}>
+          <div key={`cd-chunk-wrapper-${pageIdx}`}>
             <ContinueDoingGrid
-              key={`cd-grid-${chunkIdx}`}
+              key={`cd-grid-${pageIdx}`}
               title={title}
-              columns={localColumns}
+              columns={chunkColumns}
               onColumnsChange={setLocalColumns}
-              rowOffset={currentOffset}
-              items={chunk}
+              rowOffset={range.start}
               setMeasureTick={setMeasureTick}
               renderCell={
                 isContinue &&
@@ -805,16 +821,9 @@ const ContinueDoingPage = ({
                 Array.isArray(groupIndexMatrix)
                   ? ({ colIdx, rowIdx, value }) => {
                       const raw = String(value ?? "");
-                      // Match the main text and the existing (xN) suffix
                       const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
-                      const grpIdx = groupIndexMatrix?.[colIdx]?.[rowIdx];
-                      
-                      const list = Array.isArray(
-                        localGroups?.[grpIdx]?.comments_belong_to_this_group,
-                      )
-                        ? localGroups[grpIdx].comments_belong_to_this_group
-                        : [];
-                      
+                      const grpIdx = groupIndexMatrix?.[colIdx]?.[range.start + rowIdx];
+
                       const hasDynamicGroup = typeof grpIdx === "number" &&
                         grpIdx >= 0 &&
                         grpIdx < localGroups.length;
@@ -839,13 +848,11 @@ const ContinueDoingPage = ({
               }
             />
 
-            {chunkIdx === chunksToUse.length - 1 && footnote && (
+            {pageIdx === rangesToUse.length - 1 && footnote && (
               <div className="cd-footnote">{footnote}</div>
             )}
           </div>,
         );
-
-        currentOffset += chunk.length;
       });
     }
 
@@ -860,7 +867,7 @@ const ContinueDoingPage = ({
     }
 
     return out;
-  }, [localColumns, footnote, immediateActionSummary, title, gridChunks, iaColumns, saveIaItem, isContinue, localGroups, groupIndexMatrix]);
+  }, [localColumns, footnote, immediateActionSummary, title, rowRanges, maxRows, iaColumns, saveIaItem, isContinue, localGroups, groupIndexMatrix]);
   const Header = useMemo(() => {
     return () => (
       <FeedbackCommonHeader
