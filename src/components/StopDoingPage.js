@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Reorder } from "framer-motion";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/stopDoingPage.scss";
@@ -113,59 +114,145 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
   );
 };
 
-const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChunk}) => {
+const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChunk, renderCell}) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+  const [dragState, setDragState] = useState(() => ({
+    colIdx: null,
+    valuesByCol: {},
+  }));
+
+  const applyReorder = useCallback(
+    (colIdx, nextKeys) => {
+      onColumnsChange((prevColumns) => {
+        const nextColumns = Array.isArray(prevColumns) ? [...prevColumns] : [];
+        const prevCol = Array.isArray(nextColumns[colIdx])
+          ? [...nextColumns[colIdx]]
+          : [];
+
+        const nextValues = Array.isArray(nextKeys)
+          ? nextKeys.map((k) => (k ? k.value : ""))
+          : [];
+
+        if (!nextValues.length) return prevColumns;
+
+        const sliceStart = Math.max(0, rowOffset);
+        const sliceEnd = Math.min(prevCol.length, rowOffset + nextValues.length);
+        const sliceLen = Math.max(0, sliceEnd - sliceStart);
+
+        if (!sliceLen) return prevColumns;
+
+        prevCol.splice(sliceStart, sliceLen, ...nextValues.slice(0, sliceLen));
+
+        nextColumns[colIdx] = prevCol;
+        return nextColumns;
+      });
+    },
+    [onColumnsChange, rowOffset],
+  );
 
   return (
     <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 50 :0}} aria-label={title}>
-      {columns.map((col, colIdx) => (
-        <div key={colIdx} className="sd-col" 
-        // style={{borderTop:lastChunk ? 1 : "none" }}
-         role="rowgroup">
-          {col.map((row, rowIdx) => (
-            <div key={rowIdx} className="sd-row" role="row">
-              <div
-                className="sd-cell"
-                role="cell"
-                onDoubleClick={() => setEditing({ colIdx, rowIdx })}
-                style={{ cursor: "pointer" }}
-              >
-                {editing?.colIdx === colIdx && editing?.rowIdx === rowIdx ? (
-                  <EditableCell
-                    key={`${colIdx}-${rowIdx}`}
-                    value={columns[colIdx]?.[rowIdx]}
-                    onSave={(newValue) => {
-                      const absoluteRowIdx = rowOffset + rowIdx;
-                      onColumnsChange((prevColumns) => {
-                        const nextColumns = Array.isArray(prevColumns)
-                          ? [...prevColumns]
-                          : [];
-                        if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
-                        nextColumns[colIdx] = [...nextColumns[colIdx]];
+      {columns.map((col, colIdx) => {
+        const values = Array.isArray(col)
+          ? col.map((row, rowIdx) => ({
+              key: rowOffset + rowIdx,
+              value: String(row ?? ""),
+            }))
+          : [];
 
-                        const cleaned = String(newValue ?? "").trim();
-                        if (!cleaned) {
-                          if (absoluteRowIdx >= 0 && absoluteRowIdx < nextColumns[colIdx].length) {
-                            nextColumns[colIdx].splice(absoluteRowIdx, 1);
-                          }
-                        } else {
-                          nextColumns[colIdx][absoluteRowIdx] = newValue;
-                        }
-                        return nextColumns;
-                      });
-                      setEditing(null);
-                    }}
-                  />
-                ) : (
-                  <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                    {String(row ?? "")}
-                  </ReactMarkdown>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
+        const bufferedValues =
+          dragState.colIdx === colIdx && Array.isArray(dragState.valuesByCol[colIdx])
+            ? dragState.valuesByCol[colIdx]
+            : values;
+
+        return (
+          <Reorder.Group
+            key={colIdx}
+            as="div"
+            axis="y"
+            values={bufferedValues}
+            onReorder={(next) => {
+              setDragState((prev) => ({
+                colIdx,
+                valuesByCol: { ...prev.valuesByCol, [colIdx]: next },
+              }));
+            }}
+            className="sd-col"
+            role="rowgroup"
+          >
+            {bufferedValues.map((row) => {
+              const absoluteRowIdx = row.key;
+              const localRowIdx = absoluteRowIdx - rowOffset;
+              return (
+                <Reorder.Item
+                  key={`sd-item-${colIdx}-${absoluteRowIdx}`}
+                  as="div"
+                  value={row}
+                  className="sd-row"
+                  role="row"
+                  style={{ touchAction: "none" }}
+                  onDragEnd={() => {
+                    setDragState((prev) => {
+                      const nextBuffered = prev.valuesByCol?.[colIdx];
+                      if (Array.isArray(nextBuffered) && nextBuffered.length) {
+                        applyReorder(colIdx, nextBuffered);
+                      }
+                      return { colIdx: null, valuesByCol: {} };
+                    });
+                  }}
+                >
+                  <div
+                    className="sd-cell"
+                    role="cell"
+                    onDoubleClick={() => setEditing({ colIdx, rowIdx: absoluteRowIdx })}
+                    style={{ cursor: "grab" }}
+                  >
+                    {editing?.colIdx === colIdx && editing?.rowIdx === absoluteRowIdx ? (
+                      <EditableCell
+                        key={`${colIdx}-${absoluteRowIdx}`}
+                        value={columns[colIdx]?.[localRowIdx]}
+                        onSave={(newValue) => {
+                          onColumnsChange((prevColumns) => {
+                            const nextColumns = Array.isArray(prevColumns)
+                              ? [...prevColumns]
+                              : [];
+                            if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
+                            nextColumns[colIdx] = [...nextColumns[colIdx]];
+
+                            const cleaned = String(newValue ?? "").trim();
+                            if (!cleaned) {
+                              if (
+                                absoluteRowIdx >= 0 &&
+                                absoluteRowIdx < nextColumns[colIdx].length
+                              ) {
+                                nextColumns[colIdx].splice(absoluteRowIdx, 1);
+                              }
+                            } else {
+                              nextColumns[colIdx][absoluteRowIdx] = newValue;
+                            }
+                            return nextColumns;
+                          });
+                          setEditing(null);
+                        }}
+                      />
+                    ) : renderCell ? (
+                      renderCell({
+                        colIdx,
+                        rowIdx: localRowIdx,
+                        value: columns?.[colIdx]?.[localRowIdx],
+                      })
+                    ) : (
+                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                        {String(columns?.[colIdx]?.[localRowIdx] ?? "")}
+                      </ReactMarkdown>
+                    )}
+                  </div>
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
+        );
+      })}
     </div>
   );
 };
@@ -185,6 +272,8 @@ const formatTraitText = (value, maxLength = 140) => {
 const StopDoingPage = ({
   title = "What the Nominee Should “Stop Doing”…",
   columns,
+  groups,
+  groupIndexMatrix,
   left = [],
   right = [],
   traitsTitle = "Most Predominant Leadership Trait",
@@ -195,6 +284,29 @@ const StopDoingPage = ({
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
   );  
+
+  const serializeGroups = useCallback((g) => {
+    const safe = Array.isArray(g)
+      ? g.map((row) => ({
+          representative_comment: String(row?.representative_comment ?? ""),
+          comments_belong_to_this_group: Array.isArray(
+            row?.comments_belong_to_this_group,
+          )
+            ? row.comments_belong_to_this_group.map((c) => String(c ?? ""))
+            : [],
+        }))
+      : [];
+    try {
+      return JSON.stringify(safe);
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const [localGroups, setLocalGroups] = useState(() =>
+    Array.isArray(groups) ? groups : [],
+  );
+  const lastGroupsSerializedRef = useRef(serializeGroups(groups));
 
   const [rowRanges, setRowRanges] = useState(null);
 
@@ -208,6 +320,16 @@ const StopDoingPage = ({
       setLocalColumns(columns);
     }
   }, [columns]);
+
+  useEffect(() => {
+    const nextSerialized = serializeGroups(groups);
+    const prevSerialized = lastGroupsSerializedRef.current;
+
+    if (!nextSerialized || nextSerialized === prevSerialized) return;
+
+    lastGroupsSerializedRef.current = nextSerialized;
+    setLocalGroups(Array.isArray(groups) ? groups : []);
+  }, [groups, serializeGroups]);
 
   const maxRows = useMemo(() => {
     if (!Array.isArray(localColumns)) return 0;
@@ -414,6 +536,42 @@ const StopDoingPage = ({
               onColumnsChange={setLocalColumns}
               rowOffset={range.start}
               lastChunk={idx === rangesToUse.length - 1}
+              renderCell={
+                Array.isArray(localGroups) && Array.isArray(groupIndexMatrix)
+                  ? ({ colIdx, rowIdx, value }) => {
+                      const raw = String(value ?? "");
+                      // Match the main text and the existing (xN) suffix
+                      const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
+                      const grpIdx = groupIndexMatrix?.[colIdx]?.[range.start + rowIdx];
+                      
+                      const hasDynamicGroup = typeof grpIdx === "number" &&
+                        grpIdx >= 0 &&
+                        grpIdx < localGroups.length;
+
+                      if (!hasDynamicGroup) {
+                        return (
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                            {raw}
+                          </ReactMarkdown>
+                        );
+                      }
+
+                      const list = Array.isArray(
+                        localGroups?.[grpIdx]?.comments_belong_to_this_group,
+                      )
+                        ? localGroups[grpIdx].comments_belong_to_this_group
+                        : [];
+
+                      return (
+                        <span className="cd-group-cell">
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                            {match ? String(match[1] ?? "").trim() : raw}
+                          </ReactMarkdown>
+                        </span>
+                      );
+                    }
+                  : undefined
+              }
             />
           </div>,
         );
@@ -451,14 +609,16 @@ const StopDoingPage = ({
 
   return (
     // <div className="section-page-container">
-    <AutoPaginatedSections
-      blocks={blocks}
-      pageWidth={794}
-      pageHeight={950}
-      pagePadding={0}
-      contentClassName="stop-doing-page"
-      componentId="stop-doing"
-    />
+    <>
+      <AutoPaginatedSections
+        blocks={blocks}
+        pageWidth={794}
+        pageHeight={950}
+        pagePadding={0}
+        contentClassName="stop-doing-page"
+        componentId="stop-doing"
+      />
+    </>
     // </div>
   );
 };

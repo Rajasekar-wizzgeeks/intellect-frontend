@@ -1,6 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Eye, Mail, User } from "lucide-react";
 import "../styles/userTable.scss";
+import ReorderableTableBody, {
+  ReorderableTr,
+  ReorderHandle,
+} from "./ReorderableTableBody";
 
 const defaultUsers = [
   {
@@ -47,8 +51,20 @@ const defaultUsers = [
   },
 ];
 
-const UserTable = ({ users = defaultUsers, onViewReport }) => {
+const UserTable = ({
+  users = defaultUsers,
+  onViewReport,
+  reorderable = false,
+  onUsersReorder,
+}) => {
   const countLabel = useMemo(() => `${users.length} Users`, [users.length]);
+  const [localUsers, setLocalUsers] = useState(users);
+
+  useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
+
+  const renderedUsers = reorderable ? localUsers : users;
 
   return (
     <div className="user-table">
@@ -65,6 +81,7 @@ const UserTable = ({ users = defaultUsers, onViewReport }) => {
         <table className="user-table__table">
           <thead>
             <tr>
+              {reorderable ? <th style={{ width: 32 }} /> : null}
               <th>Name</th>
               <th>Email</th>
               {/* <th>Department</th> */}
@@ -72,50 +89,108 @@ const UserTable = ({ users = defaultUsers, onViewReport }) => {
               <th>Action</th>
             </tr>
           </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>
-                  <div className="user-table__name">
-                    <div className="user-table__avatar">
-                      <User className="user-table__avatar-icon" />
+          {reorderable ? (
+            <ReorderableTableBody
+              as="tbody"
+              items={localUsers}
+              onReorder={(next) => {
+                setLocalUsers(next);
+                onUsersReorder?.(next);
+              }}
+            >
+              {renderedUsers.map((user) => (
+                <ReorderableTr as="tr" key={user.id} value={user}>
+                  {(dragControls) => (
+                    <>
+                      <td>
+                        <ReorderHandle
+                          className="reorder-handle"
+                          onPointerDown={(e) => dragControls.start(e)}
+                        />
+                      </td>
+                      <td>
+                        <div className="user-table__name">
+                          <div className="user-table__avatar">
+                            <User className="user-table__avatar-icon" />
+                          </div>
+                          <span className="user-table__name-text">{user.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="user-table__email">
+                          <Mail className="user-table__email-icon" />
+                          <span className="user-table__email-text">{user.email}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={`user-table__status ${
+                            user.status === "Active"
+                              ? "user-table__status--active"
+                              : "user-table__status--inactive"
+                          }`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="user-table__action"
+                          onClick={() => onViewReport?.(user)}
+                        >
+                          <Eye className="user-table__action-icon" />
+                          <span className="user-table__action-text">View Report</span>
+                        </button>
+                      </td>
+                    </>
+                  )}
+                </ReorderableTr>
+              ))}
+            </ReorderableTableBody>
+          ) : (
+            <tbody>
+              {renderedUsers.map((user) => (
+                <tr key={user.id}>
+                  <td>
+                    <div className="user-table__name">
+                      <div className="user-table__avatar">
+                        <User className="user-table__avatar-icon" />
+                      </div>
+                      <span className="user-table__name-text">{user.name}</span>
                     </div>
-                    <span className="user-table__name-text">{user.name}</span>
-                  </div>
-                </td>
-                <td>
-                  <div className="user-table__email">
-                    <Mail className="user-table__email-icon" />
-                    <span className="user-table__email-text">{user.email}</span>
-                  </div>
-                </td>
-                {/* <td>
-                  <span className="user-table__dept">{user.department}</span>
-                </td> */}
-                <td>
-                  <span
-                    className={`user-table__status ${
-                      user.status === "Active"
-                        ? "user-table__status--active"
-                        : "user-table__status--inactive"
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="user-table__action"
-                    onClick={() => onViewReport?.(user)}
-                  >
-                    <Eye className="user-table__action-icon" />
-                    <span className="user-table__action-text">View Report</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+                  </td>
+                  <td>
+                    <div className="user-table__email">
+                      <Mail className="user-table__email-icon" />
+                      <span className="user-table__email-text">{user.email}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={`user-table__status ${
+                        user.status === "Active"
+                          ? "user-table__status--active"
+                          : "user-table__status--inactive"
+                      }`}
+                    >
+                      {user.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="user-table__action"
+                      onClick={() => onViewReport?.(user)}
+                    >
+                      <Eye className="user-table__action-icon" />
+                      <span className="user-table__action-text">View Report</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
         </table>
       </div>
 
