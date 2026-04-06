@@ -108,10 +108,13 @@
 }
 
 .cd-footnote {
-  margin-top: 10px;
+  margin: 10px 0;
   font-size: 12px;
   font-style: italic;
   color: #111;
+  display: flex;
+  flex-direction:column;
+  gap:8px;
 }
 
 .cd-group-cell {
