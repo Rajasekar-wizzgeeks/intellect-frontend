@@ -78,7 +78,7 @@ const StrengthsPage = ({
       groupStrengths: groupStrengths.slice(0, 3),
       groupImprovements: groupImprovements.slice(0, 3),
       managerStrengths: managerStrengths,
-      managerImprovements: managerImprovements.slice(0, 3),
+      managerImprovements: managerImprovements,
     };
   }, [averageCompentency]);
 
@@ -556,10 +556,6 @@ const StrengthsPage = ({
                     <div
                       key={`im-${idx}`}
                       className="sp-row sp-row--manager"
-                      style={{
-                        position: "absolute",
-                        top: idx === 0 ? 10 : idx === 1 ? 112 : 213,
-                      }}
                     >
                       <div className="sp-pill">
                         {Number(it.score).toFixed(2)}
