@@ -279,7 +279,9 @@ const StopDoingPage = ({
   traitsTitle = "Most Predominant Leadership Trait",
   traitsSubtitle = "(Most frequently occurring leadership traits are shown here)",
   traits = [],
+  tableFootnote,
   footnote = "* This excludes self feedback ; The larger fonts indicate more number of responses",
+
 }) => {
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
@@ -573,6 +575,9 @@ const StopDoingPage = ({
                   : undefined
               }
             />
+            {idx === rangesToUse.length - 1 && tableFootnote ? (
+              <div className="sd-footnote">{tableFootnote}</div>
+            ) : null}
           </div>,
         );
       });

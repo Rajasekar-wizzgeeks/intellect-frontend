@@ -122,13 +122,25 @@ const Feedback360Report = () => {
 
   const buildThreeTextColumns = (items) => {
     if (!Array.isArray(items) || !items.length) return [];
+
+    const normalizeQualitativeText = (raw) => {
+      const display = String(raw || "").replace(/_x000D_\s*/gi, " ").trim();
+      const plain = display
+        .replace(/&nbsp;?/gi, " ")
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return { display, plain };
+    };
+
     const cleaned = items
-      .map((raw) =>
-        String(raw || "")
-          .replace(/_x000D_\s*/gi, " ")
-          .trim(),
+      .map((raw) => normalizeQualitativeText(raw))
+      .filter(
+        ({ plain }) =>
+          plain && !/^[-–—]{2,}$/.test(plain),
       )
-      .filter((t) => t && t !== "-" && t !== "--" && t !== "---");
+      .map(({ display }) => display);
 
     if (!cleaned.length) return [];
 
@@ -172,10 +184,14 @@ const Feedback360Report = () => {
             g.text)) ||
         "";
 
-      const t = String(representative)
-        .replace(/_x000D_\s*/gi, " ")
+      const t = String(representative).replace(/_x000D_\s*/gi, " ").trim();
+      const plain = t
+        .replace(/&nbsp;?/gi, " ")
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
-      if (!t || t === "-" || t === "--" || t === "---") return;
+      if (!plain || /^[-–—]{2,}$/.test(plain)) return;
       cleaned.push({ text: t, idx });
     });
 
@@ -197,12 +213,16 @@ const Feedback360Report = () => {
   const buildDynamicStopDoingColumns = (items) => {
     if (!Array.isArray(items) || !items.length) return [];
     const cleaned = items
-      .map((raw) =>
-        String(raw || "")
-          .replace(/_x000D_\s*/gi, " ")
-          .trim(),
-      )
-      .filter((t) => t && t !== "-" && t !== "--" && t !== "---");
+      .map((raw) => String(raw || "").replace(/_x000D_\s*/gi, " ").trim())
+      .filter((t) => {
+        const plain = String(t)
+          .replace(/&nbsp;?/gi, " ")
+          .replace(/<br\s*\/?>/gi, " ")
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        return plain && !/^[-–—]{2,}$/.test(plain);
+      });
     if (!cleaned.length) return [];
     const columnCount = cleaned.length > 300 ? 3 : 2;
     const cols = Array.from({ length: columnCount }, () => []);
@@ -496,41 +516,19 @@ const Feedback360Report = () => {
     ? competencyBiggerPictureItems
     : [];
 
-  const strengthsGroupItems = feedbackOverallData?.strengths
-    ? (feedbackOverallData.strengths.Subordinates || []).map((item) => ({
-        score: item.score,
-        text: item.question,
-      }))
-    : [
-        {
-          score: 4.91,
-          text: "Builds rapport with people and treats them with respect and dignity",
-        },
-        {
-          score: 4.91,
-          text: "Leads without aggression or arrogance",
-        },
-        {
-          score: 4.86,
-          text: "Builds rapport with people and treats them with respect and dignity",
-        },
-      ];
+  const strengthsGroupItems = (feedbackOverallData?.strengths?.Subordinates || [])
+    .filter((item) => item?.question)
+    .map((item) => ({
+      score: item.score,
+      text: item.question,
+    }));
 
-  const strengthsManagerItems = feedbackOverallData?.strengths
-    ? (feedbackOverallData.strengths.Manager || []).map((item) => ({
-        score: item.score,
-        text: item.question,
-      }))
-    : [
-        {
-          score: 5.0,
-          text: "Manages school finances and payment approvals appropriately and maintains clear and accurate accounts",
-        },
-        {
-          score: 5.0,
-          text: "Manages school finances and payment approvals appropriately and maintains clear and accurate accounts",
-        },
-      ];
+  const strengthsManagerItems = (feedbackOverallData?.strengths?.Manager || [])
+    .filter((item) => item?.question)
+    .map((item) => ({
+      score: item.score,
+      text: item.question,
+    }));
 
   const improvementsGroupItems = feedbackOverallData?.area_of_improvement
     ? (feedbackOverallData.area_of_improvement.Subordinates || []).map(
@@ -663,6 +661,7 @@ const Feedback360Report = () => {
   useEffect(() => {
     setHeaderName("Feedback");
   }, []);
+
   return (
     <div className="feedbackreport-main-container">
       <GlobalLoader visible={isUploading} />
@@ -1134,6 +1133,14 @@ const Feedback360Report = () => {
       />
       <ContinueDoingPage
       continue={true}
+        footnote={
+          <>
+            <div>
+              *Similar comments with slight variations in wording will be grouped together for ease of reading and arranged in decreasing order of frequency
+            </div>
+            <div>*This excludes self feedback</div>
+          </>
+        }
         {...(() => {
           const groups = Array.isArray(feedbackOverallData?.continue_doing_thing)
             ? feedbackOverallData.continue_doing_thing
@@ -1147,6 +1154,10 @@ const Feedback360Report = () => {
         })()}
       />
       <StopDoingPage
+        tableFootnote={
+          "*Similar comments with slight variations in wording will be grouped together for ease of reading and arranged in decreasing order of frequency"
+        }
+        footnote={"*This excludes self feedback"}
         {...(() => {
           const groups = Array.isArray(feedbackOverallData?.stop_doing_thing)
             ? feedbackOverallData.stop_doing_thing
@@ -1167,6 +1178,14 @@ const Feedback360Report = () => {
       <ContinueDoingPage
         title={"Predominant Leadership Trait"}
         subtitle={"- All Comments"}
+        footnote={
+          <>
+            <div>
+              *Similar comments with slight variations in wording will be grouped together for ease of reading and arranged in decreasing order of frequency
+            </div>
+            <div>*This excludes self feedback</div>
+          </>
+        }
         {...(() => {
           const raw = Array.isArray(feedbackOverallData?.predominant_leader_thing)
             ? feedbackOverallData.predominant_leader_thing
@@ -1198,10 +1217,14 @@ const Feedback360Report = () => {
                 g.comment ??
                 g.text)) ||
               "";
-            const t = String(representative)
-              .replace(/_x000D_\s*/gi, " ")
+            const t = String(representative).replace(/_x000D_\s*/gi, " ").trim();
+            const plain = t
+              .replace(/&nbsp;?/gi, " ")
+              .replace(/<br\s*\/?>/gi, " ")
+              .replace(/<[^>]*>/g, " ")
+              .replace(/\s+/g, " ")
               .trim();
-            if (!t || t === "-" || t === "--" || t === "---") return;
+            if (!plain || /^[-–—]{2,}$/.test(plain)) return;
             cleaned.push({ text: t, idx });
           });
 
