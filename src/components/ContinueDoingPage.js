@@ -1,4 +1,5 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Check, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import { Reorder } from "framer-motion";
@@ -7,6 +8,7 @@ import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/continueDoingPage.scss";
 import { createRoot } from "react-dom/client";
 import measurementManager from "./measurementManager";
+import GroupCommentsModal from "./GroupCommentsModal";
 
 const ImmediateActionSummary = memo(function ImmediateActionSummary({
   immediateActionSummary,
@@ -240,7 +242,7 @@ const ImmediateActionSummary = memo(function ImmediateActionSummary({
   );
 });
 
-const EditableCell = ({ value, onSave }) => {
+const EditableCell = ({ value, onSave, onCancel }) => {
   const [editValue, setEditValue] = useState(String(value ?? ""));
 
   const handleKeyDown = (e) => {
@@ -248,9 +250,9 @@ const EditableCell = ({ value, onSave }) => {
       e.preventDefault();
       onSave(editValue);
     }
-    // else if (e.key === "Escape") {
-    //   onCancel();
-    // }
+    else if (e.key === "Escape") {
+      onCancel?.();
+    }
   };
 
   return (
@@ -260,6 +262,7 @@ const EditableCell = ({ value, onSave }) => {
       onBlur={() => onSave(editValue)}
       onKeyDown={handleKeyDown}
       autoFocus
+      rows={6}
       className="cd-edit-textarea"
     />
   );
@@ -289,6 +292,7 @@ const EditableIaCell = ({ value, onSave, onCancel }) => {
       onBlur={() => onSave(editValue)}
       onKeyDown={handleKeyDown}
       autoFocus
+      rows={6}
       className="cd-edit-textarea"
     />
   );
@@ -301,8 +305,13 @@ const ContinueDoingGrid = ({
   rowOffset = 0,
   setMeasureTick,
   renderCell,
+  onCellClick,
+  onAddComment,
+  getGroupForCell,
+  onOpenGroupModal,
 }) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+  const [addingTo, setAddingTo] = useState(null); // { colIdx, rowIdx }
   const [dragState, setDragState] = useState(() => ({
     colIdx: null,
     valuesByCol: {},
@@ -370,85 +379,169 @@ const ContinueDoingGrid = ({
             {bufferedValues.map((row) => {
               const absoluteRowIdx = row.key;
               const localRowIdx = absoluteRowIdx - rowOffset;
+              const isAddingHere =
+                addingTo?.colIdx === colIdx && addingTo?.rowIdx === absoluteRowIdx;
+
               return (
-                <Reorder.Item
-                  key={`cd-item-${colIdx}-${row.key}`}
-                  as="div"
-                  value={row}
-                  className="cd-row"
-                  role="row"
-                  style={{ touchAction: "none" }}
-                  onDragEnd={() => {
-                    setDragState((prev) => {
-                      const nextBuffered = prev.valuesByCol?.[colIdx];
-                      if (Array.isArray(nextBuffered) && nextBuffered.length) {
-                        applyReorder(colIdx, nextBuffered);
-                      }
-                      return { colIdx: null, valuesByCol: {} };
-                    });
-                  }}
-                >
-                  <div
-                    className="cd-cell"
-                    role="cell"
-                    onDoubleClick={() =>
-                      setEditing({ colIdx, rowIdx: absoluteRowIdx })
-                    }
-                    style={{ cursor: "grab" }}
+                <Fragment key={`cd-frag-${colIdx}-${row.key}`}>
+                  <Reorder.Item
+                    key={`cd-item-${colIdx}-${row.key}`}
+                    as="div"
+                    value={row}
+                    className="cd-row-wrapper"
+                    role="none"
                   >
-                    {editing?.colIdx === colIdx &&
-                    editing?.rowIdx === absoluteRowIdx ? (
-                      <EditableCell
-                        value={safeCol?.[localRowIdx]}
-                        onSave={(newValue) => {
-                          const cleaned = String(newValue ?? "").trim();
-                          if (!cleaned) {
-                            onColumnsChange((prevColumns) => {
-                              const nextColumns = Array.isArray(prevColumns)
-                                ? [...prevColumns]
-                                : [];
-                              if (
-                                Array.isArray(nextColumns[colIdx]) &&
-                                absoluteRowIdx >= 0 &&
-                                absoluteRowIdx < nextColumns[colIdx].length
-                              ) {
-                                const updatedCol = [...nextColumns[colIdx]];
-                                updatedCol.splice(absoluteRowIdx, 1);
-                                nextColumns[colIdx] = updatedCol;
-                              }
-                              return nextColumns;
-                            });
-                          } else {
-                            onColumnsChange((prevColumns) => {
-                              const nextColumns = Array.isArray(prevColumns)
-                                ? [...prevColumns]
-                                : [];
-                              if (!Array.isArray(nextColumns[colIdx])) {
-                                nextColumns[colIdx] = [];
-                              } else {
-                                nextColumns[colIdx] = [...nextColumns[colIdx]];
-                              }
-                              nextColumns[colIdx][absoluteRowIdx] = newValue;
-                              return nextColumns;
+                    <div
+                      className="cd-row"
+                      role="row"
+                      style={{ touchAction: "none" }}
+                      onDragEnd={() => {
+                        setDragState((prev) => {
+                          const nextBuffered = prev.valuesByCol?.[colIdx];
+                          if (
+                            Array.isArray(nextBuffered) &&
+                            nextBuffered.length
+                          ) {
+                            applyReorder(colIdx, nextBuffered);
+                          }
+                          return { colIdx: null, valuesByCol: {} };
+                        });
+                      }}
+                    >
+                      <div
+                        className="cd-cell"
+                        role="cell"
+                        onDoubleClick={() =>
+                          setEditing({ colIdx, rowIdx: absoluteRowIdx })
+                        }
+                        onClick={() => {
+                          if (onCellClick) {
+                            onCellClick({
+                              colIdx,
+                              rowIdx: absoluteRowIdx,
+                              value: safeCol?.[localRowIdx],
                             });
                           }
-                          setMeasureTick((t) => t + 1);
-                          setEditing(null);
                         }}
-                      />
-                    ) : renderCell ? (
-                      renderCell({
-                        colIdx,
-                        rowIdx: localRowIdx,
-                        value: safeCol?.[localRowIdx],
-                      })
-                    ) : (
-                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                        {String(safeCol?.[localRowIdx] ?? "")}
-                      </ReactMarkdown>
-                    )}
-                  </div>
-                </Reorder.Item>
+                        style={{ cursor: "pointer" }}
+                      >
+                        {editing?.colIdx === colIdx &&
+                        editing?.rowIdx === absoluteRowIdx ? (
+                          <EditableCell
+                            value={safeCol?.[localRowIdx]}
+                            onSave={(newValue) => {
+                              const cleaned = String(newValue ?? "").trim();
+                              if (!cleaned) {
+                                onColumnsChange((prevColumns) => {
+                                  const nextColumns = Array.isArray(prevColumns)
+                                    ? [...prevColumns]
+                                    : [];
+                                  if (
+                                    Array.isArray(nextColumns[colIdx]) &&
+                                    absoluteRowIdx >= 0 &&
+                                    absoluteRowIdx < nextColumns[colIdx].length
+                                  ) {
+                                    const updatedCol = [...nextColumns[colIdx]];
+                                    updatedCol.splice(absoluteRowIdx, 1);
+                                    nextColumns[colIdx] = updatedCol;
+                                  }
+                                  return nextColumns;
+                                });
+                              } else {
+                                onColumnsChange((prevColumns) => {
+                                  const nextColumns = Array.isArray(prevColumns)
+                                    ? [...prevColumns]
+                                    : [];
+                                  if (!Array.isArray(nextColumns[colIdx])) {
+                                    nextColumns[colIdx] = [];
+                                  } else {
+                                    nextColumns[colIdx] = [...nextColumns[colIdx]];
+                                  }
+                                  nextColumns[colIdx][absoluteRowIdx] = newValue;
+                                  return nextColumns;
+                                });
+                              }
+                              setMeasureTick((t) => t + 1);
+                              setEditing(null);
+                            }}
+                          />
+                        ) : renderCell ? (
+                          renderCell({
+                            colIdx,
+                            rowIdx: localRowIdx,
+                            value: safeCol?.[localRowIdx],
+                          })
+                        ) : (
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                            {String(safeCol?.[localRowIdx] ?? "")}
+                          </ReactMarkdown>
+                        )}
+                      </div>
+                      {onAddComment && (() => {
+                        const group = getGroupForCell?.(colIdx, absoluteRowIdx);
+                        const hasGroupComments =
+                          Array.isArray(group?.comments_belong_to_this_group) &&
+                          group.comments_belong_to_this_group.length > 0;
+
+                        if (hasGroupComments) {
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            className="cd-add-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAddingTo({ colIdx, rowIdx: absoluteRowIdx });
+                            }}
+                            title="Add similar comment"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        );
+                      })()}
+                    </div>
+                  </Reorder.Item>
+
+                  {isAddingHere && (
+                    <div className="cd-row-wrapper" role="none">
+                      <div className="cd-row" role="row">
+                        <div className="cd-cell" role="cell">
+                          <EditableCell
+                            value=""
+                            onSave={(val) => {
+                              const cleaned = String(val ?? "").trim();
+                              if (cleaned) {
+                                onColumnsChange((prevColumns) => {
+                                  const nextColumns = Array.isArray(prevColumns)
+                                    ? [...prevColumns]
+                                    : [];
+
+                                  if (!Array.isArray(nextColumns[colIdx])) {
+                                    nextColumns[colIdx] = [];
+                                  } else {
+                                    nextColumns[colIdx] = [...nextColumns[colIdx]];
+                                  }
+
+                                  const insertAt = Math.min(
+                                    Math.max(0, absoluteRowIdx + 1),
+                                    nextColumns[colIdx].length,
+                                  );
+                                  nextColumns[colIdx].splice(insertAt, 0, cleaned);
+                                  return nextColumns;
+                                });
+                                setMeasureTick?.((t) => t + 1);
+                              }
+                              setAddingTo(null);
+                            }}
+                            onCancel={() => setAddingTo(null)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </Fragment>
               );
             })}
           </Reorder.Group>
@@ -473,6 +566,7 @@ const ContinueDoingPage = ({
   const [localColumns, setLocalColumns] = useState(columns);
   const [rowRanges, setRowRanges] = useState(null);
   const [measureTick, setMeasureTick] = useState(0);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   const serializeGroups = useCallback((g) => {
     const safe = Array.isArray(g)
@@ -761,6 +855,59 @@ const ContinueDoingPage = ({
     };
   }, [isBrowser, localColumns, footnote, title, subtitle, maxRows, measureTick]);
 
+  const updateGroupData = useCallback((updatedGroup, oldRepComment) => {
+    setLocalGroups((prev) => {
+      const next = [...prev];
+      const idx = next.findIndex(
+        (g) => g.representative_comment === (oldRepComment || updatedGroup.representative_comment)
+      );
+      if (idx !== -1) {
+        next[idx] = updatedGroup;
+      }
+      return next;
+    });
+
+    // Sync back to localColumns so it reflects in the table
+    if (oldRepComment && updatedGroup.representative_comment !== oldRepComment) {
+      setLocalColumns((prevCols) => {
+        return prevCols.map((col) => {
+          if (!Array.isArray(col)) return col;
+          return col.map((cell) => {
+            // Check if the cell text (excluding (xN)) matches the old rep comment
+            const raw = String(cell ?? "");
+            const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
+            const baseText = match ? match[1].trim() : raw.trim();
+            
+            if (baseText === oldRepComment.trim()) {
+              // If it matches, replace it with new rep comment, preserving (xN) if present
+              return match ? `${updatedGroup.representative_comment} ${match[2]}` : updatedGroup.representative_comment;
+            }
+            return cell;
+          });
+        });
+      });
+    }
+
+    setSelectedGroup(updatedGroup);
+  }, []);
+
+  const handleAddComment = useCallback((colIdx, rowIdx, newValue) => {
+    if (!newValue?.trim()) return;
+    
+    const grpIdx = groupIndexMatrix?.[colIdx]?.[rowIdx];
+    if (typeof grpIdx === "number" && grpIdx >= 0 && grpIdx < localGroups.length) {
+      const group = { ...localGroups[grpIdx] };
+      const comments = Array.isArray(group.comments_belong_to_this_group) 
+        ? [...group.comments_belong_to_this_group] 
+        : [];
+      comments.push(newValue);
+      group.comments_belong_to_this_group = comments;
+      
+      updateGroupData(group);
+      setMeasureTick(t => t + 1);
+    }
+  }, [groupIndexMatrix, localGroups, updateGroupData]);
+
   const blocks = useMemo(() => {
     const out = [];
 
@@ -815,6 +962,54 @@ const ContinueDoingPage = ({
               onColumnsChange={setLocalColumns}
               rowOffset={range.start}
               setMeasureTick={setMeasureTick}
+              onAddComment={isContinue ? handleAddComment : undefined}
+              getGroupForCell={
+                isContinue &&
+                Array.isArray(localGroups) &&
+                Array.isArray(groupIndexMatrix)
+                  ? (colIdx, absoluteRowIdx) => {
+                      const grpIdx = groupIndexMatrix?.[colIdx]?.[absoluteRowIdx];
+                      if (
+                        typeof grpIdx === "number" &&
+                        grpIdx >= 0 &&
+                        grpIdx < localGroups.length
+                      ) {
+                        return localGroups[grpIdx];
+                      }
+                      return null;
+                    }
+                  : undefined
+              }
+              onOpenGroupModal={
+                isContinue
+                  ? (group) => {
+                      if (group) setSelectedGroup(group);
+                    }
+                  : undefined
+              }
+              onCellClick={
+                isContinue &&
+                Array.isArray(localGroups) &&
+                Array.isArray(groupIndexMatrix)
+                  ? ({ colIdx, rowIdx }) => {
+                      const grpIdx =
+                        groupIndexMatrix?.[colIdx]?.[rowIdx];
+                      if (
+                        typeof grpIdx === "number" &&
+                        grpIdx >= 0 &&
+                        grpIdx < localGroups.length
+                      ) {
+                        const group = localGroups[grpIdx];
+                        if (
+                          Array.isArray(group?.comments_belong_to_this_group) &&
+                          group.comments_belong_to_this_group.length > 0
+                        ) {
+                          setSelectedGroup(group);
+                        }
+                      }
+                    }
+                  : undefined
+              }
               renderCell={
                 isContinue &&
                 Array.isArray(localGroups) &&
@@ -891,6 +1086,12 @@ const ContinueDoingPage = ({
         HeaderComponent={Header}
         contentClassName="continue-doing-page"
         componentId={autoPaginatedComponentId}
+      />
+      <GroupCommentsModal
+        isOpen={!!selectedGroup}
+        onClose={() => setSelectedGroup(null)}
+        selectedGroup={selectedGroup}
+        onUpdateGroup={updateGroupData}
       />
     </>
     // </div>
