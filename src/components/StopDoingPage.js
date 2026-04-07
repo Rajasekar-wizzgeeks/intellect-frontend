@@ -1,4 +1,5 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { Reorder } from "framer-motion";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
@@ -7,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import { createRoot } from "react-dom/client";
 import measurementManager from "./measurementManager";
+import GroupCommentsModal from "./GroupCommentsModal";
 
 const EditableCell = ({ value, onSave }) => {
   const [editValue, setEditValue] = useState(String(value ?? ""));
@@ -29,6 +31,7 @@ const EditableCell = ({ value, onSave }) => {
       onBlur={() => onSave(editValue)}
       onKeyDown={handleKeyDown}
       autoFocus
+      rows={6}
       className="sd-edit-textarea"
     />
   );
@@ -55,6 +58,7 @@ const EditableTrait = ({ value, onSave }) => {
       onBlur={() => onSave(editValue)}
       onKeyDown={handleKeyDown}
       autoFocus
+      rows={6}
       className="sd-trait-edit-textarea"
     />
   );
@@ -62,12 +66,25 @@ const EditableTrait = ({ value, onSave }) => {
 
 const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }) => {
   const [editing, setEditing] = useState(null); // { idx }
+  const [addingNew, setAddingNew] = useState(false);
+
+  const allowAddTrait = traitsTitle === "Predominant Leadership Trait";
 
   return (
     <div className="sd-traits">
       <div className="sd-traits__header">
         <div className="sd-traits__title">{traitsTitle}</div>
         <div className="sd-traits__subtitle">{traitsSubtitle}</div>
+        {allowAddTrait ? (
+          <button
+            type="button"
+            className="sd-traits__add-btn"
+            onClick={() => setAddingNew(true)}
+            title="Add trait"
+          >
+            <Plus size={16} />
+          </button>
+        ) : null}
         <div className="sd-traits__underline" aria-hidden="true" />
       </div>
 
@@ -109,13 +126,46 @@ const StopDoingTraits = ({ traits, traitsTitle, traitsSubtitle, onTraitsChange }
             )}
           </div>
         ))}
+
+        {allowAddTrait && addingNew ? (
+          <div
+            key="sd-trait-new"
+            className="sd-trait-card sd-trait-card--sm"
+            role="listitem"
+            style={{ cursor: "pointer" }}
+          >
+            <EditableTrait
+              value={""}
+              onSave={(newValue) => {
+                const cleaned = String(newValue ?? "").trim();
+                if (cleaned) {
+                  const next = Array.isArray(traits) ? [...traits] : [];
+                  next.push(cleaned);
+                  onTraitsChange(next);
+                }
+                setAddingNew(false);
+              }}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );
 };
 
-const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChunk, renderCell}) => {
+const StopDoingGrid = ({
+  title,
+  columns,
+  onColumnsChange,
+  rowOffset = 0,
+  lastChunk,
+  renderCell,
+  onCellClick,
+  getGroupForCell,
+  setMeasureTick,
+}) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
+  const [addingTo, setAddingTo] = useState(null); // { colIdx, rowIdx }
   const [dragState, setDragState] = useState(() => ({
     colIdx: null,
     valuesByCol: {},
@@ -183,71 +233,144 @@ const StopDoingGrid = ({ title, columns, onColumnsChange, rowOffset = 0 ,lastChu
             {bufferedValues.map((row) => {
               const absoluteRowIdx = row.key;
               const localRowIdx = absoluteRowIdx - rowOffset;
-              return (
-                <Reorder.Item
-                  key={`sd-item-${colIdx}-${absoluteRowIdx}`}
-                  as="div"
-                  value={row}
-                  className="sd-row"
-                  role="row"
-                  style={{ touchAction: "none" }}
-                  onDragEnd={() => {
-                    setDragState((prev) => {
-                      const nextBuffered = prev.valuesByCol?.[colIdx];
-                      if (Array.isArray(nextBuffered) && nextBuffered.length) {
-                        applyReorder(colIdx, nextBuffered);
-                      }
-                      return { colIdx: null, valuesByCol: {} };
-                    });
-                  }}
-                >
-                  <div
-                    className="sd-cell"
-                    role="cell"
-                    onDoubleClick={() => setEditing({ colIdx, rowIdx: absoluteRowIdx })}
-                    style={{ cursor: "grab" }}
-                  >
-                    {editing?.colIdx === colIdx && editing?.rowIdx === absoluteRowIdx ? (
-                      <EditableCell
-                        key={`${colIdx}-${absoluteRowIdx}`}
-                        value={columns[colIdx]?.[localRowIdx]}
-                        onSave={(newValue) => {
-                          onColumnsChange((prevColumns) => {
-                            const nextColumns = Array.isArray(prevColumns)
-                              ? [...prevColumns]
-                              : [];
-                            if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
-                            nextColumns[colIdx] = [...nextColumns[colIdx]];
+              const isAddingHere =
+                addingTo?.colIdx === colIdx && addingTo?.rowIdx === absoluteRowIdx;
 
-                            const cleaned = String(newValue ?? "").trim();
-                            if (!cleaned) {
-                              if (
-                                absoluteRowIdx >= 0 &&
-                                absoluteRowIdx < nextColumns[colIdx].length
-                              ) {
-                                nextColumns[colIdx].splice(absoluteRowIdx, 1);
-                              }
-                            } else {
-                              nextColumns[colIdx][absoluteRowIdx] = newValue;
-                            }
-                            return nextColumns;
+              return (
+                <Fragment key={`sd-frag-${colIdx}-${absoluteRowIdx}`}>
+                  <Reorder.Item
+                    key={`sd-item-${colIdx}-${absoluteRowIdx}`}
+                    as="div"
+                    value={row}
+                    className="sd-row"
+                    role="row"
+                    style={{ touchAction: "none" }}
+                    onDragEnd={() => {
+                      setDragState((prev) => {
+                        const nextBuffered = prev.valuesByCol?.[colIdx];
+                        if (Array.isArray(nextBuffered) && nextBuffered.length) {
+                          applyReorder(colIdx, nextBuffered);
+                        }
+                        return { colIdx: null, valuesByCol: {} };
+                      });
+                    }}
+                  >
+                    <div
+                      className="sd-cell"
+                      role="cell"
+                      onDoubleClick={() => setEditing({ colIdx, rowIdx: absoluteRowIdx })}
+                      onClick={() => {
+                        if (onCellClick) {
+                          onCellClick({
+                            colIdx,
+                            rowIdx: absoluteRowIdx,
+                            value: columns?.[colIdx]?.[localRowIdx],
                           });
-                          setEditing(null);
-                        }}
-                      />
-                    ) : renderCell ? (
-                      renderCell({
-                        colIdx,
-                        rowIdx: localRowIdx,
-                        value: columns?.[colIdx]?.[localRowIdx],
-                      })
-                    ) : (
-                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                        {String(columns?.[colIdx]?.[localRowIdx] ?? "")}
-                      </ReactMarkdown>
-                    )}
-                  </div>
-                </Reorder.Item>
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {editing?.colIdx === colIdx && editing?.rowIdx === absoluteRowIdx ? (
+                        <EditableCell
+                          key={`${colIdx}-${absoluteRowIdx}`}
+                          value={columns[colIdx]?.[localRowIdx]}
+                          onSave={(newValue) => {
+                            onColumnsChange((prevColumns) => {
+                              const nextColumns = Array.isArray(prevColumns)
+                                ? [...prevColumns]
+                                : [];
+                              if (!nextColumns[colIdx]) nextColumns[colIdx] = [];
+                              nextColumns[colIdx] = [...nextColumns[colIdx]];
+
+                              const cleaned = String(newValue ?? "").trim();
+                              if (!cleaned) {
+                                if (
+                                  absoluteRowIdx >= 0 &&
+                                  absoluteRowIdx < nextColumns[colIdx].length
+                                ) {
+                                  nextColumns[colIdx].splice(absoluteRowIdx, 1);
+                                }
+                              } else {
+                                nextColumns[colIdx][absoluteRowIdx] = newValue;
+                              }
+                              return nextColumns;
+                            });
+                            setMeasureTick?.((t) => t + 1);
+                            setEditing(null);
+                          }}
+                        />
+                      ) : renderCell ? (
+                        renderCell({
+                          colIdx,
+                          rowIdx: localRowIdx,
+                          value: columns?.[colIdx]?.[localRowIdx],
+                        })
+                      ) : (
+                        <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                          {String(columns?.[colIdx]?.[localRowIdx] ?? "")}
+                        </ReactMarkdown>
+                      )}
+                    </div>
+
+                    {(() => {
+                      const group = getGroupForCell?.(colIdx, absoluteRowIdx);
+                      const hasGroupComments =
+                        Array.isArray(group?.comments_belong_to_this_group) &&
+                        group.comments_belong_to_this_group.length > 0;
+
+                      if (hasGroupComments) return null;
+
+                      return (
+                        <button
+                          type="button"
+                          className="cd-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddingTo({ colIdx, rowIdx: absoluteRowIdx });
+                          }}
+                          title="Add similar comment"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      );
+                    })()}
+                  </Reorder.Item>
+
+                  {isAddingHere ? (
+                    <div className="sd-row" role="row">
+                      <div className="sd-cell" role="cell">
+                        <EditableCell
+                          value={""}
+                          onSave={(val) => {
+                            const cleaned = String(val ?? "").trim();
+                            if (cleaned) {
+                              onColumnsChange((prevColumns) => {
+                                const nextColumns = Array.isArray(prevColumns)
+                                  ? [...prevColumns]
+                                  : [];
+
+                                if (!Array.isArray(nextColumns[colIdx])) {
+                                  nextColumns[colIdx] = [];
+                                } else {
+                                  nextColumns[colIdx] = [...nextColumns[colIdx]];
+                                }
+
+                                const insertAt = Math.min(
+                                  Math.max(0, absoluteRowIdx + 1),
+                                  nextColumns[colIdx].length,
+                                );
+                                nextColumns[colIdx].splice(insertAt, 0, cleaned);
+                                return nextColumns;
+                              });
+                              setMeasureTick?.((t) => t + 1);
+                            }
+                            setAddingTo(null);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </Fragment>
               );
             })}
           </Reorder.Group>
@@ -271,6 +394,7 @@ const formatTraitText = (value, maxLength = 140) => {
 
 const StopDoingPage = ({
   title = "What the Nominee Should “Stop Doing”…",
+  subtitle,
   columns,
   groups,
   groupIndexMatrix,
@@ -286,6 +410,8 @@ const StopDoingPage = ({
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
   );  
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [measureTick, setMeasureTick] = useState(0);
 
   const serializeGroups = useCallback((g) => {
     const safe = Array.isArray(g)
@@ -500,13 +626,47 @@ const StopDoingPage = ({
         `stop-doing-chunk-${measurementId.current}`
       );
     };
-  }, [isBrowser, localColumns, maxRows, title]);
+  }, [isBrowser, localColumns, maxRows, title, measureTick]);
 
   const [localTraits, setLocalTraits] = useState(traits);
 
   useEffect(() => {
     setLocalTraits(traits);
   }, [traits]);
+
+  const updateGroupData = useCallback((updatedGroup, oldRepComment) => {
+    setLocalGroups((prev) => {
+      const next = [...prev];
+      const idx = next.findIndex(
+        (g) => g.representative_comment === (oldRepComment || updatedGroup.representative_comment)
+      );
+      if (idx !== -1) {
+        next[idx] = updatedGroup;
+      }
+      return next;
+    });
+
+    // Sync back to localColumns so it reflects in the table
+    if (oldRepComment && updatedGroup.representative_comment !== oldRepComment) {
+      setLocalColumns((prevCols) => {
+        return prevCols.map((col) => {
+          if (!Array.isArray(col)) return col;
+          return col.map((cell) => {
+            const raw = String(cell ?? "");
+            const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
+            const baseText = match ? match[1].trim() : raw.trim();
+            
+            if (baseText === oldRepComment.trim()) {
+              return match ? `${updatedGroup.representative_comment} ${match[2]}` : updatedGroup.representative_comment;
+            }
+            return cell;
+          });
+        });
+      });
+    }
+
+    setSelectedGroup(updatedGroup);
+  }, []);
 
   const blocks = useMemo(() => {
     const out = [];
@@ -537,6 +697,45 @@ const StopDoingPage = ({
               columns={chunkColumns}
               onColumnsChange={setLocalColumns}
               rowOffset={range.start}
+              setMeasureTick={setMeasureTick}
+              getGroupForCell={
+                Array.isArray(localGroups) &&
+                Array.isArray(groupIndexMatrix)
+                  ? (colIdx, absoluteRowIdx) => {
+                      const grpIdx = groupIndexMatrix?.[colIdx]?.[absoluteRowIdx];
+                      if (
+                        typeof grpIdx === "number" &&
+                        grpIdx >= 0 &&
+                        grpIdx < localGroups.length
+                      ) {
+                        return localGroups[grpIdx];
+                      }
+                      return null;
+                    }
+                  : undefined
+              }
+              onCellClick={
+                Array.isArray(localGroups) &&
+                Array.isArray(groupIndexMatrix)
+                  ? ({ colIdx, rowIdx }) => {
+                      const grpIdx =
+                        groupIndexMatrix?.[colIdx]?.[rowIdx];
+                      if (
+                        typeof grpIdx === "number" &&
+                        grpIdx >= 0 &&
+                        grpIdx < localGroups.length
+                      ) {
+                        const group = localGroups[grpIdx];
+                        if (
+                          Array.isArray(group?.comments_belong_to_this_group) &&
+                          group.comments_belong_to_this_group.length > 0
+                        ) {
+                          setSelectedGroup(group);
+                        }
+                      }
+                    }
+                  : undefined
+              }
               lastChunk={idx === rangesToUse.length - 1}
               renderCell={
                 Array.isArray(localGroups) && Array.isArray(groupIndexMatrix)
@@ -610,6 +809,8 @@ const StopDoingPage = ({
     localTraits,
     traitsSubtitle,
     traitsTitle,
+    groupIndexMatrix,
+    localGroups,
   ]);
 
   return (
@@ -622,6 +823,12 @@ const StopDoingPage = ({
         pagePadding={0}
         contentClassName="stop-doing-page"
         componentId="stop-doing"
+      />
+      <GroupCommentsModal
+        isOpen={!!selectedGroup}
+        onClose={() => setSelectedGroup(null)}
+        selectedGroup={selectedGroup}
+        onUpdateGroup={updateGroupData}
       />
     </>
     // </div>

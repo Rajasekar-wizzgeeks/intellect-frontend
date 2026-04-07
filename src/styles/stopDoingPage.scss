@@ -61,10 +61,15 @@
 
 .sd-row {
   border-top: 1px solid rgba(0, 0, 0, 0.25);
+  position: relative;
 }
 
 .sd-row:first-child {
   border-top: none;
+}
+
+.sd-row:hover .cd-add-btn {
+  opacity: 1;
 }
 
 .sd-cell {
