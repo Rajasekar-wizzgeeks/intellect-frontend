@@ -44,40 +44,10 @@ div[data-last-on-page="true"] > .sp-strengths {
 
 .sp-grid {
   display: grid;
-  grid-template-columns: 127px 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   padding: 0 40px 0 40px;
   box-sizing: border-box;
-}
-
-.sp-left {
-  position: relative;
-  top: 57px;
-  left: -3px;
-  width: 143px;
-  height: var(--sp-left-height, 330px);
-}
-
-.sp-left .bs-arc {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.sp-left__icon {
-  position: absolute;
-  left: -38px;
-  top: 95px;
-  width: 132px;
-  height: 132px;
-}
-
-.sp-left__img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .sp-right {
@@ -132,8 +102,7 @@ div[data-last-on-page="true"] > .sp-strengths {
 }
 
 .sp-row {
-  position: absolute;
-  left: 0;
+  position: relative;
   display: grid;
   grid-template-columns: 74px 1fr;
   column-gap: 12px;

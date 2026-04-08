@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createRoot } from "react-dom/client";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
-import ArcConnector from "./ArcConnector";
-import strengthImage from "../assets/png/strengthImage.png";
 import "../styles/strengthsPage.scss";
 import measurementManager from "./measurementManager";
 
@@ -26,11 +24,10 @@ const StrengthsPage = ({
   improvementsManagerItems = [],
   averageCompentency = {},
 }) => {
-  const [strengthPoints, setStrengthPoints] = useState([]);
-  const [improvementPoints, setImprovementPoints] = useState([]);
-
   const [managerChunks, setManagerChunks] = useState(null);
+  const [improvementsManagerChunks, setImprovementsManagerChunks] = useState(null);
   const measurementId = useRef(`strengths-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const improvementsMeasurementId = useRef(`improvements-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
   const derivedFromAverage = useMemo(() => {
     if (!averageCompentency || typeof averageCompentency !== "object") {
@@ -95,11 +92,176 @@ const StrengthsPage = ({
     ? derivedFromAverage.managerStrengths
     : managerItems;
 
-
   const effectiveImprovementsManagerItems = derivedFromAverage
     ?.managerImprovements?.length
     ? derivedFromAverage.managerImprovements
     : improvementsManagerItems;
+
+  useEffect(() => {
+    const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
+    if (!isBrowser) return;
+
+    let cancelled = false;
+    const PAGE_HEIGHT = 1053;
+    const PAGE_WIDTH = 794;
+
+    const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeLeft }) => {
+      return new Promise((resolve) => {
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.visibility = "hidden";
+        container.style.width = `${PAGE_WIDTH}px`;
+        container.style.left = "-100000px";
+        container.style.top = "0";
+        container.style.zIndex = "-9999";
+        container.style.pointerEvents = "none";
+        document.body.appendChild(container);
+
+        const root = createRoot(container);
+
+        const slice = effectiveImprovementsManagerItems.slice(startIdx, endIdx);
+
+        root.render(
+          <div className="strengths-page">
+            <div className="sp sp--improvement">
+              {includeHeader ? <FeedbackCommonHeader title={improvementsTitle} /> : null}
+
+              <div
+                className="sp-grid"
+                style={{
+                  "--sp-arc-color": "var(--feedback-initial-underline-color)",
+                  "--sp-left-height": `330px`,
+                }}
+              >
+                <div className="sp-right">
+                  <div className="sp-cols">
+                    <div className="sp-col">
+                      <div className="sp-col__header">
+                        <div className="sp-col__header-title">{improvementsGroupTitle}</div>
+                      </div>
+                      <div className="sp-col__body" style={{ height: 330 }} />
+                    </div>
+
+                    <div className="sp-divider" aria-hidden="true" />
+
+                    <div className="sp-col">
+                      <div className="sp-col__header sp-col__header--manager">
+                        <div className="sp-col__header-title">{improvementsManagerTitle}</div>
+                      </div>
+
+                      <div className="sp-col__body sp-col__body--manager">
+                        {slice.map((it, idx) => (
+                          <div key={`im-m-${idx}`} className="sp-row sp-row--manager">
+                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-card">{it.text}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>,
+        );
+
+        const measure = async () => {
+          try {
+            if (document.fonts?.ready) await document.fonts.ready;
+            await new Promise((r) => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(r);
+                });
+              });
+            });
+
+            const rect = container.firstElementChild?.getBoundingClientRect();
+            resolve(Math.ceil(rect?.height || 0));
+          } catch {
+            resolve(0);
+          } finally {
+            try {
+              root.unmount();
+            } catch {}
+            container.remove();
+          }
+        };
+
+        setTimeout(measure, 10);
+      });
+    };
+
+    const buildChunks = async () => {
+      const items = Array.isArray(effectiveImprovementsManagerItems)
+        ? effectiveImprovementsManagerItems
+        : [];
+      if (!items.length) {
+        setImprovementsManagerChunks([]);
+        return;
+      }
+
+      const nextChunks = [];
+      let start = 0;
+      let isFirst = true;
+
+      while (start < items.length) {
+        let lo = start + 1;
+        let hi = items.length;
+        let best = lo;
+
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (mid <= start) {
+            lo = start + 1;
+            continue;
+          }
+
+          const h = await renderMeasure({
+            startIdx: start,
+            endIdx: mid,
+            includeHeader: isFirst,
+            includeLeft: isFirst,
+          });
+
+          if (h > 0 && h <= PAGE_HEIGHT) {
+            best = mid;
+            lo = mid + 1;
+          } else {
+            hi = mid - 1;
+          }
+        }
+
+        if (best <= start) best = start + 1;
+        nextChunks.push({ start, end: best, isFirst });
+        start = best;
+        isFirst = false;
+      }
+
+      if (!cancelled) setImprovementsManagerChunks(nextChunks);
+    };
+
+    const run = async () => {
+      await measurementManager.addToQueue(improvementsMeasurementId.current, async () => {
+        if (cancelled) return;
+        await buildChunks();
+      });
+    };
+
+    setImprovementsManagerChunks(null);
+    run();
+
+    return () => {
+      cancelled = true;
+      measurementManager.removeFromQueue(improvementsMeasurementId.current);
+    };
+  }, [
+    improvementsGroupTitle,
+    improvementsManagerTitle,
+    improvementsTitle,
+    effectiveImprovementsManagerItems,
+    effectiveImprovementsGroupItems,
+  ]);
 
   const arePointsEqual = (a, b) => {
     if (a === b) return true;
@@ -110,52 +272,6 @@ const StrengthsPage = ({
     }
     return true;
   };
-
-  const handleStrengthPointsLine = useCallback((newPoints) => {
-    setStrengthPoints((prev) => {
-      if (arePointsEqual(prev, newPoints)) return prev;
-      return newPoints;
-    });
-  }, []);
-
-  const handleImprovementPointsLine = useCallback((newPoints) => {
-    setImprovementPoints((prev) => {
-      if (arePointsEqual(prev, newPoints)) return prev;
-      return newPoints;
-    });
-  }, []);
-
-  const getArcRowTop = useCallback((points, index, bodyHeight, arcHeight) => {
-    const y = points?.[index]?.y;
-    if (!Number.isFinite(y) || !Number.isFinite(bodyHeight) || !arcHeight) {
-      return 0;
-    }
-
-    const pillMarginTop = 12;
-    const pillHeight = 40;
-    const lineY =
-      pillMarginTop + pillHeight - (index === 0 ? 10 : index === 1 ? 5 : 0) / 2;
-
-    const scaleY = bodyHeight / arcHeight;
-    const yScaled = y * scaleY;
-    const top = Math.round(yScaled - lineY);
-    return Math.max(0, Math.min(bodyHeight - 1, top));
-  }, []);
-
-  const getConnectorLineStyle = useCallback((points, index) => {
-    const x = points?.[index]?.x;
-    const pillMarginTop = 12;
-    const pillHeight = 40;
-    const lineY = pillMarginTop + pillHeight / 2;
-
-    if (!Number.isFinite(x)) {
-      return { top: lineY, width: 0, left: 0 };
-    }
-
-    const width = Math.max(0, Math.min(150 - x, 50));
-    const left = -(155 - x);
-    return { top: lineY, width, left };
-  }, []);
 
   useEffect(() => {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
@@ -193,27 +309,6 @@ const StrengthsPage = ({
                   "--sp-left-height": `330px`,
                 }}
               >
-                <div className="sp-left">
-                  {includeGroup ? (
-                    <>
-                      <ArcConnector
-                        items={groupToRender}
-                        arcColor={"var(--strength-arc-color)"}
-                        arcHeight={450}
-                        paddingTop={85}
-                        paddingBottom={85}
-                        circleColor={"var(--strength-pill-bg)"}
-                        circleBorderColor={"var(--strength-arc-color)"}
-                        strokeWidth={6}
-                        circleRadius={10}
-                      />
-                      <div className="sp-left__icon" aria-hidden="true">
-                        <img src={strengthImage} alt="" className="sp-left__img" />
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-
                 <div className="sp-right">
                   <div className="sp-cols">
                     <div className="sp-col">
@@ -388,28 +483,6 @@ const StrengthsPage = ({
               "--sp-left-height": `${bodyHeight}px`,
             }}
           >
-            <div className="sp-left">
-              {showGroup ? (
-                <>
-                  <ArcConnector
-                    items={groupToRender}
-                    arcColor={"var(--strength-arc-color)"}
-                    arcHeight={arcHeight}
-                    paddingTop={paddingTop}
-                    paddingBottom={paddingBottom}
-                    setPointsLine={handleStrengthPointsLine}
-                    circleColor={"var(--strength-pill-bg)"}
-                    circleBorderColor={"var(--strength-arc-color)"}
-                    strokeWidth={6}
-                    circleRadius={10}
-                  />
-                  <div className="sp-left__icon" aria-hidden="true">
-                    <img src={strengthImage} alt="" className="sp-left__img" />
-                  </div>
-                </>
-              ) : null}
-            </div>
-
             <div className="sp-right">
               <div className="sp-cols">
                 <div className="sp-col">
@@ -419,29 +492,17 @@ const StrengthsPage = ({
                   {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
                   <div className="sp-col__body" style={{ height: bodyHeight }}>
-                    {showGroup &&
-                      strengthPoints.length === groupToRender.length &&
-                      groupToRender.map((it, i) => (
-                        <div
-                          key={`g-${chunkIdx}-${i}`}
-                          className="sp-row"
-                          style={{
-                            top: getArcRowTop(
-                              strengthPoints,
-                              i,
-                              bodyHeight,
-                              arcHeight,
-                            ),
-                          }}
-                        >
+                    {showGroup
+                      ? groupToRender.map((it, i) => (
                           <div
-                            className="sp-row__line"
-                            style={getConnectorLineStyle(strengthPoints, i)}
-                          />
-                          <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
-                          <div className="sp-card">{it.text}</div>
-                        </div>
-                      ))}
+                            key={`g-${chunkIdx}-${i}`}
+                            className="sp-row sp-row--manager"
+                          >
+                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-card">{it.text}</div>
+                          </div>
+                        ))
+                      : null}
                   </div>
                 </div>
 
@@ -469,107 +530,80 @@ const StrengthsPage = ({
       );
     });
 
-    out.push(
-      <div key="improvements" className="sp sp--improvement">
-        <FeedbackCommonHeader title={improvementsTitle} />
+    const improvementsResolvedChunks = Array.isArray(improvementsManagerChunks)
+      ? improvementsManagerChunks
+      : [{ start: 0, end: effectiveImprovementsManagerItems.length, isFirst: true }];
 
-        <div
-          className="sp-grid"
-          style={{
-            "--sp-arc-color": "var(--feedback-initial-underline-color)",
-            "--sp-left-height": `${bodyHeight}px`,
-          }}
-        >
-          <div className="sp-left">
-            <ArcConnector
-              items={effectiveImprovementsGroupItems}
-              arcColor={"#b33737"}
-              arcHeight={arcHeight}
-              paddingTop={paddingTop}
-              paddingBottom={paddingBottom}
-              setPointsLine={handleImprovementPointsLine}
-              circleColor={"var(--improve-pill-bg)"}
-              circleBorderColor={"#b33737"}
-              strokeWidth={6}
-              circleRadius={10}
-            />
-            <div className="sp-left__icon" aria-hidden="true">
-              <img src={strengthImage} alt="" className="sp-left__img" />
-            </div>
-          </div>
+    improvementsResolvedChunks.forEach((chunk, idx) => {
+      const managerSlice = effectiveImprovementsManagerItems.slice(chunk.start, chunk.end);
+      const showLeft = !!chunk.isFirst;
 
-          <div className="sp-right">
-            <div className="sp-cols">
-              <div className="sp-col">
-                <div className="sp-col__header">
-                  <div className="sp-col__header-title">
-                    {improvementsGroupTitle}
+      out.push(
+        <div key={`improvements-${idx}`} className="sp sp--improvement">
+          {chunk.isFirst ? <FeedbackCommonHeader title={improvementsTitle} /> : null}
+
+          <div
+            className="sp-grid"
+            style={{
+              "--sp-arc-color": "var(--feedback-initial-underline-color)",
+              "--sp-left-height": `${bodyHeight}px`,
+            }}
+          >
+            <div className="sp-right">
+              <div className="sp-cols">
+                <div className="sp-col">
+                  <div className="sp-col__header">
+                    <div className="sp-col__header-title">
+                      {improvementsGroupTitle}
+                    </div>
+                  </div>
+
+                  <div className="sp-col__body" style={{ height: bodyHeight }}>
+                    {showLeft
+                      ? effectiveImprovementsGroupItems.map((it, i) => (
+                          <div
+                            key={`ig-${idx}-${i}`}
+                            className="sp-row sp-row--manager"
+                          >
+                            <div className="sp-pill">
+                              {Number(it.score).toFixed(2)}
+                            </div>
+                            <div className="sp-card"> {it.text}</div>
+                          </div>
+                        ))
+                      : null}
                   </div>
                 </div>
-                {/* <div className="sp-col__header-sub">
-                  {improvementsGroupSubTitle}
-                </div> */}
 
-                <div className="sp-col__body" style={{ height: bodyHeight }}>
-                  {improvementPoints.length ===
-                    effectiveImprovementsGroupItems.length &&
-                    effectiveImprovementsGroupItems.map((it, i) => (
+                <div className="sp-divider" aria-hidden="true" />
+
+                <div className="sp-col">
+                  <div className="sp-col__header sp-col__header--manager">
+                    <div className="sp-col__header-title">
+                      {improvementsManagerTitle}
+                    </div>
+                  </div>
+
+                  <div className="sp-col__body sp-col__body--manager">
+                    {managerSlice.map((it, rowIdx) => (
                       <div
-                        key={`ig-${i}`}
-                        className="sp-row"
-                        style={{
-                          top: getArcRowTop(
-                            improvementPoints,
-                            i,
-                            bodyHeight,
-                            arcHeight,
-                          ),
-                        }}
+                        key={`im-${idx}-${rowIdx}`}
+                        className="sp-row sp-row--manager"
                       >
-                        <div
-                          className="sp-row__line"
-                          style={getConnectorLineStyle(improvementPoints, i)}
-                        />
                         <div className="sp-pill">
                           {Number(it.score).toFixed(2)}
                         </div>
-                        <div className="sp-card"> {it.text}</div>
+                        <div className="sp-card">{it.text}</div>
                       </div>
                     ))}
-                </div>
-              </div>
-
-              <div className="sp-divider" aria-hidden="true" />
-
-              <div className="sp-col">
-                <div className="sp-col__header sp-col__header--manager">
-                  <div className="sp-col__header-title">
-                    {improvementsManagerTitle}
                   </div>
-                </div>
-                {/* <div className="sp-col__header-sub">
-                  {improvementsManagerSubTitle}
-                </div> */}
-
-                <div className="sp-col__body sp-col__body--manager">
-                  {effectiveImprovementsManagerItems.map((it, idx) => (
-                    <div
-                      key={`im-${idx}`}
-                      className="sp-row sp-row--manager"
-                    >
-                      <div className="sp-pill">
-                        {Number(it.score).toFixed(2)}
-                      </div>
-                      <div className="sp-card">{it.text}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>,
-    );
+        </div>,
+      );
+    });
 
     return out;
   }, [
@@ -577,9 +611,6 @@ const StrengthsPage = ({
     groupItems,
     groupSubTitle,
     groupTitle,
-    handleImprovementPointsLine,
-    handleStrengthPointsLine,
-    improvementPoints.length,
     improvementsGroupItems,
     improvementsGroupSubTitle,
     improvementsGroupTitle,
@@ -591,7 +622,8 @@ const StrengthsPage = ({
     managerSubTitle,
     managerTitle,
     managerChunks,
-    strengthPoints.length,
+    effectiveImprovementsManagerItems,
+    improvementsManagerChunks,
     title,
   ]);
 
