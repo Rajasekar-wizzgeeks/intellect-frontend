@@ -102,7 +102,7 @@ const StrengthsPage = ({
     if (!isBrowser) return;
 
     let cancelled = false;
-    const PAGE_HEIGHT = 1053;
+    const PAGE_HEIGHT = 1123;
     const PAGE_WIDTH = 794;
 
     const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeLeft }) => {
@@ -278,7 +278,7 @@ const StrengthsPage = ({
     if (!isBrowser) return;
 
     let cancelled = false;
-    const PAGE_HEIGHT = 1053;
+    const PAGE_HEIGHT = 1123;
     const PAGE_WIDTH = 794;
 
     const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeGroup }) => {
@@ -631,7 +631,7 @@ const StrengthsPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1223}
+      pageHeight={1123}
       pagePadding={0}
       contentClassName="strengths-page"
       componentId="strengths-page"
