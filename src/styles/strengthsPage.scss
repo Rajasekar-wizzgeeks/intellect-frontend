@@ -142,9 +142,9 @@ div[data-last-on-page="true"] > .sp-strengths {
   padding: 12px 14px;
   color: var(--color-black, #111);
   font-size: var(--fs-sm);
-  white-space: wrap;
+  white-space: normal;
   line-height: 1.35;
   // height: px;
-  overflow: hidden;
-  max-height: 70px;
+  overflow: visible;
+  max-height: none;
 }

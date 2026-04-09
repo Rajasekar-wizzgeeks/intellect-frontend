@@ -30,6 +30,13 @@ const StrengthsPage = ({
   const improvementsMeasurementId = useRef(`improvements-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const [layoutTick, setLayoutTick] = useState(0);
 
+  const effectivePageWidth = useMemo(() => {
+    const isBrowser = typeof window !== "undefined";
+    if (!isBrowser) return 794;
+    const w = Math.max(320, Number(window.innerWidth) || 0);
+    return Math.min(794, w);
+  }, [layoutTick]);
+
   useEffect(() => {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
     if (!isBrowser) return;
@@ -121,7 +128,7 @@ const StrengthsPage = ({
 
     let cancelled = false;
     const PAGE_HEIGHT = 1123;
-    const PAGE_WIDTH = 794;
+    const PAGE_WIDTH = effectivePageWidth;
 
     const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeLeft }) => {
       return new Promise((resolve) => {
@@ -282,6 +289,7 @@ const StrengthsPage = ({
     effectiveImprovementsManagerItems,
     effectiveImprovementsGroupItems,
     layoutTick,
+    effectivePageWidth,
   ]);
 
   const arePointsEqual = (a, b) => {
@@ -300,7 +308,7 @@ const StrengthsPage = ({
 
     let cancelled = false;
     const PAGE_HEIGHT = 1123;
-    const PAGE_WIDTH = 794;
+    const PAGE_WIDTH = effectivePageWidth;
 
     const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeGroup }) => {
       return new Promise((resolve) => {
@@ -474,6 +482,7 @@ const StrengthsPage = ({
     managerTitle,
     title,
     layoutTick,
+    effectivePageWidth,
   ]);
 
   const blocks = useMemo(() => {
@@ -498,12 +507,8 @@ const StrengthsPage = ({
         <div
           key={`strengths-${chunkIdx}`}
           className="sp sp-strengths"
-          data-force-page-break={chunk.isFirst ? "before" : undefined}
-          style={
-            chunk.isFirst
-              ? { breakBefore: "page", pageBreakBefore: "always" }
-              : undefined
-          }
+          data-force-page-break="before"
+          style={{ breakBefore: "page", pageBreakBefore: "always" }}
         >
           {chunk.isFirst ? <FeedbackCommonHeader title={title} /> : null}
 
@@ -573,12 +578,8 @@ const StrengthsPage = ({
         <div
           key={`improvements-${idx}`}
           className="sp sp--improvement"
-          data-force-page-break={chunk.isFirst ? "before" : undefined}
-          style={
-            chunk.isFirst
-              ? { breakBefore: "page", pageBreakBefore: "always" }
-              : undefined
-          }
+          data-force-page-break="before"
+          style={{ breakBefore: "page", pageBreakBefore: "always" }}
         >
           {chunk.isFirst ? <FeedbackCommonHeader title={improvementsTitle} /> : null}
 
@@ -670,9 +671,9 @@ const StrengthsPage = ({
   return (
     <AutoPaginatedSections
       blocks={blocks}
-      pageWidth={794}
+      pageWidth={effectivePageWidth}
       pageHeight={1123}
-      pagePadding={0}
+      pagePadding={60}
       contentClassName="strengths-page"
       componentId="strengths-page"
     />
