@@ -30,12 +30,6 @@ const StrengthsPage = ({
   const improvementsMeasurementId = useRef(`improvements-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const [layoutTick, setLayoutTick] = useState(0);
 
-  const repeatItems = useCallback((arr, times) => {
-    const list = Array.isArray(arr) ? arr : [];
-    if (times <= 1) return list;
-    return Array.from({ length: times }, () => list).flat();
-  }, []);
-
   const effectivePageWidth = useMemo(() => {
     const isBrowser = typeof window !== "undefined";
     if (!isBrowser) return 794;
@@ -128,26 +122,6 @@ const StrengthsPage = ({
     ? derivedFromAverage.managerImprovements
     : improvementsManagerItems;
 
-  const repeatedGroupItems = useMemo(
-    () => repeatItems(effectiveGroupItems, 3),
-    [effectiveGroupItems, repeatItems],
-  );
-
-  const repeatedManagerItems = useMemo(
-    () => repeatItems(effectiveManagerItems, 3),
-    [effectiveManagerItems, repeatItems],
-  );
-
-  const repeatedImprovementsGroupItems = useMemo(
-    () => repeatItems(effectiveImprovementsGroupItems, 3),
-    [effectiveImprovementsGroupItems, repeatItems],
-  );
-
-  const repeatedImprovementsManagerItems = useMemo(
-    () => repeatItems(effectiveImprovementsManagerItems, 3),
-    [effectiveImprovementsManagerItems, repeatItems],
-  );
-
   useEffect(() => {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
     if (!isBrowser) return;
@@ -170,7 +144,7 @@ const StrengthsPage = ({
 
         const root = createRoot(container);
 
-        const slice = repeatedImprovementsManagerItems.slice(startIdx, endIdx);
+        const slice = effectiveImprovementsManagerItems.slice(startIdx, endIdx);
 
         root.render(
           <div className="strengths-page">
@@ -246,8 +220,8 @@ const StrengthsPage = ({
     };
 
     const buildChunks = async () => {
-      const items = Array.isArray(repeatedImprovementsManagerItems)
-        ? repeatedImprovementsManagerItems
+      const items = Array.isArray(effectiveImprovementsManagerItems)
+        ? effectiveImprovementsManagerItems
         : [];
       if (!items.length) {
         setImprovementsManagerChunks([]);
@@ -312,8 +286,8 @@ const StrengthsPage = ({
     improvementsGroupTitle,
     improvementsManagerTitle,
     improvementsTitle,
-    repeatedImprovementsManagerItems,
-    repeatedImprovementsGroupItems,
+    effectiveImprovementsManagerItems,
+    effectiveImprovementsGroupItems,
     layoutTick,
     effectivePageWidth,
   ]);
@@ -350,8 +324,8 @@ const StrengthsPage = ({
 
         const root = createRoot(container);
 
-        const slice = repeatedManagerItems.slice(startIdx, endIdx);
-        const groupToRender = includeGroup ? repeatedGroupItems : [];
+        const slice = effectiveManagerItems.slice(startIdx, endIdx);
+        const groupToRender = includeGroup ? effectiveGroupItems : [];
 
         root.render(
           <div className="strengths-page">
@@ -436,7 +410,7 @@ const StrengthsPage = ({
     };
 
     const buildChunks = async () => {
-      const items = Array.isArray(repeatedManagerItems) ? repeatedManagerItems : [];
+      const items = Array.isArray(effectiveManagerItems) ? effectiveManagerItems : [];
       if (!items.length) {
         setManagerChunks([]);
         return;
@@ -500,8 +474,8 @@ const StrengthsPage = ({
     };
   }, [
     arcColor,
-    repeatedGroupItems,
-    repeatedManagerItems,
+    effectiveGroupItems,
+    effectiveManagerItems,
     groupSubTitle,
     groupTitle,
     managerSubTitle,
@@ -522,12 +496,12 @@ const StrengthsPage = ({
 
     const resolvedChunks = Array.isArray(managerChunks)
       ? managerChunks
-      : [{ start: 0, end: repeatedManagerItems.length, isFirst: true }];
+      : [{ start: 0, end: effectiveManagerItems.length, isFirst: true }];
 
     resolvedChunks.forEach((chunk, chunkIdx) => {
-      const managerSlice = repeatedManagerItems.slice(chunk.start, chunk.end);
+      const managerSlice = effectiveManagerItems.slice(chunk.start, chunk.end);
       const showGroup = !!chunk.isFirst;
-      const groupToRender = showGroup ? repeatedGroupItems : [];
+      const groupToRender = showGroup ? effectiveGroupItems : [];
 
       out.push(
         <div
@@ -594,10 +568,10 @@ const StrengthsPage = ({
 
     const improvementsResolvedChunks = Array.isArray(improvementsManagerChunks)
       ? improvementsManagerChunks
-      : [{ start: 0, end: repeatedImprovementsManagerItems.length, isFirst: true }];
+      : [{ start: 0, end: effectiveImprovementsManagerItems.length, isFirst: true }];
 
     improvementsResolvedChunks.forEach((chunk, idx) => {
-      const managerSlice = repeatedImprovementsManagerItems.slice(chunk.start, chunk.end);
+      const managerSlice = effectiveImprovementsManagerItems.slice(chunk.start, chunk.end);
       const showLeft = !!chunk.isFirst;
 
       out.push(
@@ -627,7 +601,7 @@ const StrengthsPage = ({
 
                   <div className="sp-col__body" style={{ height: bodyHeight }}>
                     {showLeft
-                      ? repeatedImprovementsGroupItems.map((it, i) => (
+                      ? effectiveImprovementsGroupItems.map((it, i) => (
                           <div
                             key={`ig-${idx}-${i}`}
                             className="sp-row sp-row--manager"
@@ -689,12 +663,11 @@ const StrengthsPage = ({
     managerSubTitle,
     managerTitle,
     managerChunks,
-    repeatedImprovementsManagerItems,
+    effectiveImprovementsManagerItems,
     improvementsManagerChunks,
     title,
-    repeatedGroupItems,
-    repeatedManagerItems,
-    repeatedImprovementsGroupItems,
+    effectiveGroupItems,
+    effectiveManagerItems,
   ]);
 
   return (
