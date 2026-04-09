@@ -357,11 +357,14 @@ const AutoPaginatedSections = ({
   pageWidth = 794,
   pageHeight = 950,
   pagePadding = 20,
+  pagePaddingTop,
+  pagePaddingBottom,
   HeaderComponent,
   paddingLeft = 0,
   contentClassName = "content-page",
   componentId,
 }) => {
+
   const [headerHeight, setHeaderHeight] = useState(0);
   const [heights, setHeights] = useState([]);
   const [pages, setPages] = useState([]);
@@ -377,9 +380,24 @@ const AutoPaginatedSections = ({
   const cleanupRef = useRef(null);
   const isUnmounted = useRef(false);
 
+  const resolvedPaddingTop =
+    typeof pagePaddingTop === "number" ? pagePaddingTop : pagePadding;
+  const resolvedPaddingBottom =
+    typeof pagePaddingBottom === "number" ? pagePaddingBottom : pagePadding;
+
   const USABLE_HEIGHT = useMemo(
-    () => pageHeight - pagePadding * 2 - (HeaderComponent ? headerHeight : 0),
-    [pageHeight, pagePadding, HeaderComponent, headerHeight]
+    () =>
+      pageHeight -
+      resolvedPaddingTop -
+      resolvedPaddingBottom -
+      (HeaderComponent ? headerHeight : 0),
+    [
+      pageHeight,
+      resolvedPaddingTop,
+      resolvedPaddingBottom,
+      HeaderComponent,
+      headerHeight,
+    ]
   );
 
   const isBrowser =
@@ -641,7 +659,12 @@ const AutoPaginatedSections = ({
     return (
       <section
         className="section-page pdf-section"
-        style={{ padding: pagePadding }}
+        style={{
+          paddingTop: resolvedPaddingTop,
+          paddingBottom: resolvedPaddingBottom,
+          paddingLeft: pagePadding,
+          paddingRight: pagePadding,
+        }}
       >
         <div className={contentClassName}>
           <div
@@ -665,7 +688,12 @@ const AutoPaginatedSections = ({
         <section
           key={`page-${measurementId.current}-${pageIndex}`}
           className="section-page pdf-section"
-          style={{ padding: pagePadding }}
+          style={{
+            paddingTop: resolvedPaddingTop,
+            paddingBottom: resolvedPaddingBottom,
+            paddingLeft: pagePadding,
+            paddingRight: pagePadding,
+          }}
         >
           <div className={contentClassName}>
             {HeaderComponent ? <HeaderComponent /> : null}
