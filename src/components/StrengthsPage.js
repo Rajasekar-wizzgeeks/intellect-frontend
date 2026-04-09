@@ -28,6 +28,24 @@ const StrengthsPage = ({
   const [improvementsManagerChunks, setImprovementsManagerChunks] = useState(null);
   const measurementId = useRef(`strengths-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const improvementsMeasurementId = useRef(`improvements-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const [layoutTick, setLayoutTick] = useState(0);
+
+  useEffect(() => {
+    const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
+    if (!isBrowser) return;
+
+    let rafId = null;
+    const onResize = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => setLayoutTick((t) => t + 1));
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
 
   const derivedFromAverage = useMemo(() => {
     if (!averageCompentency || typeof averageCompentency !== "object") {
@@ -102,7 +120,7 @@ const StrengthsPage = ({
     if (!isBrowser) return;
 
     let cancelled = false;
-    const PAGE_HEIGHT = 1053;
+    const PAGE_HEIGHT = 1123;
     const PAGE_WIDTH = 794;
 
     const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeLeft }) => {
@@ -176,6 +194,8 @@ const StrengthsPage = ({
               });
             });
 
+            await new Promise((r) => setTimeout(r, 30));
+
             const rect = container.firstElementChild?.getBoundingClientRect();
             resolve(Math.ceil(rect?.height || 0));
           } catch {
@@ -188,7 +208,7 @@ const StrengthsPage = ({
           }
         };
 
-        setTimeout(measure, 10);
+        setTimeout(measure, 30);
       });
     };
 
@@ -261,6 +281,7 @@ const StrengthsPage = ({
     improvementsTitle,
     effectiveImprovementsManagerItems,
     effectiveImprovementsGroupItems,
+    layoutTick,
   ]);
 
   const arePointsEqual = (a, b) => {
@@ -278,7 +299,7 @@ const StrengthsPage = ({
     if (!isBrowser) return;
 
     let cancelled = false;
-    const PAGE_HEIGHT = 1053;
+    const PAGE_HEIGHT = 1123;
     const PAGE_WIDTH = 794;
 
     const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeGroup }) => {
@@ -452,6 +473,7 @@ const StrengthsPage = ({
     managerSubTitle,
     managerTitle,
     title,
+    layoutTick,
   ]);
 
   const blocks = useMemo(() => {
@@ -539,7 +561,15 @@ const StrengthsPage = ({
       const showLeft = !!chunk.isFirst;
 
       out.push(
-        <div key={`improvements-${idx}`} className="sp sp--improvement">
+        <div
+          key={`improvements-${idx}`}
+          className="sp sp--improvement"
+          style={
+            chunk.isFirst
+              ? { breakBefore: "page", pageBreakBefore: "always" }
+              : undefined
+          }
+        >
           {chunk.isFirst ? <FeedbackCommonHeader title={improvementsTitle} /> : null}
 
           <div
@@ -631,7 +661,7 @@ const StrengthsPage = ({
     <AutoPaginatedSections
       blocks={blocks}
       pageWidth={794}
-      pageHeight={1223}
+      pageHeight={1123}
       pagePadding={0}
       contentClassName="strengths-page"
       componentId="strengths-page"

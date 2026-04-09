@@ -666,7 +666,7 @@ const AutoPaginatedSections = ({
   }
 
   return (
-    <div>
+    <div className="section-page-container">
       {pages.map((pageBlocks, pageIndex) => (
         <section
           key={`page-${measurementId.current}-${pageIndex}`}
