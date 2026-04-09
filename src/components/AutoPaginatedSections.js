@@ -574,22 +574,18 @@ const AutoPaginatedSections = ({
       let usedHeight = 0;
 
       heights.forEach((h, i) => {
+        const forceBreakBefore =
+          blocks?.[i]?.props?.["data-force-page-break"] === "before";
+
+        if (forceBreakBefore && currentPage.length > 0) {
+          result.push([...currentPage]);
+          currentPage = [];
+          usedHeight = 0;
+        }
+
         // Skip blocks with zero height (empty content)
         if (h <= 0) {
-          // Option 1: Skip empty blocks entirely
-          // Just ignore them and don't add to any page
           return;
-          
-          // Option 2: If you want to keep empty blocks but prevent empty pages:
-          // if (currentPage.length === 0 && result.length > 0) {
-          //   // Add to previous page if possible
-          //   const lastPageIndex = result.length - 1;
-          //   result[lastPageIndex].push(blocks[i]);
-          // } else if (currentPage.length > 0) {
-          //   currentPage.push(blocks[i]);
-          //   // Height doesn't increase for empty blocks
-          // }
-          // return;
         }
 
         if (h > USABLE_HEIGHT) {
@@ -599,7 +595,6 @@ const AutoPaginatedSections = ({
             currentPage = [];
             usedHeight = 0;
           }
-          // Only add if block has content (height > 0)
           result.push([blocks[i]]);
           return;
         }
@@ -624,16 +619,15 @@ const AutoPaginatedSections = ({
       }
 
       // Filter out any pages that might be empty (just in case)
-      const nonEmptyPages = result.filter(page => page.length > 0);
-      
+      const nonEmptyPages = result.filter((page) => page.length > 0);
+
       // If all pages were empty, fallback to original blocks
       if (nonEmptyPages.length === 0 && blocks.length > 0) {
-        console.warn('All pages were empty, falling back to original blocks');
+        console.warn("All pages were empty, falling back to original blocks");
         setPages([blocks]);
       } else {
         setPages(nonEmptyPages);
       }
-      
     } catch (error) {
       console.error("Pagination error:", error);
       setPages([blocks]);
