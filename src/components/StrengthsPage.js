@@ -495,7 +495,16 @@ const StrengthsPage = ({
       const groupToRender = showGroup ? effectiveGroupItems : [];
 
       out.push(
-        <div key={`strengths-${chunkIdx}`} className="sp sp-strengths">
+        <div
+          key={`strengths-${chunkIdx}`}
+          className="sp sp-strengths"
+          data-force-page-break={chunk.isFirst ? "before" : undefined}
+          style={
+            chunk.isFirst
+              ? { breakBefore: "page", pageBreakBefore: "always" }
+              : undefined
+          }
+        >
           {chunk.isFirst ? <FeedbackCommonHeader title={title} /> : null}
 
           <div
@@ -564,6 +573,7 @@ const StrengthsPage = ({
         <div
           key={`improvements-${idx}`}
           className="sp sp--improvement"
+          data-force-page-break={chunk.isFirst ? "before" : undefined}
           style={
             chunk.isFirst
               ? { breakBefore: "page", pageBreakBefore: "always" }
