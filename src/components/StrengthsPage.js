@@ -97,8 +97,8 @@ const StrengthsPage = ({
     managerImprovements.sort((a, b) => a.score - b.score);
 
     return {
-      groupStrengths: groupStrengths.slice(0, 3),
-      groupImprovements: groupImprovements.slice(0, 3),
+      groupStrengths,
+      groupImprovements,
       managerStrengths: managerStrengths,
       managerImprovements: managerImprovements,
     };
@@ -130,7 +130,7 @@ const StrengthsPage = ({
     const PAGE_HEIGHT = 1123;
     const PAGE_WIDTH = effectivePageWidth;
 
-    const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeLeft }) => {
+    const renderMeasure = async ({ startIdx, endIdx, includeHeader }) => {
       return new Promise((resolve) => {
         const container = document.createElement("div");
         container.style.position = "absolute";
@@ -144,7 +144,16 @@ const StrengthsPage = ({
 
         const root = createRoot(container);
 
-        const slice = effectiveImprovementsManagerItems.slice(startIdx, endIdx);
+        const maxLen = Math.max(
+          effectiveImprovementsGroupItems.length,
+          effectiveImprovementsManagerItems.length,
+        );
+
+        const boundedStart = Math.min(Math.max(0, startIdx), maxLen);
+        const boundedEnd = Math.min(Math.max(boundedStart, endIdx), maxLen);
+
+        const sliceLeft = effectiveImprovementsGroupItems.slice(boundedStart, boundedEnd);
+        const sliceRight = effectiveImprovementsManagerItems.slice(boundedStart, boundedEnd);
 
         root.render(
           <div className="strengths-page">
@@ -164,7 +173,14 @@ const StrengthsPage = ({
                       <div className="sp-col__header">
                         <div className="sp-col__header-title">{improvementsGroupTitle}</div>
                       </div>
-                      <div className="sp-col__body" style={{ height: 330 }} />
+                      <div className="sp-col__body">
+                        {sliceLeft.map((it, idx) => (
+                          <div key={`im-g-${idx}`} className="sp-row sp-row--manager">
+                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-card">{it.text}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="sp-divider" aria-hidden="true" />
@@ -175,7 +191,7 @@ const StrengthsPage = ({
                       </div>
 
                       <div className="sp-col__body sp-col__body--manager">
-                        {slice.map((it, idx) => (
+                        {sliceRight.map((it, idx) => (
                           <div key={`im-m-${idx}`} className="sp-row sp-row--manager">
                             <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
                             <div className="sp-card">{it.text}</div>
@@ -220,10 +236,16 @@ const StrengthsPage = ({
     };
 
     const buildChunks = async () => {
-      const items = Array.isArray(effectiveImprovementsManagerItems)
+      const leftItems = Array.isArray(effectiveImprovementsGroupItems)
+        ? effectiveImprovementsGroupItems
+        : [];
+      const rightItems = Array.isArray(effectiveImprovementsManagerItems)
         ? effectiveImprovementsManagerItems
         : [];
-      if (!items.length) {
+
+      const maxLen = Math.max(leftItems.length, rightItems.length);
+
+      if (!maxLen) {
         setImprovementsManagerChunks([]);
         return;
       }
@@ -232,9 +254,9 @@ const StrengthsPage = ({
       let start = 0;
       let isFirst = true;
 
-      while (start < items.length) {
+      while (start < maxLen) {
         let lo = start + 1;
-        let hi = items.length;
+        let hi = maxLen;
         let best = lo;
 
         while (lo <= hi) {
@@ -248,7 +270,6 @@ const StrengthsPage = ({
             startIdx: start,
             endIdx: mid,
             includeHeader: isFirst,
-            includeLeft: isFirst,
           });
 
           if (h > 0 && h <= PAGE_HEIGHT) {
@@ -310,7 +331,7 @@ const StrengthsPage = ({
     const PAGE_HEIGHT = 1123;
     const PAGE_WIDTH = effectivePageWidth;
 
-    const renderMeasure = async ({ startIdx, endIdx, includeHeader, includeGroup }) => {
+    const renderMeasure = async ({ startIdx, endIdx, includeHeader }) => {
       return new Promise((resolve) => {
         const container = document.createElement("div");
         container.style.position = "absolute";
@@ -324,8 +345,13 @@ const StrengthsPage = ({
 
         const root = createRoot(container);
 
-        const slice = effectiveManagerItems.slice(startIdx, endIdx);
-        const groupToRender = includeGroup ? effectiveGroupItems : [];
+        const maxLen = Math.max(effectiveGroupItems.length, effectiveManagerItems.length);
+
+        const boundedStart = Math.min(Math.max(0, startIdx), maxLen);
+        const boundedEnd = Math.min(Math.max(boundedStart, endIdx), maxLen);
+
+        const sliceLeft = effectiveGroupItems.slice(boundedStart, boundedEnd);
+        const sliceRight = effectiveManagerItems.slice(boundedStart, boundedEnd);
 
         root.render(
           <div className="strengths-page">
@@ -335,7 +361,7 @@ const StrengthsPage = ({
                 className="sp-grid"
                 style={{
                   "--sp-arc-color": arcColor,
-                  "--sp-left-height": `330px`,
+                  "--sp-left-height": `auto`,
                 }}
               >
                 <div className="sp-right">
@@ -346,15 +372,13 @@ const StrengthsPage = ({
                       </div>
                       {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
-                      <div className="sp-col__body" style={{ height: 330 }}>
-                        {includeGroup && groupToRender.length ? (
-                          groupToRender.map((it, i) => (
-                            <div key={`mg-${i}`} className="sp-row" style={{ top: 0 }}>
-                              <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
-                              <div className="sp-card">{it.text}</div>
-                            </div>
-                          ))
-                        ) : null}
+                      <div className="sp-col__body">
+                        {sliceLeft.map((it, i) => (
+                          <div key={`mg-${i}`} className="sp-row" style={{ top: 0 }}>
+                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-card">{it.text}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
@@ -367,7 +391,7 @@ const StrengthsPage = ({
                       {/* <div className="sp-col__header-sub">{managerSubTitle}</div> */}
 
                       <div className="sp-col__body sp-col__body--manager">
-                        {slice.map((it, idx) => (
+                        {sliceRight.map((it, idx) => (
                           <div key={`mm-${idx}`} className="sp-row sp-row--manager">
                             <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
                             <div className="sp-card">{it.text}</div>
@@ -410,8 +434,11 @@ const StrengthsPage = ({
     };
 
     const buildChunks = async () => {
-      const items = Array.isArray(effectiveManagerItems) ? effectiveManagerItems : [];
-      if (!items.length) {
+      const leftItems = Array.isArray(effectiveGroupItems) ? effectiveGroupItems : [];
+      const rightItems = Array.isArray(effectiveManagerItems) ? effectiveManagerItems : [];
+      const maxLen = Math.max(leftItems.length, rightItems.length);
+
+      if (!maxLen) {
         setManagerChunks([]);
         return;
       }
@@ -420,9 +447,9 @@ const StrengthsPage = ({
       let start = 0;
       let isFirst = true;
 
-      while (start < items.length) {
+      while (start < maxLen) {
         let lo = start + 1;
-        let hi = items.length;
+        let hi = maxLen;
         let best = lo;
 
         while (lo <= hi) {
@@ -437,7 +464,6 @@ const StrengthsPage = ({
             startIdx: start,
             endIdx: mid,
             includeHeader: isFirst,
-            includeGroup: isFirst,
           });
 
           if (h > 0 && h <= PAGE_HEIGHT) {
@@ -488,20 +514,13 @@ const StrengthsPage = ({
   const blocks = useMemo(() => {
     const out = [];
 
-    const topOffset = 85;
-    const arcHeight = 450;
-    const paddingTop = topOffset;
-    const paddingBottom = topOffset;
-    const bodyHeight = 330;
-
     const resolvedChunks = Array.isArray(managerChunks)
       ? managerChunks
-      : [{ start: 0, end: effectiveManagerItems.length, isFirst: true }];
+      : [{ start: 0, end: Math.max(effectiveGroupItems.length, effectiveManagerItems.length), isFirst: true }];
 
     resolvedChunks.forEach((chunk, chunkIdx) => {
+      const groupSlice = effectiveGroupItems.slice(chunk.start, chunk.end);
       const managerSlice = effectiveManagerItems.slice(chunk.start, chunk.end);
-      const showGroup = !!chunk.isFirst;
-      const groupToRender = showGroup ? effectiveGroupItems : [];
 
       out.push(
         <div
@@ -516,7 +535,7 @@ const StrengthsPage = ({
             className="sp-grid"
             style={{
               "--sp-arc-color": arcColor,
-              "--sp-left-height": `${bodyHeight}px`,
+              "--sp-left-height": `auto`,
             }}
           >
             <div className="sp-right">
@@ -527,18 +546,16 @@ const StrengthsPage = ({
                   </div>
                   {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
-                  <div className="sp-col__body" style={{ height: bodyHeight }}>
-                    {showGroup
-                      ? groupToRender.map((it, i) => (
-                          <div
-                            key={`g-${chunkIdx}-${i}`}
-                            className="sp-row sp-row--manager"
-                          >
-                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
-                            <div className="sp-card">{it.text}</div>
-                          </div>
-                        ))
-                      : null}
+                  <div className="sp-col__body">
+                    {groupSlice.map((it, i) => (
+                      <div
+                        key={`g-${chunkIdx}-${i}`}
+                        className="sp-row sp-row--manager"
+                      >
+                        <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                        <div className="sp-card">{it.text}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -568,11 +585,11 @@ const StrengthsPage = ({
 
     const improvementsResolvedChunks = Array.isArray(improvementsManagerChunks)
       ? improvementsManagerChunks
-      : [{ start: 0, end: effectiveImprovementsManagerItems.length, isFirst: true }];
+      : [{ start: 0, end: Math.max(effectiveImprovementsGroupItems.length, effectiveImprovementsManagerItems.length), isFirst: true }];
 
     improvementsResolvedChunks.forEach((chunk, idx) => {
+      const groupSlice = effectiveImprovementsGroupItems.slice(chunk.start, chunk.end);
       const managerSlice = effectiveImprovementsManagerItems.slice(chunk.start, chunk.end);
-      const showLeft = !!chunk.isFirst;
 
       out.push(
         <div
@@ -587,7 +604,7 @@ const StrengthsPage = ({
             className="sp-grid"
             style={{
               "--sp-arc-color": "var(--feedback-initial-underline-color)",
-              "--sp-left-height": `${bodyHeight}px`,
+              "--sp-left-height": `auto`,
             }}
           >
             <div className="sp-right">
@@ -599,20 +616,18 @@ const StrengthsPage = ({
                     </div>
                   </div>
 
-                  <div className="sp-col__body" style={{ height: bodyHeight }}>
-                    {showLeft
-                      ? effectiveImprovementsGroupItems.map((it, i) => (
-                          <div
-                            key={`ig-${idx}-${i}`}
-                            className="sp-row sp-row--manager"
-                          >
-                            <div className="sp-pill">
-                              {Number(it.score).toFixed(2)}
-                            </div>
-                            <div className="sp-card"> {it.text}</div>
-                          </div>
-                        ))
-                      : null}
+                  <div className="sp-col__body">
+                    {groupSlice.map((it, i) => (
+                      <div
+                        key={`ig-${idx}-${i}`}
+                        className="sp-row sp-row--manager"
+                      >
+                        <div className="sp-pill">
+                          {Number(it.score).toFixed(2)}
+                        </div>
+                        <div className="sp-card"> {it.text}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
