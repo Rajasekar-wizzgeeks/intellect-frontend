@@ -674,10 +674,6 @@ const StopDoingPage = ({
     const hasColumns =
       Array.isArray(localColumns) &&
       localColumns.some((c) => Array.isArray(c) && c.length);
-
-    out.push(
-      <FeedbackCommonHeader key="sd-hdr" title={title} titleWidth="100" className="sd-header" />,
-    );
   
     if (hasColumns) {
       const rangesToUse = Array.isArray(rowRanges) && rowRanges.length
@@ -691,6 +687,14 @@ const StopDoingPage = ({
 
         out.push(
           <div key={`sd-grid-wrap-${idx}`} className="sd-grid-wrapper">
+            {idx === 0 ? (
+              <FeedbackCommonHeader
+                key="sd-hdr"
+                title={title}
+                titleWidth="100"
+                className="sd-header"
+              />
+            ) : null}
             <StopDoingGrid
               key={`sd-grid-${idx}`}
               title={title}
@@ -780,6 +784,15 @@ const StopDoingPage = ({
           </div>,
         );
       });
+    } else {
+      out.push(
+        <FeedbackCommonHeader
+          key="sd-hdr"
+          title={title}
+          titleWidth="100"
+          className="sd-header"
+        />,
+      );
     }
 
     out.push(
