@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { Trash2, Edit2, Plus, X, Check } from "lucide-react";
+import { Trash2, Edit2, Plus, X, Check, ArrowRight } from "lucide-react";
 import "../styles/continueDoingPage.scss";
 
 const AutoResizeTextarea = ({ value, onChange, onKeyDown, onBlur, autoFocus, className, placeholder }) => {
@@ -29,7 +29,13 @@ const AutoResizeTextarea = ({ value, onChange, onKeyDown, onBlur, autoFocus, cla
   );
 };
 
-const GroupCommentsModal = ({ isOpen, onClose, selectedGroup, onUpdateGroup }) => {
+const GroupCommentsModal = ({
+  isOpen,
+  onClose,
+  selectedGroup,
+  onUpdateGroup,
+  onMoveComment,
+}) => {
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -200,6 +206,18 @@ const GroupCommentsModal = ({ isOpen, onClose, selectedGroup, onUpdateGroup }) =
                       <ReactMarkdown rehypePlugins={[rehypeRaw]}>{c}</ReactMarkdown>
                     </div>
                     <div className="cd-group-modal__item-actions">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onMoveComment?.(i);
+                        }}
+                        className="cd-group-modal__action-btn cd-group-modal__action-btn--move"
+                        title="Move to end of table"
+                        type="button"
+                      >
+                        <ArrowRight size={14} />
+                      </button>
                       <button 
                         onClick={() => handleDelete(i)} 
                         className="cd-group-modal__action-btn cd-group-modal__action-btn--delete"
