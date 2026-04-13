@@ -1,9 +1,145 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Plus } from "lucide-react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/strengthsPage.scss";
 import measurementManager from "./measurementManager";
+
+const EditablePill = ({ value, onSave }) => {
+  const [editValue, setEditValue] = useState(String(value ?? ""));
+
+  useEffect(() => {
+    setEditValue(String(value ?? ""));
+  }, [value]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onSave(editValue);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      value={editValue}
+      onChange={(e) => setEditValue(e.target.value)}
+      onBlur={() => onSave(editValue)}
+      onKeyDown={handleKeyDown}
+      autoFocus
+      className="sp-edit-pill-input"
+    />
+  );
+};
+
+const EditableText = ({ value, onSave, onCancel }) => {
+  const [text, setText] = useState(String(value ?? ""));
+  const textAreaRef = useRef(null);
+
+  const adjustHeight = useCallback(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'auto';
+      textAreaRef.current.style.height = textAreaRef.current.scrollHeight + 'px';
+    }
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [text, adjustHeight]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSave(text);
+    } else if (e.key === "Escape") {
+      onCancel?.();
+    }
+  };
+
+  return (
+    <textarea
+      ref={textAreaRef}
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onKeyDown={handleKeyDown}
+      onBlur={() => onSave(text)}
+      autoFocus
+      className="sp-edit-textarea"
+      rows={1}
+      style={{ 
+        height: 'auto',
+        minHeight: '1.35em',
+        overflow: 'hidden',
+        width: '100%',
+        display: 'block'
+      }}
+    />
+  );
+};
+
+const NewItemRow = ({ onSave, onCancel }) => {
+  const [score, setScore] = useState("");
+  const [text, setText] = useState("");
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const cleanedText = String(text ?? "").trim();
+      if (cleanedText) {
+        onSave({ score, text: cleanedText });
+      } else {
+        onCancel();
+      }
+    } else if (e.key === "Escape") {
+      onCancel();
+    }
+  };
+
+  return (
+    <div className="sp-row sp-row--manager">
+      <div className="sp-pill">
+        <input
+          type="text"
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
+          onKeyDown={handleKeyDown}
+          autoFocus
+          placeholder="0.00"
+          className="sp-edit-pill-input"
+        />
+      </div>
+      <div className="sp-card">
+        <textarea
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = e.target.scrollHeight + 'px';
+          }}
+          onKeyDown={handleKeyDown}
+          onBlur={() => {
+            const cleanedText = String(text ?? "").trim();
+            if (cleanedText) {
+              onSave({ score, text: cleanedText });
+            } else {
+              onCancel();
+            }
+          }}
+          placeholder="Enter description..."
+          className="sp-edit-textarea"
+          autoFocus={false}
+          rows={1}
+          style={{ 
+            height: 'auto',
+            minHeight: '1.35em',
+            overflow: 'hidden'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
 
 const StrengthsPage = ({
   startPage = 4,
@@ -29,6 +165,52 @@ const StrengthsPage = ({
   const measurementId = useRef(`strengths-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const improvementsMeasurementId = useRef(`improvements-manager-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const [layoutTick, setLayoutTick] = useState(0);
+  const isDirtyRef = useRef(false);
+
+  const [strengthsGroupItemsDraft, setStrengthsGroupItemsDraft] = useState([]);
+  const [strengthsManagerItemsDraft, setStrengthsManagerItemsDraft] = useState([]);
+  const [improvementsGroupItemsDraft, setImprovementsGroupItemsDraft] = useState([]);
+  const [improvementsManagerItemsDraft, setImprovementsManagerItemsDraft] = useState([]);
+
+  const [editing, setEditing] = useState(null);
+  const [editingPill, setEditingPill] = useState(null);
+  const [adding, setAdding] = useState(null);
+
+  const updateList = useCallback((section, column, next) => {
+    isDirtyRef.current = true;
+    const safeNext = Array.isArray(next) ? next : [];
+    if (section === "strengths" && column === "group") setStrengthsGroupItemsDraft(safeNext);
+    else if (section === "strengths" && column === "manager") setStrengthsManagerItemsDraft(safeNext);
+    else if (section === "improvements" && column === "group") setImprovementsGroupItemsDraft(safeNext);
+    else setImprovementsManagerItemsDraft(safeNext);
+  }, []);
+
+  const resolveList = useCallback((section, column) => {
+    if (section === "strengths" && column === "group") return strengthsGroupItemsDraft;
+    if (section === "strengths" && column === "manager") return strengthsManagerItemsDraft;
+    if (section === "improvements" && column === "group") return improvementsGroupItemsDraft;
+    return improvementsManagerItemsDraft;
+  }, [
+    strengthsGroupItemsDraft,
+    strengthsManagerItemsDraft,
+    improvementsGroupItemsDraft,
+    improvementsManagerItemsDraft,
+  ]);
+
+  const saveScore = useCallback((section, column, idx, newValue) => {
+    const current = resolveList(section, column);
+    const next = [...current];
+    const prev = next[idx] || {};
+    next[idx] = { ...prev, score: newValue };
+
+    updateList(section, column, next);
+    setEditingPill(null);
+  }, [resolveList, updateList]);
+
+  const saveNewScore = useCallback((section, column, newValue) => {
+    // This could be used if we want to set score while adding, but currently add only sets text
+    setAdding(prev => ({ ...prev, score: newValue }));
+  }, []);
 
   const effectivePageWidth = useMemo(() => {
     const isBrowser = typeof window !== "undefined";
@@ -123,6 +305,53 @@ const StrengthsPage = ({
     : improvementsManagerItems;
 
   useEffect(() => {
+    if (isDirtyRef.current) return;
+
+    const normalize = (arr) =>
+      (Array.isArray(arr) ? arr : []).map((it) => ({
+        score: it?.score,
+        text: it?.text ?? "",
+      }));
+
+    setStrengthsGroupItemsDraft(normalize(effectiveGroupItems));
+    setStrengthsManagerItemsDraft(normalize(effectiveManagerItems));
+    setImprovementsGroupItemsDraft(normalize(effectiveImprovementsGroupItems));
+    setImprovementsManagerItemsDraft(normalize(effectiveImprovementsManagerItems));
+  }, [
+    effectiveGroupItems,
+    effectiveManagerItems,
+    effectiveImprovementsGroupItems,
+    effectiveImprovementsManagerItems,
+  ]);
+
+  const formatScore = useCallback((score) => {
+    const n = Number(score);
+    return Number.isFinite(n) ? n.toFixed(2) : "";
+  }, []);
+
+  const saveText = useCallback((section, column, idx, newValue) => {
+    const cleaned = String(newValue ?? "").trim();
+    const current = resolveList(section, column);
+    const next = [...current];
+
+    if (!cleaned) {
+      next.splice(idx, 1);
+    } else {
+      const prev = next[idx] || {};
+      next[idx] = { ...prev, text: cleaned };
+    }
+
+    updateList(section, column, next);
+    setEditing(null);
+  }, [resolveList, updateList]);
+
+  const saveNewItem = useCallback((section, column, item) => {
+    const current = resolveList(section, column);
+    updateList(section, column, [...current, item]);
+    setAdding(null);
+  }, [resolveList, updateList]);
+
+  useEffect(() => {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
     if (!isBrowser) return;
 
@@ -145,15 +374,15 @@ const StrengthsPage = ({
         const root = createRoot(container);
 
         const maxLen = Math.max(
-          effectiveImprovementsGroupItems.length,
-          effectiveImprovementsManagerItems.length,
+          improvementsGroupItemsDraft.length,
+          improvementsManagerItemsDraft.length,
         );
 
         const boundedStart = Math.min(Math.max(0, startIdx), maxLen);
         const boundedEnd = Math.min(Math.max(boundedStart, endIdx), maxLen);
 
-        const sliceLeft = effectiveImprovementsGroupItems.slice(boundedStart, boundedEnd);
-        const sliceRight = effectiveImprovementsManagerItems.slice(boundedStart, boundedEnd);
+        const sliceLeft = improvementsGroupItemsDraft.slice(boundedStart, boundedEnd);
+        const sliceRight = improvementsManagerItemsDraft.slice(boundedStart, boundedEnd);
 
         root.render(
           <div className="strengths-page">
@@ -176,7 +405,7 @@ const StrengthsPage = ({
                       <div className="sp-col__body">
                         {sliceLeft.map((it, idx) => (
                           <div key={`im-g-${idx}`} className="sp-row sp-row--manager">
-                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-pill">{formatScore(it.score)}</div>
                             <div className="sp-card">{it.text}</div>
                           </div>
                         ))}
@@ -193,7 +422,7 @@ const StrengthsPage = ({
                       <div className="sp-col__body sp-col__body--manager">
                         {sliceRight.map((it, idx) => (
                           <div key={`im-m-${idx}`} className="sp-row sp-row--manager">
-                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-pill">{formatScore(it.score)}</div>
                             <div className="sp-card">{it.text}</div>
                           </div>
                         ))}
@@ -236,11 +465,11 @@ const StrengthsPage = ({
     };
 
     const buildChunks = async () => {
-      const leftItems = Array.isArray(effectiveImprovementsGroupItems)
-        ? effectiveImprovementsGroupItems
+      const leftItems = Array.isArray(improvementsGroupItemsDraft)
+        ? improvementsGroupItemsDraft
         : [];
-      const rightItems = Array.isArray(effectiveImprovementsManagerItems)
-        ? effectiveImprovementsManagerItems
+      const rightItems = Array.isArray(improvementsManagerItemsDraft)
+        ? improvementsManagerItemsDraft
         : [];
 
       const maxLen = Math.max(leftItems.length, rightItems.length);
@@ -307,10 +536,11 @@ const StrengthsPage = ({
     improvementsGroupTitle,
     improvementsManagerTitle,
     improvementsTitle,
-    effectiveImprovementsManagerItems,
-    effectiveImprovementsGroupItems,
+    improvementsManagerItemsDraft,
+    improvementsGroupItemsDraft,
     layoutTick,
     effectivePageWidth,
+    formatScore,
   ]);
 
   const arePointsEqual = (a, b) => {
@@ -345,13 +575,13 @@ const StrengthsPage = ({
 
         const root = createRoot(container);
 
-        const maxLen = Math.max(effectiveGroupItems.length, effectiveManagerItems.length);
+        const maxLen = Math.max(strengthsGroupItemsDraft.length, strengthsManagerItemsDraft.length);
 
         const boundedStart = Math.min(Math.max(0, startIdx), maxLen);
         const boundedEnd = Math.min(Math.max(boundedStart, endIdx), maxLen);
 
-        const sliceLeft = effectiveGroupItems.slice(boundedStart, boundedEnd);
-        const sliceRight = effectiveManagerItems.slice(boundedStart, boundedEnd);
+        const sliceLeft = strengthsGroupItemsDraft.slice(boundedStart, boundedEnd);
+        const sliceRight = strengthsManagerItemsDraft.slice(boundedStart, boundedEnd);
 
         root.render(
           <div className="strengths-page">
@@ -368,14 +598,19 @@ const StrengthsPage = ({
                   <div className="sp-cols">
                     <div className="sp-col">
                       <div className="sp-col__header">
-                        <div className="sp-col__header-title">{groupTitle}</div>
+                        <div className="sp-col__header-title">
+                          <span>{groupTitle}</span>
+                          <button type="button" className="sp-col__add-btn" title="Add item">
+                            <Plus size={16} />
+                          </button>
+                        </div>
                       </div>
                       {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
                       <div className="sp-col__body">
                         {sliceLeft.map((it, i) => (
                           <div key={`mg-${i}`} className="sp-row" style={{ top: 0 }}>
-                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-pill">{formatScore(it.score)}</div>
                             <div className="sp-card">{it.text}</div>
                           </div>
                         ))}
@@ -386,14 +621,19 @@ const StrengthsPage = ({
 
                     <div className="sp-col">
                       <div className="sp-col__header sp-col__header--manager">
-                        <div className="sp-col__header-title">{managerTitle}</div>
+                        <div className="sp-col__header-title">
+                          <span>{managerTitle}</span>
+                          <button type="button" className="sp-col__add-btn" title="Add item">
+                            <Plus size={16} />
+                          </button>
+                        </div>
                       </div>
                       {/* <div className="sp-col__header-sub">{managerSubTitle}</div> */}
 
                       <div className="sp-col__body sp-col__body--manager">
                         {sliceRight.map((it, idx) => (
                           <div key={`mm-${idx}`} className="sp-row sp-row--manager">
-                            <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
+                            <div className="sp-pill">{formatScore(it.score)}</div>
                             <div className="sp-card">{it.text}</div>
                           </div>
                         ))}
@@ -434,8 +674,8 @@ const StrengthsPage = ({
     };
 
     const buildChunks = async () => {
-      const leftItems = Array.isArray(effectiveGroupItems) ? effectiveGroupItems : [];
-      const rightItems = Array.isArray(effectiveManagerItems) ? effectiveManagerItems : [];
+      const leftItems = Array.isArray(strengthsGroupItemsDraft) ? strengthsGroupItemsDraft : [];
+      const rightItems = Array.isArray(strengthsManagerItemsDraft) ? strengthsManagerItemsDraft : [];
       const maxLen = Math.max(leftItems.length, rightItems.length);
 
       if (!maxLen) {
@@ -500,8 +740,8 @@ const StrengthsPage = ({
     };
   }, [
     arcColor,
-    effectiveGroupItems,
-    effectiveManagerItems,
+    strengthsGroupItemsDraft,
+    strengthsManagerItemsDraft,
     groupSubTitle,
     groupTitle,
     managerSubTitle,
@@ -509,6 +749,7 @@ const StrengthsPage = ({
     title,
     layoutTick,
     effectivePageWidth,
+    formatScore,
   ]);
 
   const blocks = useMemo(() => {
@@ -516,11 +757,11 @@ const StrengthsPage = ({
 
     const resolvedChunks = Array.isArray(managerChunks)
       ? managerChunks
-      : [{ start: 0, end: Math.max(effectiveGroupItems.length, effectiveManagerItems.length), isFirst: true }];
+      : [{ start: 0, end: Math.max(strengthsGroupItemsDraft.length, strengthsManagerItemsDraft.length), isFirst: true }];
 
     resolvedChunks.forEach((chunk, chunkIdx) => {
-      const groupSlice = effectiveGroupItems.slice(chunk.start, chunk.end);
-      const managerSlice = effectiveManagerItems.slice(chunk.start, chunk.end);
+      const groupSlice = strengthsGroupItemsDraft.slice(chunk.start, chunk.end);
+      const managerSlice = strengthsManagerItemsDraft.slice(chunk.start, chunk.end);
 
       out.push(
         <div
@@ -542,7 +783,9 @@ const StrengthsPage = ({
               <div className="sp-cols">
                 <div className="sp-col">
                   <div className="sp-col__header">
-                    <div className="sp-col__header-title">{groupTitle}</div>
+                    <div className="sp-col__header-title">
+                      <span>{groupTitle}</span>
+                    </div>
                   </div>
                   {/* <div className="sp-col__header-sub">{groupSubTitle}</div> */}
 
@@ -552,10 +795,60 @@ const StrengthsPage = ({
                         key={`g-${chunkIdx}-${i}`}
                         className="sp-row sp-row--manager"
                       >
-                        <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
-                        <div className="sp-card">{it.text}</div>
+                        <div
+                          className="sp-pill"
+                          onDoubleClick={() =>
+                            setEditingPill({ section: "strengths", column: "group", idx: chunk.start + i })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editingPill?.section === "strengths" &&
+                          editingPill?.column === "group" &&
+                          editingPill?.idx === chunk.start + i ? (
+                            <EditablePill
+                              value={it.score}
+                              onSave={(v) => saveScore("strengths", "group", chunk.start + i, v)}
+                            />
+                          ) : (
+                            formatScore(it.score)
+                          )}
+                        </div>
+                        <div
+                          className="sp-card"
+                          onDoubleClick={() =>
+                            setEditing({ section: "strengths", column: "group", idx: chunk.start + i })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editing?.section === "strengths" &&
+                          editing?.column === "group" &&
+                          editing?.idx === chunk.start + i ? (
+                            <EditableText
+                              value={it.text}
+                              onSave={(v) => saveText("strengths", "group", chunk.start + i, v)}
+                              onCancel={() => setEditing(null)}
+                            />
+                          ) : (
+                            it.text
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="sp-row__add-btn"
+                          onClick={() => setAdding({ section: "strengths", column: "group" })}
+                          title="Add item"
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
                     ))}
+
+                    {adding?.section === "strengths" && adding?.column === "group" && chunkIdx === (resolvedChunks.length - 1) ? (
+                      <NewItemRow
+                        onSave={(item) => saveNewItem("strengths", "group", item)}
+                        onCancel={() => setAdding(null)}
+                      />
+                    ) : null}
                   </div>
                 </div>
 
@@ -563,17 +856,69 @@ const StrengthsPage = ({
 
                 <div className="sp-col">
                   <div className="sp-col__header sp-col__header--manager">
-                    <div className="sp-col__header-title">{managerTitle}</div>
+                    <div className="sp-col__header-title">
+                      <span>{managerTitle}</span>
+                    </div>
                   </div>
                   {/* <div className="sp-col__header-sub">{managerSubTitle}</div> */}
 
                   <div className="sp-col__body sp-col__body--manager">
                     {managerSlice.map((it, idx) => (
                       <div key={`m-${chunkIdx}-${idx}`} className="sp-row sp-row--manager">
-                        <div className="sp-pill">{Number(it.score).toFixed(2)}</div>
-                        <div className="sp-card">{it.text}</div>
+                        <div
+                          className="sp-pill"
+                          onDoubleClick={() =>
+                            setEditingPill({ section: "strengths", column: "manager", idx: chunk.start + idx })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editingPill?.section === "strengths" &&
+                          editingPill?.column === "manager" &&
+                          editingPill?.idx === chunk.start + idx ? (
+                            <EditablePill
+                              value={it.score}
+                              onSave={(v) => saveScore("strengths", "manager", chunk.start + idx, v)}
+                            />
+                          ) : (
+                            formatScore(it.score)
+                          )}
+                        </div>
+                        <div
+                          className="sp-card"
+                          onDoubleClick={() =>
+                            setEditing({ section: "strengths", column: "manager", idx: chunk.start + idx })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editing?.section === "strengths" &&
+                          editing?.column === "manager" &&
+                          editing?.idx === chunk.start + idx ? (
+                            <EditableText
+                              value={it.text}
+                              onSave={(v) => saveText("strengths", "manager", chunk.start + idx, v)}
+                              onCancel={() => setEditing(null)}
+                            />
+                          ) : (
+                            it.text
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="sp-row__add-btn"
+                          onClick={() => setAdding({ section: "strengths", column: "manager" })}
+                          title="Add item"
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
                     ))}
+
+                    {adding?.section === "strengths" && adding?.column === "manager" && chunkIdx === (resolvedChunks.length - 1) ? (
+                      <NewItemRow
+                        onSave={(item) => saveNewItem("strengths", "manager", item)}
+                        onCancel={() => setAdding(null)}
+                      />
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -585,11 +930,11 @@ const StrengthsPage = ({
 
     const improvementsResolvedChunks = Array.isArray(improvementsManagerChunks)
       ? improvementsManagerChunks
-      : [{ start: 0, end: Math.max(effectiveImprovementsGroupItems.length, effectiveImprovementsManagerItems.length), isFirst: true }];
+      : [{ start: 0, end: Math.max(improvementsGroupItemsDraft.length, improvementsManagerItemsDraft.length), isFirst: true }];
 
     improvementsResolvedChunks.forEach((chunk, idx) => {
-      const groupSlice = effectiveImprovementsGroupItems.slice(chunk.start, chunk.end);
-      const managerSlice = effectiveImprovementsManagerItems.slice(chunk.start, chunk.end);
+      const groupSlice = improvementsGroupItemsDraft.slice(chunk.start, chunk.end);
+      const managerSlice = improvementsManagerItemsDraft.slice(chunk.start, chunk.end);
 
       out.push(
         <div
@@ -612,7 +957,7 @@ const StrengthsPage = ({
                 <div className="sp-col">
                   <div className="sp-col__header">
                     <div className="sp-col__header-title">
-                      {improvementsGroupTitle}
+                      <span>{improvementsGroupTitle}</span>
                     </div>
                   </div>
 
@@ -622,12 +967,60 @@ const StrengthsPage = ({
                         key={`ig-${idx}-${i}`}
                         className="sp-row sp-row--manager"
                       >
-                        <div className="sp-pill">
-                          {Number(it.score).toFixed(2)}
+                        <div
+                          className="sp-pill"
+                          onDoubleClick={() =>
+                            setEditingPill({ section: "improvements", column: "group", idx: chunk.start + i })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editingPill?.section === "improvements" &&
+                          editingPill?.column === "group" &&
+                          editingPill?.idx === chunk.start + i ? (
+                            <EditablePill
+                              value={it.score}
+                              onSave={(v) => saveScore("improvements", "group", chunk.start + i, v)}
+                            />
+                          ) : (
+                            formatScore(it.score)
+                          )}
                         </div>
-                        <div className="sp-card"> {it.text}</div>
+                        <div
+                          className="sp-card"
+                          onDoubleClick={() =>
+                            setEditing({ section: "improvements", column: "group", idx: chunk.start + i })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editing?.section === "improvements" &&
+                          editing?.column === "group" &&
+                          editing?.idx === chunk.start + i ? (
+                            <EditableText
+                              value={it.text}
+                              onSave={(v) => saveText("improvements", "group", chunk.start + i, v)}
+                              onCancel={() => setEditing(null)}
+                            />
+                          ) : (
+                            it.text
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="sp-row__add-btn"
+                          onClick={() => setAdding({ section: "improvements", column: "group" })}
+                          title="Add item"
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
                     ))}
+
+                    {adding?.section === "improvements" && adding?.column === "group" && idx === (improvementsResolvedChunks.length - 1) ? (
+                      <NewItemRow
+                        onSave={(item) => saveNewItem("improvements", "group", item)}
+                        onCancel={() => setAdding(null)}
+                      />
+                    ) : null}
                   </div>
                 </div>
 
@@ -636,7 +1029,7 @@ const StrengthsPage = ({
                 <div className="sp-col">
                   <div className="sp-col__header sp-col__header--manager">
                     <div className="sp-col__header-title">
-                      {improvementsManagerTitle}
+                      <span>{improvementsManagerTitle}</span>
                     </div>
                   </div>
 
@@ -646,12 +1039,60 @@ const StrengthsPage = ({
                         key={`im-${idx}-${rowIdx}`}
                         className="sp-row sp-row--manager"
                       >
-                        <div className="sp-pill">
-                          {Number(it.score).toFixed(2)}
+                        <div
+                          className="sp-pill"
+                          onDoubleClick={() =>
+                            setEditingPill({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editingPill?.section === "improvements" &&
+                          editingPill?.column === "manager" &&
+                          editingPill?.idx === chunk.start + rowIdx ? (
+                            <EditablePill
+                              value={it.score}
+                              onSave={(v) => saveScore("improvements", "manager", chunk.start + rowIdx, v)}
+                            />
+                          ) : (
+                            formatScore(it.score)
+                          )}
                         </div>
-                        <div className="sp-card">{it.text}</div>
+                        <div
+                          className="sp-card"
+                          onDoubleClick={() =>
+                            setEditing({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editing?.section === "improvements" &&
+                          editing?.column === "manager" &&
+                          editing?.idx === chunk.start + rowIdx ? (
+                            <EditableText
+                              value={it.text}
+                              onSave={(v) => saveText("improvements", "manager", chunk.start + rowIdx, v)}
+                              onCancel={() => setEditing(null)}
+                            />
+                          ) : (
+                            it.text
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="sp-row__add-btn"
+                          onClick={() => setAdding({ section: "improvements", column: "manager" })}
+                          title="Add item"
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
                     ))}
+
+                    {adding?.section === "improvements" && adding?.column === "manager" && idx === (improvementsResolvedChunks.length - 1) ? (
+                      <NewItemRow
+                        onSave={(item) => saveNewItem("improvements", "manager", item)}
+                        onCancel={() => setAdding(null)}
+                      />
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -678,11 +1119,19 @@ const StrengthsPage = ({
     managerSubTitle,
     managerTitle,
     managerChunks,
-    effectiveImprovementsManagerItems,
+    improvementsManagerItemsDraft,
     improvementsManagerChunks,
     title,
-    effectiveGroupItems,
-    effectiveManagerItems,
+    strengthsGroupItemsDraft,
+    strengthsManagerItemsDraft,
+    improvementsGroupItemsDraft,
+    editing,
+    editingPill,
+    adding,
+    formatScore,
+    saveText,
+    saveScore,
+    saveNewItem,
   ]);
 
   return (
