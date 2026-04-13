@@ -567,6 +567,22 @@ const ContinueDoingPage = ({
   const [rowRanges, setRowRanges] = useState(null);
   const [measureTick, setMeasureTick] = useState(0);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedGroupColIdx, setSelectedGroupColIdx] = useState(null);
+
+  const serializeColumns = useCallback((cols) => {
+    const safe = Array.isArray(cols)
+      ? cols.map((col) =>
+          Array.isArray(col) ? col.map((c) => String(c ?? "")) : [],
+        )
+      : [];
+    try {
+      return JSON.stringify(safe);
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const lastColumnsSerializedRef = useRef(serializeColumns(columns));
 
   const serializeGroups = useCallback((g) => {
     const safe = Array.isArray(g)
@@ -637,8 +653,16 @@ const ContinueDoingPage = ({
   // }, [shouldReMeasure]);
 
   useEffect(() => {
-    setLocalColumns(columns);
-  }, [columns]);
+    const nextSerialized = serializeColumns(columns);
+    const prevSerialized = lastColumnsSerializedRef.current;
+
+    if (!nextSerialized || nextSerialized === prevSerialized) return;
+
+    lastColumnsSerializedRef.current = nextSerialized;
+    if (Array.isArray(columns)) {
+      setLocalColumns(columns);
+    }
+  }, [columns, serializeColumns]);
 
   useEffect(() => {
     const nextSerialized = serializeGroups(groups);
@@ -1005,6 +1029,7 @@ const ContinueDoingPage = ({
                           group.comments_belong_to_this_group.length > 0
                         ) {
                           setSelectedGroup(group);
+                          setSelectedGroupColIdx(colIdx);
                         }
                       }
                     }
@@ -1089,9 +1114,49 @@ const ContinueDoingPage = ({
       />
       <GroupCommentsModal
         isOpen={!!selectedGroup}
-        onClose={() => setSelectedGroup(null)}
+        onClose={() => {
+          setSelectedGroup(null);
+          setSelectedGroupColIdx(null);
+        }}
         selectedGroup={selectedGroup}
         onUpdateGroup={updateGroupData}
+        onMoveComment={(commentIdx) => {
+          if (!selectedGroup) return;
+
+          const list = Array.isArray(selectedGroup?.comments_belong_to_this_group)
+            ? selectedGroup.comments_belong_to_this_group
+            : [];
+
+          if (commentIdx == null || commentIdx < 0 || commentIdx >= list.length) return;
+          const moved = String(list[commentIdx] ?? "");
+          if (!String(moved).trim()) return;
+
+          const nextComments = list.filter((_, i) => i !== commentIdx);
+          const updatedGroup = {
+            ...selectedGroup,
+            comments_belong_to_this_group: nextComments,
+          };
+
+          // Update group first
+          updateGroupData(updatedGroup);
+          setSelectedGroup(updatedGroup);
+
+          // Append to end of the LAST column in the table
+          setLocalColumns((prevColumns) => {
+            const nextColumns = Array.isArray(prevColumns) ? [...prevColumns] : [];
+            if (nextColumns.length === 0) return nextColumns;
+
+            const lastColIdx = nextColumns.length - 1;
+            if (!Array.isArray(nextColumns[lastColIdx])) nextColumns[lastColIdx] = [];
+
+            nextColumns[lastColIdx] = [...nextColumns[lastColIdx], moved];
+            return nextColumns;
+          });
+
+          // Force pagination ranges to rebuild so the newly appended row is included
+          setRowRanges(null);
+          setMeasureTick((t) => t + 1);
+        }}
       />
     </>
     // </div>

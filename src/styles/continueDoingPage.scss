@@ -451,6 +451,22 @@
   }
 }
 
+.cd-group-modal__action-btn--move {
+  padding: 8px;
+  min-width: 32px;
+  min-height: 32px;
+  color: #0d6fb3;
+}
+
+.cd-group-modal__action-btn--move:hover {
+  background-color: rgba(13, 111, 179, 0.12);
+  color: #0a3a73;
+}
+
+.cd-group-modal__action-btn--move:active {
+  transform: translateY(1px);
+}
+
 .cd-group-modal__add {
   margin-top: 16px;
   display: grid;
