@@ -390,23 +390,23 @@ const ContinueDoingGrid = ({
                     value={row}
                     className="cd-row-wrapper"
                     role="none"
+                    style={{ touchAction: "none" }}
+                    onDragEnd={() => {
+                      setDragState((prev) => {
+                        const nextBuffered = prev.valuesByCol?.[colIdx];
+                        if (
+                          Array.isArray(nextBuffered) &&
+                          nextBuffered.length
+                        ) {
+                          applyReorder(colIdx, nextBuffered);
+                        }
+                        return { colIdx: null, valuesByCol: {} };
+                      });
+                    }}
                   >
                     <div
                       className="cd-row"
                       role="row"
-                      style={{ touchAction: "none" }}
-                      onDragEnd={() => {
-                        setDragState((prev) => {
-                          const nextBuffered = prev.valuesByCol?.[colIdx];
-                          if (
-                            Array.isArray(nextBuffered) &&
-                            nextBuffered.length
-                          ) {
-                            applyReorder(colIdx, nextBuffered);
-                          }
-                          return { colIdx: null, valuesByCol: {} };
-                        });
-                      }}
                     >
                       <div
                         className="cd-cell"

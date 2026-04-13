@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Plus } from "lucide-react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
@@ -345,9 +345,15 @@ const StrengthsPage = ({
     setEditing(null);
   }, [resolveList, updateList]);
 
-  const saveNewItem = useCallback((section, column, item) => {
+  const saveNewItem = useCallback((section, column, item, insertIdx) => {
     const current = resolveList(section, column);
-    updateList(section, column, [...current, item]);
+    const next = [...current];
+    if (typeof insertIdx === "number" && insertIdx >= 0 && insertIdx <= next.length) {
+      next.splice(insertIdx, 0, item);
+    } else {
+      next.push(item);
+    }
+    updateList(section, column, next);
     setAdding(null);
   }, [resolveList, updateList]);
 
@@ -791,61 +797,79 @@ const StrengthsPage = ({
 
                   <div className="sp-col__body">
                     {groupSlice.map((it, i) => (
-                      <div
-                        key={`g-${chunkIdx}-${i}`}
-                        className="sp-row sp-row--manager"
-                      >
-                        <div
-                          className="sp-pill"
-                          onDoubleClick={() =>
-                            setEditingPill({ section: "strengths", column: "group", idx: chunk.start + i })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editingPill?.section === "strengths" &&
-                          editingPill?.column === "group" &&
-                          editingPill?.idx === chunk.start + i ? (
-                            <EditablePill
-                              value={it.score}
-                              onSave={(v) => saveScore("strengths", "group", chunk.start + i, v)}
+                        <Fragment key={`g-${chunkIdx}-${i}`}>
+                          <div
+                            className="sp-row sp-row--manager"
+                          >
+                            <div
+                              className="sp-pill"
+                              onDoubleClick={() =>
+                                setEditingPill({ section: "strengths", column: "group", idx: chunk.start + i })
+                              }
+                              style={{ cursor: "pointer" }}
+                            >
+                              {editingPill?.section === "strengths" &&
+                              editingPill?.column === "group" &&
+                              editingPill?.idx === chunk.start + i ? (
+                                <EditablePill
+                                  value={it.score}
+                                  onSave={(v) => saveScore("strengths", "group", chunk.start + i, v)}
+                                />
+                              ) : (
+                                formatScore(it.score)
+                              )}
+                            </div>
+                            <div
+                              className="sp-card"
+                              onDoubleClick={() =>
+                                setEditing({ section: "strengths", column: "group", idx: chunk.start + i })
+                              }
+                              style={{ cursor: "pointer" }}
+                            >
+                              {editing?.section === "strengths" &&
+                              editing?.column === "group" &&
+                              editing?.idx === chunk.start + i ? (
+                                <EditableText
+                                  value={it.text}
+                                  onSave={(v) => saveText("strengths", "group", chunk.start + i, v)}
+                                  onCancel={() => setEditing(null)}
+                                />
+                              ) : (
+                                it.text
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              className="sp-row__add-btn"
+                              onClick={() => setAdding({ section: "strengths", column: "group", idx: chunk.start + i })}
+                              title="Add item"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                          {adding?.section === "strengths" &&
+                          adding?.column === "group" &&
+                          adding?.idx === chunk.start + i ? (
+                            <NewItemRow
+                              onSave={(item) =>
+                                saveNewItem(
+                                  "strengths",
+                                  "group",
+                                  item,
+                                  adding.idx !== undefined ? adding.idx + 1 : undefined
+                                )
+                              }
+                              onCancel={() => setAdding(null)}
                             />
-                          ) : (
-                            formatScore(it.score)
-                          )}
-                        </div>
-                        <div
-                          className="sp-card"
-                          onDoubleClick={() =>
-                            setEditing({ section: "strengths", column: "group", idx: chunk.start + i })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editing?.section === "strengths" &&
-                          editing?.column === "group" &&
-                          editing?.idx === chunk.start + i ? (
-                            <EditableText
-                              value={it.text}
-                              onSave={(v) => saveText("strengths", "group", chunk.start + i, v)}
-                              onCancel={() => setEditing(null)}
-                            />
-                          ) : (
-                            it.text
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          className="sp-row__add-btn"
-                          onClick={() => setAdding({ section: "strengths", column: "group" })}
-                          title="Add item"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                          ) : null}
+                        </Fragment>
                     ))}
 
-                    {adding?.section === "strengths" && adding?.column === "group" && chunkIdx === (resolvedChunks.length - 1) ? (
+                    {adding?.section === "strengths" &&
+                    adding?.column === "group" &&
+                    adding?.idx === -1 ? (
                       <NewItemRow
-                        onSave={(item) => saveNewItem("strengths", "group", item)}
+                        onSave={(item) => saveNewItem("strengths", "group", item, 0)}
                         onCancel={() => setAdding(null)}
                       />
                     ) : null}
@@ -864,58 +888,77 @@ const StrengthsPage = ({
 
                   <div className="sp-col__body sp-col__body--manager">
                     {managerSlice.map((it, idx) => (
-                      <div key={`m-${chunkIdx}-${idx}`} className="sp-row sp-row--manager">
-                        <div
-                          className="sp-pill"
-                          onDoubleClick={() =>
-                            setEditingPill({ section: "strengths", column: "manager", idx: chunk.start + idx })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editingPill?.section === "strengths" &&
-                          editingPill?.column === "manager" &&
-                          editingPill?.idx === chunk.start + idx ? (
-                            <EditablePill
-                              value={it.score}
-                              onSave={(v) => saveScore("strengths", "manager", chunk.start + idx, v)}
-                            />
-                          ) : (
-                            formatScore(it.score)
-                          )}
+                      <Fragment key={`m-${chunkIdx}-${idx}`}>
+                        <div className="sp-row sp-row--manager">
+                          <div
+                            className="sp-pill"
+                            onDoubleClick={() =>
+                              setEditingPill({ section: "strengths", column: "manager", idx: chunk.start + idx })
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            {editingPill?.section === "strengths" &&
+                            editingPill?.column === "manager" &&
+                            editingPill?.idx === chunk.start + idx ? (
+                              <EditablePill
+                                value={it.score}
+                                onSave={(v) => saveScore("strengths", "manager", chunk.start + idx, v)}
+                              />
+                            ) : (
+                              formatScore(it.score)
+                            )}
+                          </div>
+                          <div
+                            className="sp-card"
+                            onDoubleClick={() =>
+                              setEditing({ section: "strengths", column: "manager", idx: chunk.start + idx })
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            {editing?.section === "strengths" &&
+                            editing?.column === "manager" &&
+                            editing?.idx === chunk.start + idx ? (
+                              <EditableText
+                                value={it.text}
+                                onSave={(v) => saveText("strengths", "manager", chunk.start + idx, v)}
+                                onCancel={() => setEditing(null)}
+                              />
+                            ) : (
+                              it.text
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="sp-row__add-btn"
+                            onClick={() => setAdding({ section: "strengths", column: "manager", idx: chunk.start + idx })}
+                            title="Add item"
+                          >
+                            <Plus size={16} />
+                          </button>
                         </div>
-                        <div
-                          className="sp-card"
-                          onDoubleClick={() =>
-                            setEditing({ section: "strengths", column: "manager", idx: chunk.start + idx })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editing?.section === "strengths" &&
-                          editing?.column === "manager" &&
-                          editing?.idx === chunk.start + idx ? (
-                            <EditableText
-                              value={it.text}
-                              onSave={(v) => saveText("strengths", "manager", chunk.start + idx, v)}
-                              onCancel={() => setEditing(null)}
-                            />
-                          ) : (
-                            it.text
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          className="sp-row__add-btn"
-                          onClick={() => setAdding({ section: "strengths", column: "manager" })}
-                          title="Add item"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                        {adding?.section === "strengths" &&
+                        adding?.column === "manager" &&
+                        adding?.idx === chunk.start + idx ? (
+                          <NewItemRow
+                            onSave={(item) =>
+                              saveNewItem(
+                                "strengths",
+                                "manager",
+                                item,
+                                adding.idx !== undefined ? adding.idx + 1 : undefined
+                              )
+                            }
+                            onCancel={() => setAdding(null)}
+                          />
+                        ) : null}
+                      </Fragment>
                     ))}
 
-                    {adding?.section === "strengths" && adding?.column === "manager" && chunkIdx === (resolvedChunks.length - 1) ? (
+                    {adding?.section === "strengths" &&
+                    adding?.column === "manager" &&
+                    adding?.idx === -1 ? (
                       <NewItemRow
-                        onSave={(item) => saveNewItem("strengths", "manager", item)}
+                        onSave={(item) => saveNewItem("strengths", "manager", item, 0)}
                         onCancel={() => setAdding(null)}
                       />
                     ) : null}
@@ -963,61 +1006,79 @@ const StrengthsPage = ({
 
                   <div className="sp-col__body">
                     {groupSlice.map((it, i) => (
-                      <div
-                        key={`ig-${idx}-${i}`}
-                        className="sp-row sp-row--manager"
-                      >
-                        <div
-                          className="sp-pill"
-                          onDoubleClick={() =>
-                            setEditingPill({ section: "improvements", column: "group", idx: chunk.start + i })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editingPill?.section === "improvements" &&
-                          editingPill?.column === "group" &&
-                          editingPill?.idx === chunk.start + i ? (
-                            <EditablePill
-                              value={it.score}
-                              onSave={(v) => saveScore("improvements", "group", chunk.start + i, v)}
+                        <Fragment key={`ig-${idx}-${i}`}>
+                          <div
+                            className="sp-row sp-row--manager"
+                          >
+                            <div
+                              className="sp-pill"
+                              onDoubleClick={() =>
+                                setEditingPill({ section: "improvements", column: "group", idx: chunk.start + i })
+                              }
+                              style={{ cursor: "pointer" }}
+                            >
+                              {editingPill?.section === "improvements" &&
+                              editingPill?.column === "group" &&
+                              editingPill?.idx === chunk.start + i ? (
+                                <EditablePill
+                                  value={it.score}
+                                  onSave={(v) => saveScore("improvements", "group", chunk.start + i, v)}
+                                />
+                              ) : (
+                                formatScore(it.score)
+                              )}
+                            </div>
+                            <div
+                              className="sp-card"
+                              onDoubleClick={() =>
+                                setEditing({ section: "improvements", column: "group", idx: chunk.start + i })
+                              }
+                              style={{ cursor: "pointer" }}
+                            >
+                              {editing?.section === "improvements" &&
+                              editing?.column === "group" &&
+                              editing?.idx === chunk.start + i ? (
+                                <EditableText
+                                  value={it.text}
+                                  onSave={(v) => saveText("improvements", "group", chunk.start + i, v)}
+                                  onCancel={() => setEditing(null)}
+                                />
+                              ) : (
+                                it.text
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              className="sp-row__add-btn"
+                              onClick={() => setAdding({ section: "improvements", column: "group", idx: chunk.start + i })}
+                              title="Add item"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                          {adding?.section === "improvements" &&
+                          adding?.column === "group" &&
+                          adding?.idx === chunk.start + i ? (
+                            <NewItemRow
+                              onSave={(item) =>
+                                saveNewItem(
+                                  "improvements",
+                                  "group",
+                                  item,
+                                  adding.idx !== undefined ? adding.idx + 1 : undefined
+                                )
+                              }
+                              onCancel={() => setAdding(null)}
                             />
-                          ) : (
-                            formatScore(it.score)
-                          )}
-                        </div>
-                        <div
-                          className="sp-card"
-                          onDoubleClick={() =>
-                            setEditing({ section: "improvements", column: "group", idx: chunk.start + i })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editing?.section === "improvements" &&
-                          editing?.column === "group" &&
-                          editing?.idx === chunk.start + i ? (
-                            <EditableText
-                              value={it.text}
-                              onSave={(v) => saveText("improvements", "group", chunk.start + i, v)}
-                              onCancel={() => setEditing(null)}
-                            />
-                          ) : (
-                            it.text
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          className="sp-row__add-btn"
-                          onClick={() => setAdding({ section: "improvements", column: "group" })}
-                          title="Add item"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                          ) : null}
+                        </Fragment>
                     ))}
 
-                    {adding?.section === "improvements" && adding?.column === "group" && idx === (improvementsResolvedChunks.length - 1) ? (
+                    {adding?.section === "improvements" &&
+                    adding?.column === "group" &&
+                    adding?.idx === -1 ? (
                       <NewItemRow
-                        onSave={(item) => saveNewItem("improvements", "group", item)}
+                        onSave={(item) => saveNewItem("improvements", "group", item, 0)}
                         onCancel={() => setAdding(null)}
                       />
                     ) : null}
@@ -1035,61 +1096,79 @@ const StrengthsPage = ({
 
                   <div className="sp-col__body sp-col__body--manager">
                     {managerSlice.map((it, rowIdx) => (
-                      <div
-                        key={`im-${idx}-${rowIdx}`}
-                        className="sp-row sp-row--manager"
-                      >
+                      <Fragment key={`im-${idx}-${rowIdx}`}>
                         <div
-                          className="sp-pill"
-                          onDoubleClick={() =>
-                            setEditingPill({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })
-                          }
-                          style={{ cursor: "pointer" }}
+                          className="sp-row sp-row--manager"
                         >
-                          {editingPill?.section === "improvements" &&
-                          editingPill?.column === "manager" &&
-                          editingPill?.idx === chunk.start + rowIdx ? (
-                            <EditablePill
-                              value={it.score}
-                              onSave={(v) => saveScore("improvements", "manager", chunk.start + rowIdx, v)}
-                            />
-                          ) : (
-                            formatScore(it.score)
-                          )}
+                          <div
+                            className="sp-pill"
+                            onDoubleClick={() =>
+                              setEditingPill({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            {editingPill?.section === "improvements" &&
+                            editingPill?.column === "manager" &&
+                            editingPill?.idx === chunk.start + rowIdx ? (
+                              <EditablePill
+                                value={it.score}
+                                onSave={(v) => saveScore("improvements", "manager", chunk.start + rowIdx, v)}
+                              />
+                            ) : (
+                              formatScore(it.score)
+                            )}
+                          </div>
+                          <div
+                            className="sp-card"
+                            onDoubleClick={() =>
+                              setEditing({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            {editing?.section === "improvements" &&
+                            editing?.column === "manager" &&
+                            editing?.idx === chunk.start + rowIdx ? (
+                              <EditableText
+                                value={it.text}
+                                onSave={(v) => saveText("improvements", "manager", chunk.start + rowIdx, v)}
+                                onCancel={() => setEditing(null)}
+                              />
+                            ) : (
+                              it.text
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="sp-row__add-btn"
+                            onClick={() => setAdding({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })}
+                            title="Add item"
+                          >
+                            <Plus size={16} />
+                          </button>
                         </div>
-                        <div
-                          className="sp-card"
-                          onDoubleClick={() =>
-                            setEditing({ section: "improvements", column: "manager", idx: chunk.start + rowIdx })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editing?.section === "improvements" &&
-                          editing?.column === "manager" &&
-                          editing?.idx === chunk.start + rowIdx ? (
-                            <EditableText
-                              value={it.text}
-                              onSave={(v) => saveText("improvements", "manager", chunk.start + rowIdx, v)}
-                              onCancel={() => setEditing(null)}
-                            />
-                          ) : (
-                            it.text
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          className="sp-row__add-btn"
-                          onClick={() => setAdding({ section: "improvements", column: "manager" })}
-                          title="Add item"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                        {adding?.section === "improvements" &&
+                        adding?.column === "manager" &&
+                        adding?.idx === chunk.start + rowIdx ? (
+                          <NewItemRow
+                            onSave={(item) =>
+                              saveNewItem(
+                                "improvements",
+                                "manager",
+                                item,
+                                adding.idx !== undefined ? adding.idx + 1 : undefined
+                              )
+                            }
+                            onCancel={() => setAdding(null)}
+                          />
+                        ) : null}
+                      </Fragment>
                     ))}
 
-                    {adding?.section === "improvements" && adding?.column === "manager" && idx === (improvementsResolvedChunks.length - 1) ? (
+                    {adding?.section === "improvements" &&
+                    adding?.column === "manager" &&
+                    adding?.idx === -1 ? (
                       <NewItemRow
-                        onSave={(item) => saveNewItem("improvements", "manager", item)}
+                        onSave={(item) => saveNewItem("improvements", "manager", item, 0)}
                         onCancel={() => setAdding(null)}
                       />
                     ) : null}
