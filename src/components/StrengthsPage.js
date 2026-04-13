@@ -20,11 +20,18 @@ const EditablePill = ({ value, onSave }) => {
     }
   };
 
+  const handleChange = (e) => {
+    const val = e.target.value;
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setEditValue(val);
+    }
+  };
+
   return (
     <input
       type="text"
       value={editValue}
-      onChange={(e) => setEditValue(e.target.value)}
+      onChange={handleChange}
       onBlur={() => onSave(editValue)}
       onKeyDown={handleKeyDown}
       autoFocus
@@ -96,13 +103,20 @@ const NewItemRow = ({ onSave, onCancel }) => {
     }
   };
 
+  const handleScoreChange = (e) => {
+    const val = e.target.value;
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setScore(val);
+    }
+  };
+
   return (
     <div className="sp-row sp-row--manager">
       <div className="sp-pill">
         <input
           type="text"
           value={score}
-          onChange={(e) => setScore(e.target.value)}
+          onChange={handleScoreChange}
           onKeyDown={handleKeyDown}
           autoFocus
           placeholder="0.00"
@@ -346,12 +360,20 @@ const StrengthsPage = ({
   }, [resolveList, updateList]);
 
   const saveNewItem = useCallback((section, column, item, insertIdx) => {
+    const cleanedText = String(item?.text ?? "").trim();
+    if (!cleanedText) {
+      setAdding(null);
+      return;
+    }
+
     const current = resolveList(section, column);
     const next = [...current];
+    const newItem = { ...item, text: cleanedText };
+
     if (typeof insertIdx === "number" && insertIdx >= 0 && insertIdx <= next.length) {
-      next.splice(insertIdx, 0, item);
+      next.splice(insertIdx, 0, newItem);
     } else {
-      next.push(item);
+      next.push(newItem);
     }
     updateList(section, column, next);
     setAdding(null);
