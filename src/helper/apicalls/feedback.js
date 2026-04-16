@@ -1,4 +1,4 @@
-import { feedbackExcelUrl } from "../apiurls";
+import { feedbackExcelUrl, lbscore360ExcelUrl } from "../apiurls";
 
 const parseSSEStream = async (response) => {
   const reader = response.body.getReader();
@@ -199,6 +199,45 @@ export const excelSheetFeedback = async (fileOrFiles) => {
     };
   } catch (error) {
     console.error("Error fetching courses:", error);
+    throw error;
+  }
+};
+
+export const excelSheetLbScore360 = async (fileOrFiles) => {
+  try {
+    const files = Array.isArray(fileOrFiles)
+      ? fileOrFiles.filter(Boolean)
+      : [fileOrFiles].filter(Boolean);
+
+    const formData = new FormData();
+    for (const f of files) formData.append("files", f);
+
+    const fetchOptions = {
+      method: "POST",
+      headers: {
+        Accept: "text/event-stream",
+      },
+      body: formData,
+    };
+
+    const res = await fetch(`${lbscore360ExcelUrl}/base`, fetchOptions);
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`LBSCORE360 failed: ${res.status} ${text}`);
+    }
+
+    const data = await parseSSEStream(res).catch((e) => {
+      console.error("LBSCORE360 stream error:", e);
+      if (e.message.includes("network error") || e.message.includes("Reader has been released")) {
+         return {}; 
+      }
+      throw new Error(`LBSCORE360 stream failed: ${e.message}`);
+    });
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching lbscore360 data:", error);
     throw error;
   }
 };

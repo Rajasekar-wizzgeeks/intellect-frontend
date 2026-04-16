@@ -47,9 +47,11 @@ const QualitativeFeedbackList = ({
 
     questions.forEach((q, qi) => {
       const theme = THEME[q.colorTheme] || THEME.green;
+      
+      // Question Header
       out.push(
         <div
-          key={`q-${qi}`}
+          key={`qh-${qi}`}
           className={`qfl-question ${qi === 0 ? "qfl-question--first" : ""}`}
         >
           <div className="qfl-question__header">
@@ -58,32 +60,35 @@ const QualitativeFeedbackList = ({
             </span>
             <span>{q.text}</span>
           </div>
-          <div className="qfl-comments">
-            {(q.comments || []).map((c, i) => (
-              <FeedbackBubble
-                key={i}
-                text={typeof c === "string" ? c : c?.text || ""}
-                compact={true}
-                bubbleColor={theme.bubbleColor}
-                borderColor={theme.borderColor}
-                avatarBg={theme.avatarBg}
-                textColor={theme.textColor}
-                icon={
-                  <img
-                    src={theme.icon}
-                    alt="Person"
-                    style={
-                      q.colorTheme === "green"
-                        ? { width: "42px", height: "40px" }
-                        : { width: "48px", height: "45px" }
-                    }
-                  />
-                }
-              />
-            ))}
-          </div>
         </div>
       );
+
+      // Each comment is its own block for finer-grained pagination
+      (q.comments || []).forEach((c, i) => {
+        out.push(
+          <div key={`qc-${qi}-${i}`} className="qfl-comment-block">
+            <FeedbackBubble
+              text={typeof c === "string" ? c : c?.text || ""}
+              compact={true}
+              bubbleColor={theme.bubbleColor}
+              borderColor={theme.borderColor}
+              avatarBg={theme.avatarBg}
+              textColor={theme.textColor}
+              icon={
+                <img
+                  src={theme.icon}
+                  alt="Person"
+                  style={
+                    q.colorTheme === "green"
+                      ? { width: "42px", height: "40px" }
+                      : { width: "48px", height: "45px" }
+                  }
+                />
+              }
+            />
+          </div>
+        );
+      });
     });
 
     return out;
