@@ -111,6 +111,8 @@
   font-size: var(--fs-md);
   line-height: 1.5;
   color: var(--fb-text-color, var(--color-text));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* new textarea style */

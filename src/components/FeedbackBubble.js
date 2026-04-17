@@ -30,6 +30,9 @@ const FeedbackBubble = ({
   rows = 2,
   readOnly = false,
 }) => {
+  const isEditable = Boolean(onChange) && !readOnly;
+  const resolvedText = typeof value === "string" ? value : text;
+
   return (
     <div
       className={`fb-row ${
@@ -53,15 +56,19 @@ const FeedbackBubble = ({
           "--fb-border": borderColor,
         }}
       >
-        <textarea
-          className="fb-textarea"
-          value={typeof value === "string" ? value : undefined}
-          onChange={onChange}
-          defaultValue={typeof value === "string" ? undefined : text}
-          placeholder={placeholder}
-          rows={rows}
-          readOnly={readOnly || !onChange}
-        />
+        {isEditable ? (
+          <textarea
+            className="fb-textarea"
+            value={typeof value === "string" ? value : undefined}
+            onChange={onChange}
+            defaultValue={typeof value === "string" ? undefined : text}
+            placeholder={placeholder}
+            rows={rows}
+            readOnly={readOnly}
+          />
+        ) : (
+          <div className="fb-text">{resolvedText}</div>
+        )}
         <div className="fb-bubble-thread"></div>
       </div>
     </div>

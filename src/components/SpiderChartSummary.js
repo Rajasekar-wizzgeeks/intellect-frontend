@@ -65,6 +65,32 @@ function RadarGrid({ size = 420, levels = 5, spokes = 7 }) {
   );
 }
 
+function RadarLevelLabels({ size = 420, levels = 5, max = 5 }) {
+  const R = size / 2;
+  const step = R / levels;
+
+  // Labels are drawn along the top spoke (vertical axis), like the PDF.
+  return (
+    <g transform={`translate(${R}, ${R})`} fontSize={12} fill="#222">
+      {Array.from({ length: levels + 1 }, (_, i) => {
+        const v = i; // 0..levels
+        const y = -step * v;
+        return (
+          <text
+            key={`lvl-${i}`}
+            x={0}
+            y={y}
+            textAnchor="middle"
+            alignmentBaseline="middle"
+          >
+            {Math.round((v / levels) * max)}
+          </text>
+        );
+      })}
+    </g>
+  );
+}
+
 function RadarSeries({ size = 420, values = [], max = 5, color = "#0e4a2e" }) {
   const R = size / 2;
   const spokes = values.length;
@@ -204,6 +230,7 @@ const SpiderChartSummary = ({
             preserveAspectRatio="xMidYMid meet"
           >
             <RadarGrid size={size} levels={5} spokes={categories.length} />
+            <RadarLevelLabels size={size} levels={5} max={5} />
             <RadarLabels size={size} labels={categories} />
             <RadarSeries size={size} values={self} color="#caa785" />
             <RadarSeries size={size} values={manager} color="#0e4a2e" />

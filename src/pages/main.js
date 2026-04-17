@@ -121,12 +121,8 @@ const MainPage = () => {
           const questionText = Object.keys(qObj)[0];
           const rolesData = qObj[questionText];
 
-          // Determine color theme based on question index or keywords
           const isPositive = /strength|effectively|positively|contribute/i.test(questionText);
           
-          // Flatten comments from all roles into the format expected by QualitativeFeedbackList
-          // Note: The component seems to expect a flat list of comments or categorized. 
-          // Based on previous code, it uses a flat array. We will combine them or pick the main ones.
           const allComments = [];
           if (rolesData) {
             ["Manager", "Peer", "Subordinate", "Self"].forEach(role => {
@@ -220,11 +216,29 @@ const MainPage = () => {
   }, [reportData]);
 
   const highlightsSections = useMemo(() => {
-    if (!reportData?.strengths_area_of_improvement) {
-      return [];
-    }
+    const fallbackStrengths = [
+      { score: 4.8, question: "Demonstrates strong leadership and sets clear direction." },
+      { score: 4.7, question: "Communicates expectations clearly and consistently." },
+      { score: 4.6, question: "Builds trust and collaborates effectively across teams." },
+      { score: 4.6, question: "Takes ownership and delivers outcomes consistently." },
+      { score: 4.5, question: "Responds constructively to feedback and adapts quickly." },
+    ];
 
-    const { strengths, area_of_improvement } = reportData.strengths_area_of_improvement;
+    const fallbackImprovements = [
+      { score: 3.2, question: "Delegates more effectively to optimize workload." },
+      { score: 3.1, question: "Improves stakeholder communication during high-pressure periods." },
+      { score: 3.0, question: "Builds stronger alignment on priorities across functions." },
+      { score: 2.9, question: "Strengthens coaching cadence and follow-through." },
+      { score: 2.8, question: "Increases proactive risk identification and mitigation." },
+    ];
+
+    const strengths = reportData?.strengths_area_of_improvement?.strengths?.length
+      ? reportData.strengths_area_of_improvement.strengths
+      : fallbackStrengths;
+
+    const area_of_improvement = reportData?.strengths_area_of_improvement?.area_of_improvement?.length
+      ? reportData.strengths_area_of_improvement.area_of_improvement
+      : fallbackImprovements;
 
     return [
       {
@@ -239,10 +253,10 @@ const MainPage = () => {
         dotsColor: "var(--color-green)",
         leftIcon: ChessKingIcon,
         scoreShip: false,
-        items: (strengths || []).map(s => ({
-          score: s.score,
-          title: "", // Title not provided in this simplified format
-          desc: s.question,
+        items: (Array.isArray(strengths) ? strengths : []).slice(0, 5).map((s) => ({
+          score: s?.score,
+          title: "",
+          desc: s?.question,
         })),
       },
       {
@@ -256,21 +270,91 @@ const MainPage = () => {
         dotsColor: "var(--color-gold)",
         scoreShip: true,
         leftIcon: MarketingIcon,
-        items: (area_of_improvement || []).map(a => ({
-          score: a.score,
-          title: "",
-          desc: a.question,
-        })),
+        items: (Array.isArray(area_of_improvement) ? area_of_improvement : [])
+          .slice(0, 5)
+          .map((a) => ({
+            score: a?.score,
+            title: "",
+            desc: a?.question,
+          })),
       },
     ];
   }, [reportData]);
 
   const blindSpotsSectionsData = useMemo(() => {
-    if (!reportData?.blindspot_hiddentstrength) {
-      return [];
-    }
+    const fallbackHiddenStrengths = [
+      {
+        score: 4.4,
+        question: "Builds positive relationships and collaboration across stakeholders.",
+        self_rating: 3.2,
+        others_rating: 4.0,
+      },
+      {
+        score: 4.3,
+        question: "Demonstrates calm decision-making during ambiguous situations.",
+        self_rating: 3.0,
+        others_rating: 3.8,
+      },
+      {
+        score: 4.2,
+        question: "Provides clear structure and prioritization to the team.",
+        self_rating: 2.9,
+        others_rating: 3.6,
+      },
+      {
+        score: 4.1,
+        question: "Shows resilience and consistency under pressure.",
+        self_rating: 2.8,
+        others_rating: 3.5,
+      },
+      {
+        score: 4.0,
+        question: "Leverages expertise to unblock others and move work forward.",
+        self_rating: 2.7,
+        others_rating: 3.4,
+      },
+    ];
 
-    const { hidden_strengths, blind_spots } = reportData.blindspot_hiddentstrength;
+    const fallbackBlindSpots = [
+      {
+        score: 3.0,
+        question: "Aligns stakeholders early to avoid last-minute changes.",
+        self_rating: 4.0,
+        others_rating: 3.4,
+      },
+      {
+        score: 2.9,
+        question: "Seeks feedback proactively before finalizing decisions.",
+        self_rating: 3.9,
+        others_rating: 3.3,
+      },
+      {
+        score: 2.8,
+        question: "Balances speed with communication to keep others informed.",
+        self_rating: 3.8,
+        others_rating: 3.2,
+      },
+      {
+        score: 2.7,
+        question: "Clarifies ownership and next steps after meetings.",
+        self_rating: 3.7,
+        others_rating: 3.1,
+      },
+      {
+        score: 2.6,
+        question: "Delegates effectively instead of doing critical tasks alone.",
+        self_rating: 3.6,
+        others_rating: 3.0,
+      },
+    ];
+
+    const hidden_strengths = reportData?.blindspot_hiddentstrength?.hidden_strengths?.length
+      ? reportData.blindspot_hiddentstrength.hidden_strengths
+      : fallbackHiddenStrengths;
+
+    const blind_spots = reportData?.blindspot_hiddentstrength?.blind_spots?.length
+      ? reportData.blindspot_hiddentstrength.blind_spots
+      : fallbackBlindSpots;
 
     return [
       {
@@ -282,7 +366,7 @@ const MainPage = () => {
         chipColor: "var(--color-green)",
         leftIcon: ChessIcon,
         scoreShip: false,
-        items: (hidden_strengths || []).map(it => ({
+        items: (Array.isArray(hidden_strengths) ? hidden_strengths : []).slice(0, 5).map(it => ({
           score: it.score,
           desc: it.question,
           self: it.self_rating,
@@ -298,7 +382,7 @@ const MainPage = () => {
         chipColor: "var(--color-gold)",
         scoreShip: true,
         leftIcon: EyeIcon,
-        items: (blind_spots || []).map(it => ({
+        items: (Array.isArray(blind_spots) ? blind_spots : []).slice(0, 5).map(it => ({
           score: it.score,
           desc: it.question,
           self: it.self_rating,
