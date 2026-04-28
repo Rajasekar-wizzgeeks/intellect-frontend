@@ -5,6 +5,10 @@
   counter-reset: page;
   overflow-x: auto;
 
+  .section-page-container {
+    counter-reset: none;
+  }
+
   .section-page {
     position: relative;
     counter-increment: page;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import InitialPage from "../components/initialPage";
 import "../styles/mainPage.scss";
 import Header from "../components/header";
@@ -31,387 +31,330 @@ import MarketingIcon from "../assets/png/marketingIcon.png";
 import ChessIcon from "../assets/png/chessIcon.png";
 import EyeIcon from "../assets/png/eye.png";
 import { useOutletContext, useSearchParams } from "react-router-dom";
+import { excelSheetLbScore360 } from "../helper/apicalls/feedback";
+import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
 
 const MainPage = () => {
-  // const [assessementLastPage, setAssessementLastPage] = useState(5)
-  // const [aboutSectionLastPage, setaboutSectionLastPage] = useState(7)
-  // const [scoreLastPage, setScoreLastPage] = useState(9)
-  // const [aboutSectionTwoLastPage, setAboutSectionTwoLastPage] = useState(11)
-  // const [compentencyLastPage, setCompentencyLastPage] = useState(12)
-
   const { setIsHeader, setHeaderName } = useOutletContext();
-  const qualitativeSections = [
-    {
-      titleIndex: "3.1.",
-      titleText: "Leadership",
-      questions: [
-        {
-          index: "1.",
-          text: "What do you consider the key leadership strengths demonstrated by the Participant?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you see opportunities for the Participant to strengthen their leadership effectiveness?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-    {
-      titleIndex: "3.2.",
-      titleText: "Bandwidth",
-      questions: [
-        {
-          index: "1.",
-          text: "In what ways does the Participant effectively manage bandwidth and handle responsibilities with clarity and focus?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you feel Participant could improve in managing workload, prioritization, or capacity planning?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-    {
-      titleIndex: "3.3.",
-      titleText: "Sales & Customer Centricity",
-      questions: [
-        {
-          index: "1.",
-          text: "What strengths does the Participant demonstrate in driving customer value or supporting sales outcomes?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you see opportunities for the Participant to strengthen their leadership effectiveness?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-    {
-      titleIndex: "3.4.",
-      titleText: "Collaboration",
-      questions: [
-        {
-          index: "1.",
-          text: "What behaviors of the Participant positively contribute to collaboration and cross-functional teamwork?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you see opportunities for the Participant to strengthen their leadership effectiveness?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-    {
-      titleIndex: "3.5.",
-      titleText: "Operational Excellence",
-      questions: [
-        {
-          index: "1.",
-          text: "What strengths does the Participant display in ensuring operational discipline, process alignment, or quality of execution?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you see opportunities for the Participant to strengthen their leadership effectiveness?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-    {
-      titleIndex: "3.6.",
-      titleText: "Results Orientation",
-      questions: [
-        {
-          index: "1.",
-          text: "In what ways does the Participant demonstrate strong ownership and drive for results?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you see opportunities for the Participant to strengthen their leadership effectiveness?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-    {
-      titleIndex: "3.7.",
-      titleText: "Expertise & Communication",
-      questions: [
-        {
-          index: "1.",
-          text: "What strengths does the Participant demonstrate in their expertise and communication?",
-          colorTheme: "green",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-        {
-          index: "2.",
-          text: "Where do you see opportunities for the Participant to strengthen their leadership effectiveness?",
-          colorTheme: "gold",
-          comments: [
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-            "Sample",
-          ],
-        },
-      ],
-    },
-  ];
-  const highlightsSections = [
-    {
-      startPage: 45,
-      titleIndex: "4.",
-      titleText: "Highlights",
-      subIndex: "4.1.",
-      subText: "Strengths",
-      note: "Below are the top 5 statements where you received the highest ratings and are considered your key strengths.",
-      arcColor: "var(--color-green)",
-      chipColor: "var(--color-green)",
-      dotsColor: "var(--color-green)",
-      leftIcon: ChessKingIcon,
-      scoreShip: false,
-      items: [
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [excelFile, setExcelFile] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
-        {
-          score: 4.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
+  const handleExcelUpload = async () => {
+    if (!excelFile) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await excelSheetLbScore360(excelFile);
+      setReportData(data);
+      setIsUploadModalOpen(false);
+      setExcelFile(null);
+    } catch (err) {
+      setError(err.message);
+      console.error("Excel upload failed", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setExcelFile(file);
+      setError(null);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      setExcelFile(file);
+      setError(null);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
+  useEffect(() => {
+    // Optional: Auto-fetch if there's a default state or trigger
+  }, []);
+
+  const qualitativeSectionsData = useMemo(() => {
+    if (!reportData?.feedbacks) return [];
+
+    const feedbackData = reportData.feedbacks;
+    const sections = [];
+
+    // Define the mapping between API keys and local section headers
+    const mapping = [
+      { key: "Leadership Feedback", titleIndex: "3.1.", titleText: "Leadership" },
+      { key: "Bandwidth Feedback", titleIndex: "3.2.", titleText: "Bandwidth" },
+      { key: "Sales and Customer Centricity Feedback", titleIndex: "3.3.", titleText: "Sales & Customer Centricity" },
+      { key: "Collaboration Feedback", titleIndex: "3.4.", titleText: "Collaboration" },
+      { key: "Operational Excellence Feedback", titleIndex: "3.5.", titleText: "Operational Excellence" },
+      { key: "Result Orientation Feedback", titleIndex: "3.6.", titleText: "Results Orientation" },
+      { key: "Expertise and Communication Feedback", titleIndex: "3.7.", titleText: "Expertise & Communication" }
+    ];
+
+    mapping.forEach((m) => {
+      const apiSection = feedbackData[m.key];
+      if (apiSection && Array.isArray(apiSection)) {
+        const questions = apiSection.map((qObj) => {
+          const questionText = Object.keys(qObj)[0];
+          const rolesData = qObj[questionText];
+
+          const isPositive = /strength|effectively|positively|contribute/i.test(questionText);
+          
+          const allComments = [];
+          if (rolesData) {
+            ["Manager", "Peer", "Subordinate", "Self"].forEach(role => {
+              if (Array.isArray(rolesData[role])) {
+                rolesData[role].forEach(comment => {
+                  if (comment) allComments.push(`${role}: ${comment}`);
+                });
+              }
+            });
+          }
+
+          return {
+            text: questionText,
+            colorTheme: isPositive ? "green" : "gold",
+            comments: allComments
+          };
+        });
+
+        sections.push({
+          titleIndex: m.titleIndex,
+          titleText: m.titleText,
+          questions: questions
+        });
+      }
+    });
+
+    return sections;
+  }, [reportData]);
+
+  const qualitativeSections = qualitativeSectionsData;
+
+  const behaviouralIndicatorsData = useMemo(() => {
+    if (!reportData?.behavioural_indications) return [];
+
+    const rawData = reportData.behavioural_indications;
+    
+    return Object.entries(rawData).map(([indicatorText, dataArray]) => {
+      const data = dataArray[0];
+      const scores = data.score || {};
+      const gaps = data.gap || {};
+      const selfScore = scores.Self ?? 0;
+
+      const cleanedIndicator = indicatorText.replace(/^\d+\.\s*/, "");
+
+      return {
+        indicator: cleanedIndicator,
+        self: selfScore,
+        others: [
+          {
+            label: "Manager",
+            score: scores.Manager ?? 0,
+            gapFromSelf: gaps.manager_gap ?? 0,
+            highlight: "",
+            color: "#b8860b",
+          },
+          {
+            label: "Peer",
+            score: scores.Peer ?? 0,
+            gapFromSelf: gaps.peer_avg ?? 0,
+            highlight: "",
+            color: "#a9d0b8",
+          },
+          {
+            label: "Team Members",
+            score: scores.Subordinate ?? 0,
+            gapFromSelf: gaps.subordinate_avg ?? 0,
+            highlight: "",
+            color: "#6b8e23",
+          },
+        ],
+      };
+    });
+  }, [reportData]);
+
+  const evaluatorCategoryBreakdownData = useMemo(() => {
+    if (!reportData?.overall_behavioural_indications) return [];
+
+    const rawData = reportData.overall_behavioural_indications;
+    
+    return Object.entries(rawData).map(([label, stats]) => {
+      return {
+        label: label,
+        values: {
+          self: stats.self_avg ?? 0,
+          manager: stats.manager_avg ?? 0,
+          team: stats.subordinate_avg ?? 0,
+          peers: stats.peer_avg ?? 0,
         },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-      ],
-    },
-    {
-      startPage: 46,
-      titleIndex: "4.",
-      // titleText: "Highlights",
-      subIndex: "4.2.",
-      subText: "Areas of Improvement",
-      note: "Below are the 5 statements where you received the lowest ratings and are considered your areas of improvements.",
-      arcColor: "var(--color-gold)",
-      chipColor: "var(--color-gold)",
-      dotsColor: "var(--color-gold)",
-      scoreShip: true,
-      leftIcon: MarketingIcon,
-      items: [
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-        {
-          score: 2.5,
-          title: "Negotiation",
-          desc: "Is flexible and works well in a fast paced and dynamic environment",
-        },
-      ],
-    },
-  ];
-  const blindSpotsSections = [
-    {
-      startPage: 45,
-      subIndex: "4.3.",
-      subText: "Hidden Strengths",
-      note: "Hidden Strengths are behaviours/competencies where you have rated yourself lower than others, with a difference of ≥ 0.5 between your self-rating and the rating given by other raters. These are highlighted only when your self-rating is ≤ 3, meaning you tend to underrate yourself relative to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
-      arcColor: "var(--color-green)",
-      chipColor: "var(--color-green)",
-      leftIcon: ChessIcon,
-      scoreShip: false,
-      items: [
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        // { score: 2.5, desc: "Text" },
-      ],
-    },
-    {
-      startPage: 46,
-      subIndex: "4.4.",
-      subText: "Blind Spots",
-      note: "Blind Spots are behaviours/ competencies where you have rated yourself higher than others with a difference of ≥ 0.5 between your self-rating and the rating given by others. These are highlighted only when self-rating is ≥3.5, indicating areas where you may be overestimating your effectiveness compared to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
-      arcColor: "var(--color-gold)",
-      chipColor: "var(--color-gold)",
-      scoreShip: true,
-      leftIcon: EyeIcon,
-      items: [
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-        { score: 2.5, desc: "Text" },
-      ],
-    },
-  ];
+      };
+    });
+  }, [reportData]);
+
+  const highlightsSections = useMemo(() => {
+    if (!reportData?.strengths_area_of_improvement) {
+      return [];
+    }
+
+    const { strengths, area_of_improvement } = reportData.strengths_area_of_improvement;
+
+    return [
+      {
+        startPage: 45,
+        titleIndex: "4.",
+        titleText: "Highlights",
+        subIndex: "4.1.",
+        subText: "Strengths",
+        note: "Below are the top 5 statements where you received the highest ratings and are considered your key strengths.",
+        arcColor: "var(--color-green)",
+        chipColor: "var(--color-green)",
+        dotsColor: "var(--color-green)",
+        leftIcon: ChessKingIcon,
+        scoreShip: false,
+        items: (Array.isArray(strengths) ? strengths : []).slice(0, 5).map((s) => ({
+          score: s?.score,
+          title: "",
+          desc: s?.question,
+        })),
+      },
+      {
+        startPage: 46,
+        titleIndex: "4.",
+        subIndex: "4.2.",
+        subText: "Areas of Improvement",
+        note: "Below are the 5 statements where you received the lowest ratings and are considered your areas of improvements.",
+        arcColor: "var(--color-gold)",
+        chipColor: "var(--color-gold)",
+        dotsColor: "var(--color-gold)",
+        scoreShip: true,
+        leftIcon: MarketingIcon,
+        items: (Array.isArray(area_of_improvement) ? area_of_improvement : [])
+          .slice(0, 5)
+          .map((a) => ({
+            score: a?.score,
+            title: "",
+            desc: a?.question,
+          })),
+      },
+    ];
+  }, [reportData]);
+
+  const blindSpotsSectionsData = useMemo(() => {
+    const normalizeTypedPayload = (payload) => {
+      if (!payload) return null;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return null;
+    };
+
+    const hiddenRaw =
+      normalizeTypedPayload(reportData?.hidden_strengths) ||
+      normalizeTypedPayload(reportData?.blindspot_hiddentstrength?.hidden_strengths);
+
+    const blindRaw =
+      normalizeTypedPayload(reportData?.blind_spots) ||
+      normalizeTypedPayload(reportData?.blindspot_hiddentstrength?.blind_spots);
+
+    if (!hiddenRaw?.length && !blindRaw?.length) {
+      return [];
+    }
+
+    const hidden_strengths = hiddenRaw || [];
+    const blind_spots = blindRaw || [];
+
+    return [
+      {
+        startPage: 47,
+        subIndex: "4.3.",
+        subText: "Hidden Strengths",
+        note: " are behaviours/competencies where you have rated yourself lower than others, with a difference of ≥ 0.5 between your self-rating and the rating given by other raters. These are highlighted only when your self-rating is ≤ 3, meaning you tend to underrate yourself relative to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
+        arcColor: "var(--color-green)",
+        chipColor: "var(--color-green)",
+        leftIcon: ChessIcon,
+        scoreShip: false,
+        items: (Array.isArray(hidden_strengths) ? hidden_strengths : []).slice(0, 5).map(it => ({
+          score: it?.gap ?? it?.score,
+          desc: it?.question,
+          self: it?.self_rating ?? it?.self,
+          others: it?.others_rating ?? it?.others,
+        })),
+      },
+      {
+        startPage: 48,
+        subIndex: "4.4.",
+        subText: "Blind Spots",
+        note: " are behaviours/ competencies where you have rated yourself higher than others with a difference of ≥ 0.5 between your self-rating and the rating given by others. These are highlighted only when self-rating is ≥3.5, indicating areas where you may be overestimating your effectiveness compared to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
+        arcColor: "var(--color-gold)",
+        chipColor: "var(--color-gold)",
+        scoreShip: true,
+        leftIcon: EyeIcon,
+        items: (Array.isArray(blind_spots) ? blind_spots : []).slice(0, 5).map(it => ({
+          score: it?.gap ?? it?.score,
+          desc: it?.question,
+          self: it?.self_rating ?? it?.self,
+          others: it?.others_rating ?? it?.others_avg ?? it?.others,
+        })),
+      },
+    ];
+  }, [reportData]);
+
+  const spiderChartData = useMemo(() => {
+    if (!reportData?.overall_behavioural_indications) return { categories: [], self: [], manager: [], others: [] };
+
+    const rawData = reportData.overall_behavioural_indications;
+    const categories = [];
+    const self = [];
+    const manager = [];
+    const others = [];
+
+    Object.entries(rawData).forEach(([label, stats]) => {
+      categories.push(label);
+      self.push(stats.self_avg ?? 0);
+      manager.push(stats.manager_avg ?? 0);
+      others.push(stats.spider_chart_others_avg ?? 0);
+    });
+
+    return { categories, self, manager, others };
+  }, [reportData]);
+
+  const overviewSummaryData = useMemo(() => {
+    if (!reportData?.overall_behavioural_indications) return [];
+
+    const rawData = reportData.overall_behavioural_indications;
+    
+    return Object.entries(rawData).map(([label, stats]) => {
+      return {
+        label: label,
+        self: stats.self_avg ?? 0,
+        others: stats.others_avg ?? 0,
+      };
+    });
+  }, [reportData]);
+
   useEffect(() => {
     setHeaderName("Report");
   }, []);
@@ -441,7 +384,7 @@ const MainPage = () => {
           Download PDF
         </button>
         <button
-          // onClick={downloadDocxSplitByHeader}
+          onClick={() => setIsUploadModalOpen(true)}
           style={{
             padding: "8px 14px",
             background: "var(--color-accent)",
@@ -449,12 +392,140 @@ const MainPage = () => {
             border: "none",
             borderRadius: 6,
             cursor: "pointer",
-            display: "none",
           }}
+          disabled={loading}
         >
-          Download Word
+          {loading ? "Uploading..." : "Upload Excel"}
         </button>
       </div>
+
+      {isUploadModalOpen && (
+        <div
+          className="feedbackreport-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+          onClick={(e) => e.target === e.currentTarget && setIsUploadModalOpen(false)}
+        >
+          <div
+            className="feedbackreport-modal"
+            style={{
+              background: "#fff",
+              padding: "24px",
+              borderRadius: "8px",
+              width: "450px",
+              maxWidth: "90%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "600" }}>
+                <FileSpreadsheet size={20} />
+                <span>Upload LBSCORE 360 Excel</span>
+              </div>
+              <button
+                onClick={() => setIsUploadModalOpen(false)}
+                style={{ border: "none", background: "none", fontSize: "20px", cursor: "pointer" }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              className={`feedbackreport-dropzone ${excelFile ? "feedbackreport-dropzone--has-file" : ""} ${
+                dragOver ? "feedbackreport-dropzone--dragover" : ""
+              }`}
+              style={{
+                border: "2px dashed #ccc",
+                borderRadius: "8px",
+                padding: "40px 20px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: dragOver ? "#f0fdfa" : "#fafafa",
+                borderColor: dragOver ? "var(--color-green)" : "#ccc",
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+              {excelFile ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  <Check size={20} color="green" />
+                  <span style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {excelFile.name}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExcelFile(null);
+                    }}
+                    style={{ border: "none", background: "none", cursor: "pointer" }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <Upload size={32} style={{ marginBottom: "10px", color: "#666" }} />
+                  <div style={{ fontWeight: "500" }}>Click to upload or drag and drop</div>
+                  <div style={{ fontSize: "12px", color: "#999", marginTop: "4px" }}>
+                    Excel files only (.xlsx, .xls, .csv)
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div style={{ color: "#ef4444", fontSize: "13px", marginTop: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <AlertCircle size={14} />
+                {error}
+              </div>
+            )}
+
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleExcelUpload}
+                disabled={!excelFile || loading}
+                style={{
+                  padding: "10px 20px",
+                  background: !excelFile || loading ? "#ccc" : "var(--color-green)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: !excelFile || loading ? "not-allowed" : "pointer",
+                  width: "100%",
+                  fontWeight: "600",
+                }}
+              >
+                {loading ? "Processing..." : "Upload and Generate Report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="section-page-container">
         <section className="section-page pdf-section">
           <InitialPage />
@@ -615,20 +686,15 @@ const MainPage = () => {
           ]}
         />
         <CompetencySummary />
-        <OverviewSummary
-          items={[
-            { label: "Leadership", self: 3.5, others: 4.5 },
-            { label: "Bandwidth", self: 2.4, others: 4.1 },
-            { label: "Sales and Customer Centricity", self: 3.6, others: 1.2 },
-            { label: "Collaboration", self: 4.5, others: 1.0 },
-            { label: "Operational Excellence", self: 3.7, others: 2.1 },
-            { label: "Result Orientation", self: 3.5, others: 3.0 },
-            { label: "Expertise and Communication", self: 2.6, others: 3.5 },
-          ]}
+        <OverviewSummary items={overviewSummaryData} />
+        <SpiderChartSummary 
+          categories={spiderChartData.categories}
+          self={spiderChartData.self}
+          manager={spiderChartData.manager}
+          others={spiderChartData.others}
         />
-        <SpiderChartSummary />
-        <EvaluatorCategoryBreakdown />
-        <BehaviouralIndicators />
+        <EvaluatorCategoryBreakdown items={evaluatorCategoryBreakdownData} />
+        <BehaviouralIndicators items={behaviouralIndicatorsData} />
         <ParticipantCohortSummary />
         <QualitativeFeedbackIntro />
         {qualitativeSections.map((sec, i) => (
@@ -643,7 +709,7 @@ const MainPage = () => {
         {highlightsSections.map((sec, i) => (
           <Highlights key={`hl-${i}`} {...sec} />
         ))}
-        {blindSpotsSections.map((sec, i) => (
+        {blindSpotsSectionsData.map((sec, i) => (
           <BlindSpots
             key={`bs-${i}`}
             startPage={sec.startPage}
@@ -656,8 +722,8 @@ const MainPage = () => {
             items={sec.items.map((it) => ({
               score: it.score ?? 2.5,
               text: it.desc ?? "Text",
-              self: 4,
-              others: 2,
+              self: it.self,
+              others: it.others,
             }))}
             scoreShip={sec.scoreShip}
             key_id={`bs-${i}`}

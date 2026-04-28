@@ -13,39 +13,12 @@ const PALETTE = {
   peers: "#a9d0b8",
 };
 
-const defaultData = [
-  {
-    label: "Leadership",
-    values: { self: 3.0, manager: 3.0, team: 2.5, peers: 4.5 },
-  },
-  {
-    label: "Leadership",
-    values: { self: 4.5, manager: 3.0, team: 2.5, peers: 4.0 },
-  },
-  {
-    label: "Bandwidth",
-    values: { self: 4.5, manager: 3.0, team: 2.5, peers: 4.0 },
-  },
-  {
-    label: "Sales and Customer Centricity",
-    values: { self: 4.5, manager: 3.0, team: 2.5, peers: 4.0 },
-  },
-  {
-    label: "Collaboration",
-    values: { self: 4.5, manager: 3.0, team: 2.5, peers: 4.0 },
-  },
-  {
-    label: "Collaboration",
-    values: { self: 4.5, manager: 3.0, team: 2.5, peers: 4.0 },
-  },
-];
-
 const EvaluatorCategoryBreakdown = ({
   startPage = 15,
   pageWidth = 794,
   pageHeight = 852,
   pagePadding = 10,
-  items = defaultData,
+  items = [],
 }) => {
   const initialRows = useMemo(() => items, [items]);
   const [rows, setRows] = useState(initialRows);

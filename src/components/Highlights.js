@@ -49,41 +49,14 @@ const Highlights = ({
   dotsColor = "var(--color-gold)",
   leftIcon = null,
   scoreShip = false,
-  items = [
-    {
-      score: 2.5,
-      title: "Negotiation",
-      desc: "Is flexible and works well in a fast paced and dynamic environment",
-      circleX: 65,
-    },
-    {
-      score: 2.5,
-      title: "Negotiation",
-      desc: "Is flexible and works well in a fast paced and dynamic environment",
-      circleX: 95,
-    },
-    {
-      score: 2.5,
-      title: "Negotiation",
-      desc: "Is flexible and works well in a fast paced and dynamic environment",
-      circleX: 135,
-    },
-    {
-      score: 2.5,
-      title: "Negotiation",
-      desc: "Is flexible and works well in a fast paced and dynamic environment",
-      circleX: 95,
-    },
-    {
-      score: 2.5,
-      title: "Negotiation",
-      desc: "Is flexible and works well in a fast paced and dynamic environment",
-      circleX: 65,
-    },
-    
-  ],
+  items = [],
 }) => {
   const [points, setPoints] = useState([]);
+
+  const stripLeadingSerial = (text) => {
+    const s = String(text ?? "").trim();
+    return s.replace(/^\d+\s*[.)-]\s*/, "");
+  };
 
   const arePointsEqual = (a, b) => {
     if (a === b) return true;
@@ -200,8 +173,8 @@ const Highlights = ({
                   scoreShip={scoreShip}
                 />
                 <div className="hl-row-text">
-                  <div className="hl-row-title">{it.title}</div>
-                  <div className="hl-row-desc">{it.desc}</div>
+                  <div className="hl-row-title">{stripLeadingSerial(it.title)}</div>
+                  <div className="hl-row-desc">{stripLeadingSerial(it.desc)}</div>
                 </div>
               </div>
             ))}
