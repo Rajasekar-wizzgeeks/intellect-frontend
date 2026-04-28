@@ -216,29 +216,11 @@ const MainPage = () => {
   }, [reportData]);
 
   const highlightsSections = useMemo(() => {
-    const fallbackStrengths = [
-      { score: 4.8, question: "Demonstrates strong leadership and sets clear direction." },
-      { score: 4.7, question: "Communicates expectations clearly and consistently." },
-      { score: 4.6, question: "Builds trust and collaborates effectively across teams." },
-      { score: 4.6, question: "Takes ownership and delivers outcomes consistently." },
-      { score: 4.5, question: "Responds constructively to feedback and adapts quickly." },
-    ];
+    if (!reportData?.strengths_area_of_improvement) {
+      return [];
+    }
 
-    const fallbackImprovements = [
-      { score: 3.2, question: "Delegates more effectively to optimize workload." },
-      { score: 3.1, question: "Improves stakeholder communication during high-pressure periods." },
-      { score: 3.0, question: "Builds stronger alignment on priorities across functions." },
-      { score: 2.9, question: "Strengthens coaching cadence and follow-through." },
-      { score: 2.8, question: "Increases proactive risk identification and mitigation." },
-    ];
-
-    const strengths = reportData?.strengths_area_of_improvement?.strengths?.length
-      ? reportData.strengths_area_of_improvement.strengths
-      : fallbackStrengths;
-
-    const area_of_improvement = reportData?.strengths_area_of_improvement?.area_of_improvement?.length
-      ? reportData.strengths_area_of_improvement.area_of_improvement
-      : fallbackImprovements;
+    const { strengths, area_of_improvement } = reportData.strengths_area_of_improvement;
 
     return [
       {
@@ -282,111 +264,59 @@ const MainPage = () => {
   }, [reportData]);
 
   const blindSpotsSectionsData = useMemo(() => {
-    const fallbackHiddenStrengths = [
-      {
-        score: 4.4,
-        question: "Builds positive relationships and collaboration across stakeholders.",
-        self_rating: 3.2,
-        others_rating: 4.0,
-      },
-      {
-        score: 4.3,
-        question: "Demonstrates calm decision-making during ambiguous situations.",
-        self_rating: 3.0,
-        others_rating: 3.8,
-      },
-      {
-        score: 4.2,
-        question: "Provides clear structure and prioritization to the team.",
-        self_rating: 2.9,
-        others_rating: 3.6,
-      },
-      {
-        score: 4.1,
-        question: "Shows resilience and consistency under pressure.",
-        self_rating: 2.8,
-        others_rating: 3.5,
-      },
-      {
-        score: 4.0,
-        question: "Leverages expertise to unblock others and move work forward.",
-        self_rating: 2.7,
-        others_rating: 3.4,
-      },
-    ];
+    const normalizeTypedPayload = (payload) => {
+      if (!payload) return null;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return null;
+    };
 
-    const fallbackBlindSpots = [
-      {
-        score: 3.0,
-        question: "Aligns stakeholders early to avoid last-minute changes.",
-        self_rating: 4.0,
-        others_rating: 3.4,
-      },
-      {
-        score: 2.9,
-        question: "Seeks feedback proactively before finalizing decisions.",
-        self_rating: 3.9,
-        others_rating: 3.3,
-      },
-      {
-        score: 2.8,
-        question: "Balances speed with communication to keep others informed.",
-        self_rating: 3.8,
-        others_rating: 3.2,
-      },
-      {
-        score: 2.7,
-        question: "Clarifies ownership and next steps after meetings.",
-        self_rating: 3.7,
-        others_rating: 3.1,
-      },
-      {
-        score: 2.6,
-        question: "Delegates effectively instead of doing critical tasks alone.",
-        self_rating: 3.6,
-        others_rating: 3.0,
-      },
-    ];
+    const hiddenRaw =
+      normalizeTypedPayload(reportData?.hidden_strengths) ||
+      normalizeTypedPayload(reportData?.blindspot_hiddentstrength?.hidden_strengths);
 
-    const hidden_strengths = reportData?.blindspot_hiddentstrength?.hidden_strengths?.length
-      ? reportData.blindspot_hiddentstrength.hidden_strengths
-      : fallbackHiddenStrengths;
+    const blindRaw =
+      normalizeTypedPayload(reportData?.blind_spots) ||
+      normalizeTypedPayload(reportData?.blindspot_hiddentstrength?.blind_spots);
 
-    const blind_spots = reportData?.blindspot_hiddentstrength?.blind_spots?.length
-      ? reportData.blindspot_hiddentstrength.blind_spots
-      : fallbackBlindSpots;
+    if (!hiddenRaw?.length && !blindRaw?.length) {
+      return [];
+    }
+
+    const hidden_strengths = hiddenRaw || [];
+    const blind_spots = blindRaw || [];
 
     return [
       {
         startPage: 47,
         subIndex: "4.3.",
         subText: "Hidden Strengths",
-        note: "Hidden Strengths are behaviours/competencies where you have rated yourself lower than others, with a difference of ≥ 0.5 between your self-rating and the rating given by other raters. These are highlighted only when your self-rating is ≤ 3, meaning you tend to underrate yourself relative to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
+        note: " are behaviours/competencies where you have rated yourself lower than others, with a difference of ≥ 0.5 between your self-rating and the rating given by other raters. These are highlighted only when your self-rating is ≤ 3, meaning you tend to underrate yourself relative to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
         arcColor: "var(--color-green)",
         chipColor: "var(--color-green)",
         leftIcon: ChessIcon,
         scoreShip: false,
         items: (Array.isArray(hidden_strengths) ? hidden_strengths : []).slice(0, 5).map(it => ({
-          score: it.score,
-          desc: it.question,
-          self: it.self_rating,
-          others: it.others_rating,
+          score: it?.gap ?? it?.score,
+          desc: it?.question,
+          self: it?.self_rating ?? it?.self,
+          others: it?.others_rating ?? it?.others,
         })),
       },
       {
         startPage: 48,
         subIndex: "4.4.",
         subText: "Blind Spots",
-        note: "Blind Spots are behaviours/ competencies where you have rated yourself higher than others with a difference of ≥ 0.5 between your self-rating and the rating given by others. These are highlighted only when self-rating is ≥3.5, indicating areas where you may be overestimating your effectiveness compared to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
+        note: " are behaviours/ competencies where you have rated yourself higher than others with a difference of ≥ 0.5 between your self-rating and the rating given by others. These are highlighted only when self-rating is ≥3.5, indicating areas where you may be overestimating your effectiveness compared to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
         arcColor: "var(--color-gold)",
         chipColor: "var(--color-gold)",
         scoreShip: true,
         leftIcon: EyeIcon,
         items: (Array.isArray(blind_spots) ? blind_spots : []).slice(0, 5).map(it => ({
-          score: it.score,
-          desc: it.question,
-          self: it.self_rating,
-          others: it.others_rating,
+          score: it?.gap ?? it?.score,
+          desc: it?.question,
+          self: it?.self_rating ?? it?.self,
+          others: it?.others_rating ?? it?.others_avg ?? it?.others,
         })),
       },
     ];

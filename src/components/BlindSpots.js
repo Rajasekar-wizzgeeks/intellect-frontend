@@ -59,21 +59,21 @@ const BlindSpots = ({
   startPage = 48,
   titleIndex = "4.4.",
   titleText = "Blind Spots",
-  description = "Blind Spots are behaviours/ competencies where you have rated yourself higher than others with a difference of ≥ 0.5 between your self-rating and the rating given by others. These are highlighted only when self-rating is ≥3.5, indicating areas where you may be overestimating your effectiveness compared to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
+  description = " are behaviours/ competencies where you have rated yourself higher than others with a difference of ≥ 0.5 between your self-rating and the rating given by others. These are highlighted only when self-rating is ≥3.5, indicating areas where you may be overestimating your effectiveness compared to how others experience you. Only the top 5 statements with the largest rating gaps are indicated.",
   arcColor = "var(--color-gold)",
   chipColor = "var(--color-gold)",
   leftIcon = null,
   scoreShip = false,
-  items = [
-    { score: 2.5, text: "Text", self: 4, others: 2 },
-    { score: 2.5, text: "Text", self: 4, others: 2 },
-    { score: 2.5, text: "Text", self: 4, others: 2 },
-    { score: 2.5, text: "Text", self: 4, others: 2 },
-    { score: 2.5, text: "Text", self: 4, others: 2 },
-  ],
+  items = [],
   key_id = "",
 }) => {
   const [points, setPoints] = useState([]);
+
+  const stripLeadingSerial = (text) => {
+    const s = String(text ?? "").trim();
+    return s.replace(/^\d+\s*[.)-]\s*/, "");
+  };
+
   const arePointsEqual = (a, b) => {
     if (a === b) return true;
     if (!Array.isArray(a) || !Array.isArray(b)) return false;
@@ -124,7 +124,7 @@ const BlindSpots = ({
     out.push(
       <div key="desc" className="bs-desc">
         <p>
-          <strong>Blind Spots</strong> {description}
+          <strong>{titleText}</strong> {description}
         </p>
       </div>,
     );
@@ -207,7 +207,7 @@ const BlindSpots = ({
                     <div className="bs-row-title">Your Rating</div>
                     <RatingBars self={it.self} others={it.others} />
                   </div>
-                  <div className="bs-row-text">{it.text}</div>
+                  <div className="bs-row-text">{stripLeadingSerial(it.text)}</div>
                 </div>
               </div>
             ))}
