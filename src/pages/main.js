@@ -152,6 +152,37 @@ const MainPage = () => {
     return sections;
   }, [reportData]);
 
+  const profileRows = useMemo(() => {
+    const normalizeTypedObject = (payload) => {
+      if (!payload) return null;
+      if (payload && typeof payload === "object" && !Array.isArray(payload) && payload.type && payload.data) {
+        return payload.data;
+      }
+      return payload;
+    };
+
+    const profile = normalizeTypedObject(reportData?.profile) || normalizeTypedObject(reportData?.introduction);
+    if (!profile || typeof profile !== "object" || Array.isArray(profile)) return undefined;
+
+    const get = (key, ...fallbackKeys) => {
+      if (profile?.[key] != null && String(profile[key]).trim() !== "") return profile[key];
+      for (const k of fallbackKeys) {
+        if (profile?.[k] != null && String(profile[k]).trim() !== "") return profile[k];
+      }
+      return "";
+    };
+
+    return [
+      { label: "Associate Name", value: get("Associate Name", "associateName", "name") },
+      { label: "Associate ID", value: get("Associate ID", "associateId", "employeeId") },
+      { label: "Email ID", value: get("Email ID", "Email", "Email id", "email", "emailId") },
+      { label: "Stream", value: get("Stream", "Role", "role", "stream") },
+      { label: "LOB", value: get("LOB", "LOB / Unit", "lob") },
+      { label: "Report Date", value: get("Report Date", "Date", "date", "ReportDate") },
+      { label: "Assessed By", value: get("Assessed By", "assessedBy", "Assessedby") },
+    ];
+  }, [reportData]);
+
   const qualitativeSections = qualitativeSectionsData;
 
   const behaviouralIndicatorsData = useMemo(() => {
@@ -545,7 +576,7 @@ const MainPage = () => {
           <InitialPage />
         </section>
         <section className="section-page pdf-section">
-          <ContentPage />
+          <ContentPage rows={profileRows} />
         </section>
         <section className="section-page pdf-section">
           <TableContentPage />
