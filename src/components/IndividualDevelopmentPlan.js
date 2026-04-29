@@ -45,7 +45,13 @@ const IndividualDevelopmentPlan = ({
         {bodyRows.map((_, r) => (
           <div key={`r-${r}`} className="idp-grid6__row">
             {headers.map((_, c) => (
-              <div key={`r${r}c${c}`} className="idp-grid6__td" />
+              <div key={`r${r}c${c}`} className="idp-grid6__td">
+                {c === 0 || c === 3 || c === 4 ? (
+                  <input className="cap-input" type="text" defaultValue="" />
+                ) : (
+                  <textarea className="cap-textarea__input" defaultValue="" />
+                )}
+              </div>
             ))}
           </div>
         ))}
@@ -76,7 +82,13 @@ const IndividualDevelopmentPlan = ({
           {assignmentsRows.map((_, r) => (
             <div key={`ar-${r}`} className="assign-grid4__row">
               {assignmentsHeaders.map((_, c) => (
-                <div key={`ar${r}c${c}`} className="assign-grid4__td" />
+                <div key={`ar${r}c${c}`} className="assign-grid4__td">
+                  {c === 0 ? (
+                    <input className="cap-input" type="text" defaultValue="" />
+                  ) : (
+                    <textarea className="cap-textarea__input" defaultValue="" />
+                  )}
+                </div>
               ))}
             </div>
           ))}
@@ -88,7 +100,9 @@ const IndividualDevelopmentPlan = ({
     out.push(
       <div key="summary-block" className="summary">
         <div className="section-band">Summary</div>
-        <div className="summary__box" />
+        <div className="summary__box">
+          <textarea className="cap-textarea__input" defaultValue="" />
+        </div>
       </div>
     );
 

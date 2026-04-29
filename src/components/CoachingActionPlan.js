@@ -42,7 +42,9 @@ const CoachingActionPlan = ({
       <div key="cap1" className="cap cap--padded">
         <div className="cap-row cap-row--tight">
           <div className="cap-label cap-label--green">{labels.date}</div>
-          <div className="cap-cell" />
+          <div className="cap-cell">
+            <input className="cap-input" type="text" defaultValue="" />
+          </div>
         </div>
 
         <FormTable
@@ -84,7 +86,9 @@ const CoachingActionPlan = ({
           <div className="cap-block__header cap-label--green cap-block-box-border">
             {labels.reportFeedback}
           </div>
-          <div className="cap-textarea" />
+          <div className="cap-textarea">
+            <textarea className="cap-textarea__input" defaultValue="" />
+          </div>
         </div>
       </div>
     );

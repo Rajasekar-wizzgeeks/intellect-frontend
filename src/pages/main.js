@@ -216,11 +216,25 @@ const MainPage = () => {
   }, [reportData]);
 
   const highlightsSections = useMemo(() => {
-    if (!reportData?.strengths_area_of_improvement) {
+    const normalizeTypedPayload = (payload) => {
+      if (!payload) return null;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.data)) return payload.data;
+      return null;
+    };
+
+    const strengths =
+      normalizeTypedPayload(reportData?.strengths) ||
+      normalizeTypedPayload(reportData?.strengths_area_of_improvement?.strengths);
+
+    const area_of_improvement =
+      normalizeTypedPayload(reportData?.area_of_improvements) ||
+      normalizeTypedPayload(reportData?.strengths_area_of_improvement?.area_of_improvements) ||
+      normalizeTypedPayload(reportData?.strengths_area_of_improvement?.area_of_improvement);
+
+    if (!strengths?.length && !area_of_improvement?.length) {
       return [];
     }
-
-    const { strengths, area_of_improvement } = reportData.strengths_area_of_improvement;
 
     return [
       {
@@ -236,7 +250,7 @@ const MainPage = () => {
         leftIcon: ChessKingIcon,
         scoreShip: false,
         items: (Array.isArray(strengths) ? strengths : []).slice(0, 5).map((s) => ({
-          score: s?.score,
+          score: s?.others ?? s?.others_avg ?? s?.score,
           title: "",
           desc: s?.question,
         })),
@@ -255,7 +269,7 @@ const MainPage = () => {
         items: (Array.isArray(area_of_improvement) ? area_of_improvement : [])
           .slice(0, 5)
           .map((a) => ({
-            score: a?.score,
+            score: a?.others ?? a?.others_avg ?? a?.score,
             title: "",
             desc: a?.question,
           })),

@@ -21,7 +21,9 @@ const CoachingActionPlanPage2 = ({
         <div className="cap-block__header cap-block-box-border">
           {takeawayTitle}
         </div>
-        <div className="cap-textarea cap-textarea--lg" />
+        <div className="cap-textarea cap-textarea--lg">
+          <textarea className="cap-textarea__input" defaultValue="" />
+        </div>
       </div>
     );
 
@@ -34,8 +36,12 @@ const CoachingActionPlanPage2 = ({
         </div>
         {rows.map((_, i) => (
           <div key={`row-${i}`} className="cap-grid2__row">
-            <div className="cap-grid2__td" />
-            <div className="cap-grid2__td" />
+            <div className="cap-grid2__td">
+              <input className="cap-input" type="text" defaultValue="" />
+            </div>
+            <div className="cap-grid2__td">
+              <input className="cap-input" type="text" defaultValue="" />
+            </div>
           </div>
         ))}
       </div>
