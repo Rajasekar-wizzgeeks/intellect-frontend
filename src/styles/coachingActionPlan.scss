@@ -44,6 +44,17 @@
   min-height: 28px;
 }
 
+.cap-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  padding: 6px 8px;
+  font-size: var(--fs-md);
+  background: transparent;
+  color: var(--color-text);
+}
+
 .cap-block {
   margin-top: 16px;
 
@@ -95,6 +106,18 @@
   &.cap-textarea--lg {
     height: 300px;
   }
+}
+
+.cap-textarea__input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 10px 10px;
+  font-size: var(--fs-md);
+  background: transparent;
+  color: var(--color-text);
 }
 
 /* Page 2: two-column goals grid */
