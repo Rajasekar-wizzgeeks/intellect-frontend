@@ -1,11 +1,8 @@
 import React from "react";
 import "../styles/summaryTable.scss";
 
-
-
-
 const ReportInfoTable = ({
-  rows,
+  rows = [],
   headers,
   leftWidth = "36%",
   rightWidth = "64%",
