@@ -1,0 +1,112 @@
+.crc {
+  width: 100%;
+}
+
+.crc__legend {
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+  margin: 10px 0 10px;
+  font-size: 12px;
+}
+
+.crc__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crc__legend-line {
+  width: 50px;
+  height: 2px;
+  background: #22c55e;
+}
+
+.crc__legend-mean {
+  width: 10px;
+  height: 10px;
+  background: #2563eb;
+}
+
+.crc__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 14px;
+}
+
+.crc__row {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.crc__label {
+  font-weight: 700;
+  color: #0b2a6d;
+}
+
+.crc__plot {
+  position: relative;
+  height: 28px;
+}
+
+.crc__plot-bg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(17, 1fr);
+  opacity: 0.25;
+}
+
+.crc__tick {
+  border-left: 1px solid #94a3b8;
+}
+
+.crc__range {
+  position: absolute;
+  top: 13px;
+  height: 2px;
+  background: #22c55e;
+}
+
+.crc__mean {
+  position: absolute;
+  top: 9px;
+  width: 8px;
+  height: 8px;
+  background: #2563eb;
+  transform: translateX(-50%);
+}
+
+.crc__min-label,
+.crc__mean-label,
+.crc__max-label {
+  position: absolute;
+  top: -2px;
+  transform: translateX(-50%);
+  font-size: 11px;
+}
+
+.crc__mean-label {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.crc__axis {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(17, 1fr);
+  align-items: start;
+  font-size: 11px;
+}
+
+.crc__axis-tick {
+  text-align: center;
+  color: #111827;
+}
+
+.crc__axis-tick--major {
+  font-weight: 700;
+}

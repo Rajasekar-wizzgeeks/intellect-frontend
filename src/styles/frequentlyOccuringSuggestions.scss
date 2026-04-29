@@ -1,0 +1,61 @@
+.fos-page {
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+.fos-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 2px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.fos-divider {
+  background: #2f66c5;
+  width: 2px;
+  height: 920px;
+  justify-self: center;
+}
+
+.fos-col__title {
+  text-align: center;
+  font-weight: 800;
+  background: #e5efff;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+.fos-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.fos-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #cfd8e3;
+
+  &--head {
+    background: #e6f0fb;
+    font-weight: 700;
+  }
+
+  > div {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
+.fos-action {
+  border-right: 1px solid #cfd8e3;
+  line-height: 1.4;
+}
+
+.fos-feedback {
+  line-height: 1.5;
+
+  div {
+    margin-bottom: 2px;
+  }
+}

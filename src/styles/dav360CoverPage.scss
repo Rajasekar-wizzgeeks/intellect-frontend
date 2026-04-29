@@ -1,0 +1,39 @@
+.dav360-cover {
+  width: 794px;
+  height: 1123px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 80px;
+  box-sizing: border-box;
+}
+
+.dav360-cover__image-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.dav360-cover__image {
+  width: 520px;
+  max-width: 90%;
+  height: auto;
+}
+
+.dav360-cover__divider {
+  width: 70%;
+  height: 6px;
+  background: #2f66c5;
+  margin: 60px 0 40px;
+}
+
+.dav360-cover__title {
+  font-size: 56px;
+  font-weight: 800;
+  text-align: center;
+  color: #0b2a6d;
+  line-height: 1.05;
+  white-space: pre-line;
+}

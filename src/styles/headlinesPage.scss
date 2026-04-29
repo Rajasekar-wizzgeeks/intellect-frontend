@@ -1,0 +1,53 @@
+.headlines-page {
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.headlines-page__section {
+  margin-top: 14px;
+}
+
+.headlines-page__bullet-title {
+  font-weight: 700;
+  color: #d10000;
+  margin: 10px 0 10px;
+}
+
+.headlines-page__tables {
+  border: 1px solid #2f66c5;
+}
+
+.hl-table__hdr {
+  background: #2f66c5;
+  color: #fff;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+.hl-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  border-top: 1px solid #2f66c5;
+}
+
+.hl-row__group {
+  padding: 10px 12px;
+  border-right: 2px dashed #2f66c5;
+  font-weight: 700;
+}
+
+.hl-row__items {
+  padding: 10px 12px;
+}
+
+.hl-item {
+  margin-bottom: 6px;
+}
+
+.headlines-page__notes {
+  padding-left: 18px;
+}
+
+.headlines-page__note {
+  margin-top: 6px;
+}

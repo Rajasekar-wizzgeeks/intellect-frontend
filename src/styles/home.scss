@@ -13,7 +13,7 @@
   // width: 100%;
   // max-width: 1180px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 32px;
 }
 
@@ -25,6 +25,12 @@
   .home__grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .home__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -63,6 +69,15 @@
   );
 }
 
+.home-card__topbar--dav360 {
+  background: linear-gradient(
+    90deg,
+    var(--color-green-mid) 0%,
+    var(--color-green) 55%,
+    var(--color-gold) 100%
+  );
+}
+
 .home-card__body {
   padding: 32px;
 }
@@ -93,6 +108,11 @@
   box-shadow: 0 10px 24px rgba(174, 127, 46, 0.22);
 }
 
+.home-card__icon--dav360 {
+  background-color: var(--color-green-mid);
+  box-shadow: 0 10px 24px rgba(20, 83, 45, 0.2);
+}
+
 .home-card__badge {
   padding: 6px 14px;
   border-radius: 999px;
@@ -108,6 +128,10 @@
 
 .home-card__badge--report360 {
   color: var(--color-gold);
+}
+
+.home-card__badge--dav360 {
+  color: var(--color-green-mid);
 }
 
 .home-card__content {
@@ -179,4 +203,8 @@
 
 .home-card__cta--report360 {
   background-color: var(--color-gold);
+}
+
+.home-card__cta--dav360 {
+  background-color: var(--color-green-mid);
 }
