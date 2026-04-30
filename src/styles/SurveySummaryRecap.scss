@@ -1,0 +1,147 @@
+$navy: #1f3a93;
+$blue-bar: #2c5fb8;
+$red: #d32f2f;
+$text-dark: #1a1a1a;
+$divider: #cfcfcf;
+$circle-blue: #4a7fc8;
+$circle-bg: #eaf1fb;
+
+.sfr-page {
+  width: 794px;
+  min-height: 1123px;
+  background: #fff;
+  margin: 24px auto;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.sfr {
+  background: #fff;
+  width: 100%;
+  padding: 28px 36px 28px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: $text-dark;
+  position: relative;
+  box-sizing: border-box;
+
+  &__title {
+    font-size: 32px;
+    font-weight: 800;
+    color: $navy;
+    margin: 0 0 10px;
+    letter-spacing: -0.3px;
+  }
+
+  &__title-rule {
+    height: 4px;
+    background: $blue-bar;
+    width: 360px;
+    margin-bottom: 22px;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 36px 240px 16px 1fr;
+    align-items: center;
+    padding: 10px 6px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &__row-icon {
+    font-size: 18px;
+  }
+
+  &__row-label {
+    color: $text-dark;
+  }
+
+  &__row-colon {
+    color: $text-dark;
+  }
+
+  &__row-value {
+    color: $text-dark;
+
+    &--red {
+      color: $red;
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    background: $divider;
+  }
+
+  &__bullet {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 16px 6px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: $text-dark;
+
+    &--last {
+      margin-top: 18px;
+    }
+  }
+
+  &__triangle {
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 9px solid $blue-bar;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  &__red {
+    color: $red;
+  }
+
+  &__competencies {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border: 2px solid $navy;
+    padding: 18px 8px 16px;
+    margin: 10px 0 6px;
+  }
+
+  &__comp {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 6px;
+
+    & + .sfr__comp {
+      border-left: 1px dashed $blue-bar;
+    }
+  }
+
+  &__comp-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid $blue-bar;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  &__comp-icon {
+    font-size: 28px;
+  }
+
+  &__comp-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: $text-dark;
+    line-height: 1.25;
+  }
+}

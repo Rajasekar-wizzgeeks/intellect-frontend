@@ -1,6 +1,6 @@
 import React from "react";
 import "../styles/dav360CoverPage.scss";
-import ReportCycle from "../assets/png/ReportCycle.png";
+import ReportCycle from "../assets/png/davReportCoverImage.png";
 
 const Dav360CoverPage = ({ title = "DAV 360 Degree Feedback\nSummary Report", imageSrc = ReportCycle }) => {
   return (

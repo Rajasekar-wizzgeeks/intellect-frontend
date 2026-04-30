@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
-import FeedbackCommonHeader from "./FeedbackCommonHeader";
+import DavCommonHeader from "./DavCommonHeader";
 import "../styles/frequentlyOccuringSuggestions.scss";
 
 const FrequentlyOccuringSuggestions = ({
@@ -72,7 +72,7 @@ const FrequentlyOccuringSuggestions = ({
   const blocks = useMemo(() => {
     return [
       <div key="fos" className="fos-page">
-        <FeedbackCommonHeader title={title} titleWidth={100} />
+        <DavCommonHeader title={title} />
 
         <div className="fos-grid">
           {/* LEFT */}

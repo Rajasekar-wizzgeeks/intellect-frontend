@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
-import FeedbackCommonHeader from "./FeedbackCommonHeader";
+import DavCommonHeader from "./DavCommonHeader";
 import CompetencyRangeChart from "./CompetencyRangeChart";
 import "../styles/summaryByCompetencyInstitutionPage.scss";
 
@@ -14,9 +14,9 @@ const SummaryByCompetencyInstitutionPage = ({
   const blocks = useMemo(() => {
     return [
       <div key="sbi" className="sbi-page">
-        <FeedbackCommonHeader title={title} titleWidth={100} />
+        <DavCommonHeader title={title} />
         <div className="sbi-page__chart">
-          <CompetencyRangeChart items={items} minX={minX} maxX={maxX} />
+          <CompetencyRangeChart items={items} minX={minX} maxX={maxX} showTitle={false} />
         </div>
         {footnote ? <div className="sbi-page__footnote">{footnote}</div> : null}
       </div>,

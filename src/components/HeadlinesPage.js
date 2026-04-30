@@ -1,83 +1,98 @@
-import React, { useMemo } from "react";
-import AutoPaginatedSections from "./AutoPaginatedSections";
-import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/headlinesPage.scss";
 
-const HeadlinesTable = ({ title, rows = [] }) => {
+export default function Headlines() {
   return (
-    <div className="hl-table">
-      <div className="hl-table__hdr">{title}</div>
-      <div className="hl-table__body">
-        {rows.map((r, idx) => (
-          <div key={idx} className="hl-row">
-            <div className="hl-row__group">{r.group}</div>
-            <div className="hl-row__items">
-              {(r.items || []).map((it, i) => (
-                <div key={i} className="hl-item">
-                  {it}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+    <div className="headlines">
+      <h1 className="headlines-title">Headlines</h1>
+      <div className="headlines-title-rule" />
+
+      <div className="headlines-section">
+        <span className="headlines-bullet">▪</span>
+        <span className="headlines-section-title">Highest &amp; Lowest Institutional Averages</span>
       </div>
+
+      <table className="headlines-table headlines-table--green">
+        <colgroup>
+          <col style={{ width: "180px" }} />
+          <col />
+        </colgroup>
+        <tbody>
+          <tr>
+            <td className="headlines-empty-cell" />
+            <td className="headlines-header-cell">Highest Institutional Averages</td>
+          </tr>
+          <tr>
+            <td className="headlines-label-cell">Team/Staff Perception</td>
+            <td className="headlines-data-cell">
+              <ul className="headlines-list">
+                <li>Visits classrooms to observe &amp; monitor the quality of curriculum, assessments &amp; instruction [Avg : 4.47]</li>
+                <li>Works with teachers to set high academic standards [Avg : 4.44]</li>
+                <li>Provides support, direction &amp; guidance for effective performance of team members [Avg : 4.44]</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td className="headlines-label-cell">Management Perception</td>
+            <td className="headlines-data-cell">
+              <ul className="headlines-list">
+                <li>Manages School finances appropriately [Avg : 4.6]</li>
+                <li>Does not misuse power and authority [Avg : 4.1]</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table className="headlines-table headlines-table--peach">
+        <colgroup>
+          <col style={{ width: "180px" }} />
+          <col />
+        </colgroup>
+        <tbody>
+          <tr>
+            <td className="headlines-empty-cell" />
+            <td className="headlines-header-cell">Lowest Institutional Averages</td>
+          </tr>
+          <tr>
+            <td className="headlines-label-cell">Team/Staff Perception</td>
+            <td className="headlines-data-cell">
+              <ul className="headlines-list">
+                <li>Values diverse perspectives [Avg : 4.16]</li>
+                <li>Makes the team members feel empowered to take decisions [Avg : 4.19]</li>
+                <li>Has created a work culture that rewards merit [Avg : 4.2]</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td className="headlines-label-cell">Management Perception</td>
+            <td className="headlines-data-cell">
+              <ul className="headlines-list">
+                <li>Develops future leaders [Avg : 3.2]</li>
+                <li>Handles ambiguity [Avg : 3.4]</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr className="headlines-divider" />
+
+      <div className="headlines-principals">
+        <div className="headlines-principals-heading">
+          <span className="headlines-bullet">▪</span>
+          <span>Principals who have rated themselves 5 in most questions :</span>
+        </div>
+        <ul className="headlines-principals-list">
+          <li>
+            <strong>Smt. Hemamala Balasubramanian and Thiru. Veeramurugan G</strong> (Rating 5 for 21 out of 24 questions),
+          </li>
+          <li>
+            <strong>Smt. Bhuvaneshwari G and Thiru. Ramana Velavan Venkatachalam</strong> (Rating 5 for 20 out of 24 questions)
+          </li>
+        </ul>
+      </div>
+
+      <div className="headlines-page-number">3</div>
     </div>
   );
-};
-
-const HeadlinesPage = ({
-  title = "Headlines",
-  highestRows = [],
-  lowestRows = [],
-  notesTitle = "Principals who have rated themselves 5 in most questions :",
-  notes = [],
-}) => {
-  const blocks = useMemo(() => {
-    const out = [];
-
-    out.push(
-      <div key="hl" className="headlines-page">
-        <FeedbackCommonHeader title={title} titleWidth={100} />
-
-        <div className="headlines-page__section">
-          <div className="headlines-page__bullet-title">
-            Highest &amp; Lowest Institutional Averages
-          </div>
-
-          <div className="headlines-page__tables">
-            <HeadlinesTable title="Highest Institutional Averages" rows={highestRows} />
-            <HeadlinesTable title="Lowest Institutional Averages" rows={lowestRows} />
-          </div>
-        </div>
-
-        {notes?.length ? (
-          <div className="headlines-page__section">
-            <div className="headlines-page__bullet-title">{notesTitle}</div>
-            <div className="headlines-page__notes">
-              {notes.map((t, idx) => (
-                <div key={idx} className="headlines-page__note">
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>,
-    );
-
-    return out;
-  }, [highestRows, lowestRows, notes, notesTitle, title]);
-
-  return (
-    <AutoPaginatedSections
-      blocks={blocks}
-      pageWidth={794}
-      pageHeight={1123}
-      pagePadding={0}
-      contentClassName="headlines-page-container"
-      componentId="headlines-page"
-    />
-  );
-};
-
-export default HeadlinesPage;
+}

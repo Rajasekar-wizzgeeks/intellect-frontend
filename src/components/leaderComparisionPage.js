@@ -1,161 +1,194 @@
-import React, { useMemo } from "react";
-import AutoPaginatedSections from "./AutoPaginatedSections";
-import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/leaderComparisionPage.scss";
+const LeaderPart = ({
+  type, // "green" or "red"
+  highest,
+  lowest,
+  profile,
+}) => {
+  if (type === "green") {
+    return (
+      <div className="leader-green-row">
+        <div className="leader-axis-col">
+          <div className="leader-axis leader-axis--up">
+            <span className="leader-axis-arrow" />
+            <span className="leader-axis-line leader-axis-line--green" />
+            <span className="leader-axis-label">Highest Averages</span>
+            <span className="leader-axis-tick" />
+          </div>
+        </div>
 
-const LeaderCard = ({ data }) => {
-  if (!data) return null;
+        <div className="leader-ratings-col">
+          <div className="leader-card leader-card--green">
+            {highest.map((item, i) => (
+              <div className="leader-row" key={`h-${i}`}>
+                <div className="leader-row-text">{item.text}</div>
+                <div className="leader-row-score">{item.score}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="leader-profile-col">
+          <div className="leader-profile-header">LEADER PROFILE</div>
+          <ul className="leader-profile-list">
+            {profile.slice(0, 3).map((p, i) => (
+              <li key={i}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="lcp-card">
-      <div className="lcp-header">{data.name}</div>
-      <div className="lcp-sub">Team Responses # {data.responses}</div>
-
-      <div className="lcp-layout">
-        {/* AXIS (spans full height) */}
-        <div className="lcp-axis">
-          <div className="lcp-axis__label lcp-axis__label--top">
-            Highest Averages
-          </div>
-          <div className="lcp-axis__label lcp-axis__label--bottom">
-            Lowest Averages
-          </div>
-          <div className="lcp-axis__line" />
-          <div className="lcp-axis__arrow lcp-axis__arrow--up" />
-          <div className="lcp-axis__arrow lcp-axis__arrow--down" />
-          <div className="lcp-axis__diamond" />
+    <div className="leader-red-row">
+      <div className="leader-axis-col">
+        <div className="leader-axis leader-axis--down">
+          <span className="leader-axis-tick" />
+          <span className="leader-axis-label">Lowest Averages</span>
+          <span className="leader-axis-line leader-axis-line--red" />
+          <span className="leader-axis-arrow" />
         </div>
+      </div>
 
-        {/* MAIN + RIGHT are a single grid to keep alignment */}
-        <div className="lcp-content">
-          {/* LEFT MAIN */}
-          <div className="lcp-main">
-            {/* TOP (GREEN) */}
-            <div className="lcp-box lcp-box--top">
-              {data.topItems.map((r, i) => (
-                <div key={i} className="lcp-row">
-                  <div className="lcp-text">{r.text}</div>
-                  <div className="lcp-score">{r.score}</div>
-                </div>
-              ))}
+      <div className="leader-ratings-col">
+        <div className="leader-card leader-card--red">
+          {lowest.map((item, i) => (
+            <div className="leader-row" key={`l-${i}`}>
+              <div className="leader-row-text">{item.text}</div>
+              <div
+                className={`leader-row-score ${
+                  parseFloat(item.score) < 4 ? "leader-row-score--highlight" : ""
+                }`}
+              >
+                {item.score}
+              </div>
             </div>
-
-            {/* MID LINE (shared baseline with right panel) */}
-            <div className="lcp-midline" />
-
-            {/* BOTTOM (RED) */}
-            <div className="lcp-box lcp-box--low">
-              {data.lowItems.map((r, i) => (
-                <div key={i} className="lcp-row">
-                  <div className="lcp-text">{r.text}</div>
-                  <div className="lcp-score">{r.score}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="lcp-footnote-red">
-              *Was part of the highest / lowest ratings last year as well
-            </div>
-          </div>
-
-          {/* RIGHT PANEL */}
-          <div className="lcp-side">
-            <div className="lcp-side__header">LEADER PROFILE</div>
-
-            <ul className="lcp-side__list">
-              {data.profile.map((p, i) => <li key={i}>{p}</li>)}
-            </ul>
-
-            {/* this divider MUST align with midline */}
-            <div className="lcp-side__midline" />
-
-            <ul className="lcp-side__list">
-              {data.notes.map((n, i) => <li key={i}>{n}</li>)}
-            </ul>
-          </div>
+          ))}
         </div>
+      </div>
+
+      <div className="leader-profile-col">
+        <ul className="leader-profile-list">
+          {profile.slice(3).map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 };
 
-const LeaderComparisonPage = () => {
-  const data = [
-    {
-      name: "Smt. Kanakalakshmi S",
-      responses: 151,
-      topItems: [
-        { text: "Does not misuse power or authority", score: 4.58 },
-        { text: "Visits classrooms & monitors quality", score: 4.5 },
-        { text: "Provides enough support & guidance", score: 4.5 },
-      ],
-      lowItems: [
-        { text: "Makes team members feel empowered", score: 4.26 },
-        { text: "Leads without aggression", score: 4.27 },
-        { text: "Values diverse perspectives", score: 4.34 },
-        { text: "Has created work culture", score: 4.34 },
-      ],
-      profile: [
-        "Strong leader with a clear vision",
-        "Empathetic listener",
-        "Manages tough situations well",
-      ],
-      notes: [
-        "Needs to increase meetings with teachers",
-        "Provide feedback in private",
-        "Enhance teacher opportunities",
-      ],
-    },
-    {
-      name: "Smt. Nandhini S",
-      responses: 96,
-      topItems: [
-        { text: "Provides support & guidance", score: 4.51 },
-        { text: "Helps resolve issues", score: 4.42 },
-        { text: "Maintains high academic standards", score: 4.41 },
-      ],
-      lowItems: [
-        { text: "Leads without aggression", score: 4.01 },
-        { text: "Builds rapport with team", score: 4.1 },
-        { text: "Makes one feel valued", score: 4.2 },
-      ],
-      profile: [
-        "Bold and confident leader",
-        "Inspires team",
-        "Balances expectations",
-      ],
-      notes: [
-        "Needs to be calm in situations",
-        "Ensure feedback is constructive",
-        "Reduce waiting time",
-      ],
-    },
-  ];
+const LeaderHeader = ({ name, responses }) => (
+  <div className="leader-col">
+    <div className="leader-name-bar">{name}</div>
+    <div className="leader-responses-bar">Team Responses # {responses}</div>
+  </div>
+);
 
-  const blocks = useMemo(() => {
-    return [
-      <div key="lcp" className="lcp-page">
-        <FeedbackCommonHeader title="Leader Comparison" />
+const LeaderFootnote = ({ footnote }) => (
+  <div className="leader-footnote">
+    <div className="leader-footnote-legend">
+      <em>*Was part of the highest / lowest ratings last year as well</em>
+    </div>
+    <ul className="leader-footnote-list">
+      {footnote.map((f, i) => (
+        <li key={i}>{f}</li>
+      ))}
+    </ul>
+  </div>
+);
 
-        <div className="lcp-grid">
-          {data.map((d, i) => (
-            <LeaderCard key={i} data={d} />
-          ))}
-        </div>
-      </div>,
-    ];
-  }, []);
+export default function LeaderProfiles() {
+  const left = {
+    name: "Smt. Kanakalakshmi S",
+    responses: 151,
+    highest: [
+      { text: "*Does not misuse his/her power or authority in any direct or indirect ways", score: "4.58" },
+      { text: "*Visits classrooms to observe and monitor the quality of curriculum, assessments and instruction that engage students in successful learning", score: "4.5" },
+      { text: "*Provides enough support, direction and guidance, for effective performance of team members", score: "4.5" },
+    ],
+    lowest: [
+      { text: "Makes the team members feel empowered to take decisions", score: "4.26" },
+      { text: "Leads without aggression or arrogance", score: "4.27" },
+      { text: "*Values diverse perspectives, even if they are different from his/her own", score: "4.34" },
+      { text: "*Has created a work culture that rewards merit", score: "4.34" },
+    ],
+    profile: [
+      "Strong leader with a clear vision for the school",
+      "Empathetic listener",
+      "Manages tough or ambiguous situations well",
+      "Needs to increase meetings with teachers",
+      "Needs to provide feedback in a private & constructive manner",
+      "Needs to enhance opportunities for teachers' professional growth",
+      "To ensure broader allocation of work among teachers",
+    ],
+    footnote: [
+      "No significant change noticed in any of the above areas as compared to last year",
+    ],
+  };
+
+  const right = {
+    name: "Smt. Nandhini S",
+    responses: 96,
+    highest: [
+      { text: "Provides enough support, direction and guidance, for effective performance of team members", score: "4.51" },
+      { text: "Helps in resolving issues/remove roadblocks in the job", score: "4.42" },
+      { text: "*Works with teachers to set high academic standards that rise above minimum expectations", score: "4.41" },
+    ],
+    lowest: [
+      { text: "*Leads without aggression or arrogance", score: "4.01" },
+      { text: "Builds rapport with people and treats team members with respect and dignity", score: "4.1" },
+      { text: "*Makes one feel valued as an individual", score: "4.2" },
+    ],
+    profile: [
+      "Bold, confident and decisive leader with practical problem-solving abilities",
+      "Inspires and motivates team",
+      "Balances high expectations with encouragement",
+      "Needs to be calm & composed in all situations",
+      "Needs to ensure feedback is provided in a constructive manner",
+      "Needs to minimize waiting time for staff members to meet her",
+    ],
+    footnote: [
+      "No significant change noticed in any of the above areas as compared to last year except, \"Builds rapport with people\" which has come down by 0.25",
+    ],
+  };
 
   return (
-    <AutoPaginatedSections
-      blocks={blocks}
-      pageWidth={794}
-      pageHeight={1123}
-      pagePadding={0}
-      contentClassName="leader-comparison-page"
-      componentId="leader-comparison"
-    />
-  );
-};
+    <div className="leaders">
+      {/* Header Row */}
+      <div className="leaders-global-row">
+        <LeaderHeader {...left} />
+        <LeaderHeader {...right} />
+      </div>
 
-export default LeaderComparisonPage;
+      <div className="leader-body">
+        {/* GREEN BOX ROW - Shared across both leaders */}
+        <div className="leaders-global-row">
+          <LeaderPart type="green" {...left} />
+          <LeaderPart type="green" {...right} />
+        </div>
+
+        {/* GLOBAL ARROW DIVIDER */}
+        <div className="leaders-global-divider">
+          <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
+          <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
+        </div>
+
+        {/* RED BOX ROW - Shared across both leaders */}
+        <div className="leaders-global-row">
+          <LeaderPart type="red" {...left} />
+          <LeaderPart type="red" {...right} />
+        </div>
+      </div>
+
+      {/* Footnote Row */}
+      <div className="leaders-global-row" style={{ marginTop: "16px" }}>
+        <LeaderFootnote {...left} />
+        <LeaderFootnote {...right} />
+      </div>
+
+      <div className="leaders-page-number">8</div>
+    </div>
+  );
+}

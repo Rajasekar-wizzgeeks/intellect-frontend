@@ -7,6 +7,7 @@ import SummaryByCompetencyInstitutionPage from "../components/SummaryByCompetenc
 import OverallAveragesByPrincipalPage from "../components/OverallAveragesByPrincipalPage";
 import FrequentlyOccuringSuggestions from "../components/frequentlyOccuringSuggestions"
 import LeaderComparisonPage from "../components/leaderComparisionPage"
+import SurveySummaryRecap from "../components/SurveySummaryRecap"
 import "../styles/feedback360Report.scss";
 
 const Dav360SummaryReport = () => {
@@ -82,6 +83,7 @@ const Dav360SummaryReport = () => {
         <Dav360CoverPage />
       </div>
 
+      <SurveySummaryRecap/>
       <HeadlinesPage highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
 
       <SummaryByCompetencyInstitutionPage items={competencyItems} />

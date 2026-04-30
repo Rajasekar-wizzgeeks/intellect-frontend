@@ -1,72 +1,93 @@
-import React, { useMemo } from "react";
-import AutoPaginatedSections from "./AutoPaginatedSections";
-import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/overallAveragesByPrincipalPage.scss";
 
-const BarList = ({ title, colorClass, rows = [] }) => {
-  const max = useMemo(() => {
-    const vals = rows.map((r) => Number(r.value)).filter((v) => Number.isFinite(v));
-    return vals.length ? Math.max(...vals, 5) : 5;
-  }, [rows]);
+const MAX = 5;
 
+const teamRows = [
+  { name: "Mr. Ramana Velavan Venkatachalam", responses: 43, value: 4.65 },
+  { name: "Ms. Bhuvaneshwari G", responses: 36, value: 4.54 },
+  { name: "Ms. Kanakalakshmi S", responses: 151, value: 4.4 },
+  { name: "Ms. Nandhini Srinivasan", responses: 96, value: 4.3 },
+  { name: "Ms. Swarna Karpagavalli S", responses: 93, value: 4.26 },
+  { name: "Ms. Sindhu S", responses: 92, value: 4.26 },
+  { name: "Ms. Hemamala Balasubramanian", responses: 22, value: 4.26 },
+  { name: "Ms. Uma Parvathy", responses: 66, value: 4.25 },
+  { name: "Mr. Veeramurugan G", responses: 77, value: 4.16 },
+  { name: "Mr. T. Rangarajan", responses: 33, value: 4.04 },
+];
+
+const managerRows = [
+  { name: "Ms. Kanakalakshmi S", value: 4.38 },
+  { name: "Ms. Sindhu S", value: 4.38 },
+  { name: "Ms. Hemamala Balasubramanian", value: 3.85 },
+  { name: "Mr. Ramana Velavan...", value: 3.77 },
+  { name: "Mr. T. Rangarajan", value: 3.69 },
+  { name: "Mr. Veeramurugan G", value: 3.54 },
+  { name: "Ms. Swarna Karpagavalli S", value: 3.54 },
+  { name: "Ms. Nandhini Srinivasan", value: 3.54 },
+  { name: "Ms. Bhuvaneshwari G", value: 3.38 },
+  { name: "Ms. Uma Parvathy", value: 2.92 },
+];
+
+const fmt = (v) => v.toFixed(2);
+
+const Bar = ({ row, color, showResponses }) => {
+  const widthPct = (row.value / MAX) * 100;
   return (
-    <div className={`oap-col oap-col--${colorClass}`.trim()}>
-      <div className="oap-col__title">{title}</div>
-
-      <div className="oap-col__legend">
-        <span className={`oap-col__legend-dot oap-col__legend-dot--${colorClass}`} />
-        <span className="oap-col__legend-text">{title === "Team" ? "Group Mean (Teachers & Office Staff)" : "Manager Rating"}</span>
-      </div>
-
-      <div className="oap-rows">
-        {rows.map((r, idx) => {
-          const v = Number(r.value);
-          const pct = Number.isFinite(v) ? Math.max(0, Math.min(100, (v / max) * 100)) : 0;
-          return (
-            <div key={r.name || idx} className="oap-row">
-              <div className="oap-row__name">{r.name}</div>
-              <div className="oap-row__bar-wrap">
-                {r.responses != null ? (
-                  <div className="oap-row__responses">{r.responses} responses</div>
-                ) : null}
-                <div className={`oap-row__bar oap-row__bar--${colorClass}`} style={{ width: `${pct}%` }} />
-              </div>
-              <div className="oap-row__value">{Number.isFinite(v) ? v.toFixed(2).replace(/\.00$/, "") : ""}</div>
-            </div>
-          );
-        })}
+    <div className="oap__row">
+      <div className="oap__name">{row.name}</div>
+      <div className="oap__bar-wrap">
+        <div className={`oap__bar oap__bar--${color}`} style={{ width: `${widthPct}%` }}>
+          {showResponses && row.responses != null && (
+            <span className="oap__responses">{row.responses} responses</span>
+          )}
+        </div>
+        <span className="oap__value">{fmt(row.value)}</span>
       </div>
     </div>
   );
 };
 
-const OverallAveragesByPrincipalPage = ({
-  title = "Overall Averages By Principal",
-  teamRows = [],
-  managerRows = [],
-}) => {
-  const blocks = useMemo(() => {
-    return [
-      <div key="oap" className="oap-page">
-        <FeedbackCommonHeader title={title} titleWidth={100} />
-        <div className="oap-page__grid">
-          <BarList title="Team" colorClass="team" rows={teamRows} />
-          <div className="oap-page__divider" aria-hidden="true" />
-          <BarList title="Manager" colorClass="manager" rows={managerRows} />
-        </div>
-      </div>,
-    ];
-  }, [managerRows, teamRows, title]);
-
+const OverallAveragesByPrincipalPage = () => {
   return (
-    <AutoPaginatedSections
-      blocks={blocks}
-      pageWidth={794}
-      pageHeight={1123}
-      pagePadding={0}
-      contentClassName="overall-averages-by-principal-page"
-      componentId="overall-averages-by-principal"
-    />
+    <div className="oap-page">
+      <div className="oap">
+        <h2 className="oap__title">Overall Averages By Principal</h2>
+
+        <div className="oap__headers">
+          <div className="oap__header">Team</div>
+          <div className="oap__header-divider" />
+          <div className="oap__header">Manager</div>
+        </div>
+
+        <div className="oap__legend-row">
+          <div className="oap__legend">
+            <span className="oap__legend-square oap__legend-square--green" />
+            <span className="oap__legend-text">Group Mean (Teachers &amp; Office Staff)</span>
+          </div>
+          <div className="oap__legend-spacer" />
+          <div className="oap__legend">
+            <span className="oap__legend-square oap__legend-square--red" />
+            <span className="oap__legend-text">Manager Rating</span>
+          </div>
+        </div>
+
+        <div className="oap__columns">
+          <div className="oap__col">
+            {teamRows.map((r) => (
+              <Bar key={r.name} row={r} color="green" showResponses />
+            ))}
+          </div>
+
+          <div className="oap__col-divider" />
+
+          <div className="oap__col">
+            {managerRows.map((r) => (
+              <Bar key={r.name} row={r} color="red" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

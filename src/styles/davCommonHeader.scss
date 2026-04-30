@@ -1,0 +1,21 @@
+.dav-common-header {
+  width: 100%;
+  background: #fff;
+  padding: 24px 28px 0;
+  box-sizing: border-box;
+
+  &__title {
+    font-size: 32px;
+    font-weight: 900;
+    color: #1f3864;
+    line-height: 1.15;
+    letter-spacing: 0.2px;
+  }
+
+  &__underline {
+    height: 6px;
+    width: 100%;
+    background: #4472c4;
+    margin-top: 14px;
+  }
+}
