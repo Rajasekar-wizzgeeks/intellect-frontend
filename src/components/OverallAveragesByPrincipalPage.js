@@ -1,6 +1,7 @@
 import "../styles/overallAveragesByPrincipalPage.scss";
 
 const MAX = 5;
+const BAR_WIDTH_PX = 120;
 
 const teamRows = [
   { name: "Mr. Ramana Velavan Venkatachalam", responses: 43, value: 4.65 },
@@ -31,15 +32,16 @@ const managerRows = [
 const fmt = (v) => v.toFixed(2);
 
 const Bar = ({ row, color, showResponses }) => {
-  const widthPct = (row.value / MAX) * 100;
+  const barWidth = (row.value / MAX) * BAR_WIDTH_PX;
   return (
     <div className="oap__row">
       <div className="oap__name">{row.name}</div>
       <div className="oap__bar-wrap">
-        <div className={`oap__bar oap__bar--${color}`} style={{ width: `${widthPct}%` }}>
-          {showResponses && row.responses != null && (
-            <span className="oap__responses">{row.responses} responses</span>
-          )}
+        {showResponses && row.responses != null && (
+          <span className="oap__responses">{row.responses} responses</span>
+        )}
+        <div className="oap__bar-container">
+          <div className={`oap__bar oap__bar--${color}`} style={{ width: `${barWidth}px` }} />
         </div>
         <span className="oap__value">{fmt(row.value)}</span>
       </div>

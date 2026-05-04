@@ -7,7 +7,8 @@ $divider: #c9d6e8;
 $header-bg: #eaf1fb;
 
 .oap-page {
-  width: 794px;
+  width: 100%;
+  max-width: 794px;
   min-height: 1123px;
   background: #fff;
   margin: 24px auto;
@@ -22,6 +23,7 @@ $header-bg: #eaf1fb;
   font-family: Arial, Helvetica, sans-serif;
   color: $text-dark;
   box-sizing: border-box;
+  overflow-x: hidden;
 
   &__title {
     font-size: 30px;
@@ -33,7 +35,7 @@ $header-bg: #eaf1fb;
 
   &__headers {
     display: grid;
-    grid-template-columns: 1fr 18px 1fr;
+    grid-template-columns: 1fr 1px 1fr;
     align-items: center;
     background: transparent;
     height: 28px;
@@ -55,7 +57,7 @@ $header-bg: #eaf1fb;
   }
 
   &__header-divider {
-    width: 18px;
+    width: 1px;
     height: 28px;
     position: relative;
 
@@ -73,7 +75,7 @@ $header-bg: #eaf1fb;
 
   &__legend-row {
     display: grid;
-    grid-template-columns: 1fr 18px 1fr;
+    grid-template-columns: 1fr 1px 1fr;
     margin-bottom: 8px;
   }
 
@@ -86,7 +88,7 @@ $header-bg: #eaf1fb;
   }
 
   &__legend:last-child {
-    padding-left: 18px;
+    padding-left: 10px;
   }
 
   &__legend-square {
@@ -106,7 +108,7 @@ $header-bg: #eaf1fb;
   }
 
   &__legend-spacer {
-    width: 18px;
+    width: 1px;
   }
 
   &__columns {
@@ -127,7 +129,7 @@ $header-bg: #eaf1fb;
 
   &__row {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: 10px;
     padding: 6px 12px;
@@ -147,13 +149,19 @@ $header-bg: #eaf1fb;
   }
 
   &__bar-wrap {
-    position: relative;
     display: flex;
     align-items: center;
     height: 20px;
+    gap: 8px;
+  }
+
+  &__bar-container {
+    width: 120px;
+    position: relative;
   }
 
   &__bar {
+    position: relative;
     height: 18px;
     display: flex;
     align-items: center;
@@ -172,17 +180,18 @@ $header-bg: #eaf1fb;
     background: $green-soft;
     color: #333;
     padding: 1px 6px;
-    margin-left: -6px;
     height: 18px;
     display: inline-flex;
     align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   &__value {
     font-size: 12px;
     font-weight: 700;
     color: $text-dark;
-    margin-left: 8px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 }

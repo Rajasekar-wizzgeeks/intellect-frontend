@@ -1,11 +1,18 @@
 import "../styles/SurveySummaryRecap.scss";
-
+import LeadhipforStaff from "../assets/png/leadershipForStaffPerformance.png"
+import LeadhipPersonality from "../assets/png/leadershipPersonalityAndStyle.png"
+import educationalQualityAndStudentOutcomes from "../assets/png/educationalQualityAndStudentOutcomes.png"
+import creatingTheRightCulture from "../assets/png/creatingTheRightCulture.png"
+import engagementAndManagement from "../assets/png/engagementAndManagement.png"
+import noofPrinciplesAssesed from "../assets/png/NoofPrinciplesAssesed.png"
+import responsesGivenBy from "../assets/png/responsesGivenBy.png"
+import totalNoOfQuestions from "../assets/png/totalNoOfQuestions.png"
 const competencies = [
-  { title: "Leadership for\nStaff performance\n& Development", icon: "📈" },
-  { title: "Leadership\nPersonality &\nStyle", icon: "👥" },
-  { title: "Educational\nQuality & Student\noutcomes", icon: "🎓" },
-  { title: "Creating the right\nculture", icon: "🤝" },
-  { title: "Engagement with\nManagement", icon: "👤" },
+  { title: "Leadership for\nStaff performance\n& Development", icon:LeadhipforStaff },
+  { title: "Leadership\nPersonality &\nStyle", icon: LeadhipPersonality },
+  { title: "Educational\nQuality & Student\noutcomes", icon: educationalQualityAndStudentOutcomes },
+  { title: "Creating the right\nculture", icon: creatingTheRightCulture },
+  { title: "Engagement with\nManagement", icon: engagementAndManagement },
 ];
 
 const SurveySummaryRecap = () => {
@@ -16,7 +23,7 @@ const SurveySummaryRecap = () => {
         <div className="sfr__title-rule" />
 
         <div className="sfr__row">
-          <span className="sfr__row-icon" aria-hidden>📋</span>
+          <img className="sfr__row-icon" aria-hidden src={noofPrinciplesAssesed}/>
           <span className="sfr__row-label">No of Principals Assessed</span>
           <span className="sfr__row-colon">:</span>
           <span className="sfr__row-value" />
@@ -24,7 +31,7 @@ const SurveySummaryRecap = () => {
         <div className="sfr__divider" />
 
         <div className="sfr__row">
-          <span className="sfr__row-icon" aria-hidden>💬</span>
+          <img className="sfr__row-icon" aria-hidden src={responsesGivenBy}/>
           <span className="sfr__row-label">Responses given by</span>
           <span className="sfr__row-colon">:</span>
           <span className="sfr__row-value sfr__row-value--red">
@@ -34,7 +41,7 @@ const SurveySummaryRecap = () => {
         <div className="sfr__divider" />
 
         <div className="sfr__row">
-          <span className="sfr__row-icon" aria-hidden>🎯</span>
+          <img className="sfr__row-icon" aria-hidden src={totalNoOfQuestions}/>
           <span className="sfr__row-label">Total number of questions</span>
           <span className="sfr__row-colon">:</span>
           <span className="sfr__row-value sfr__row-value--red">
@@ -52,7 +59,7 @@ const SurveySummaryRecap = () => {
           {competencies.map((c, i) => (
             <div key={i} className="sfr__comp">
               <div className="sfr__comp-circle">
-                <span className="sfr__comp-icon">{c.icon}</span>
+                <img className="sfr__comp-icon" src={c.icon}/>
               </div>
               <div className="sfr__comp-title">
                 {c.title.split("\n").map((line, idx) => (

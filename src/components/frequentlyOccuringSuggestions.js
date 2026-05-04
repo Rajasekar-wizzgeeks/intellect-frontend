@@ -99,9 +99,6 @@ const FrequentlyOccuringSuggestions = ({
             </div>
           </div>
 
-          {/* DIVIDER */}
-          <div className="fos-divider" />
-
           {/* RIGHT */}
           <div className="fos-col">
             <div className="fos-col__title">Manager Perception</div>
