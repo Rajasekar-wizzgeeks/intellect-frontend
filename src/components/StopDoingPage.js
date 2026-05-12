@@ -201,13 +201,13 @@ const StopDoingGrid = ({
   );
 
   return (
-    <div className="sd-grid"  role="table"  style={{"grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr",paddingBottom:lastChunk? 50 :0}} aria-label={title}>
+    <div className="sd-grid" role="table" style={{ "grid-template-columns": columns.length > 2 ? "1fr 1fr 1fr" : "1fr 1fr", paddingBottom: lastChunk ? 50 : 0 }} aria-label={title}>
       {columns.map((col, colIdx) => {
         const values = Array.isArray(col)
           ? col.map((row, rowIdx) => ({
-              key: rowOffset + rowIdx,
-              value: String(row ?? ""),
-            }))
+            key: rowOffset + rowIdx,
+            value: String(row ?? ""),
+          }))
           : [];
 
         const bufferedValues =
@@ -409,7 +409,7 @@ const StopDoingPage = ({
 }) => {
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
-  );  
+  );
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedGroupColIdx, setSelectedGroupColIdx] = useState(null);
   const [measureTick, setMeasureTick] = useState(0);
@@ -417,8 +417,8 @@ const StopDoingPage = ({
   const serializeColumns = useCallback((cols) => {
     const safe = Array.isArray(cols)
       ? cols.map((col) =>
-          Array.isArray(col) ? col.map((c) => String(c ?? "")) : [],
-        )
+        Array.isArray(col) ? col.map((c) => String(c ?? "")) : [],
+      )
       : [];
     try {
       return JSON.stringify(safe);
@@ -432,13 +432,13 @@ const StopDoingPage = ({
   const serializeGroups = useCallback((g) => {
     const safe = Array.isArray(g)
       ? g.map((row) => ({
-          representative_comment: String(row?.representative_comment ?? ""),
-          comments_belong_to_this_group: Array.isArray(
-            row?.comments_belong_to_this_group,
-          )
-            ? row.comments_belong_to_this_group.map((c) => String(c ?? ""))
-            : [],
-        }))
+        representative_comment: String(row?.representative_comment ?? ""),
+        comments_belong_to_this_group: Array.isArray(
+          row?.comments_belong_to_this_group,
+        )
+          ? row.comments_belong_to_this_group.map((c) => String(c ?? ""))
+          : [],
+      }))
       : [];
     try {
       return JSON.stringify(safe);
@@ -516,8 +516,8 @@ const StopDoingPage = ({
 
         const sliceColumns = Array.isArray(localColumns)
           ? localColumns.map((col) =>
-              Array.isArray(col) ? col.slice(start, end) : [],
-            )
+            Array.isArray(col) ? col.slice(start, end) : [],
+          )
           : [];
 
         root.render(
@@ -578,7 +578,7 @@ const StopDoingPage = ({
           } finally {
             try {
               root.unmount();
-            } catch {}
+            } catch { }
             container.remove();
           }
         };
@@ -677,7 +677,7 @@ const StopDoingPage = ({
             const raw = String(cell ?? "");
             const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
             const baseText = match ? match[1].trim() : raw.trim();
-            
+
             if (baseText === oldRepComment.trim()) {
               return match ? `${updatedGroup.representative_comment} ${match[2]}` : updatedGroup.representative_comment;
             }
@@ -696,7 +696,7 @@ const StopDoingPage = ({
     const hasColumns =
       Array.isArray(localColumns) &&
       localColumns.some((c) => Array.isArray(c) && c.length);
-  
+
     if (hasColumns) {
       const rangesToUse = Array.isArray(rowRanges) && rowRanges.length
         ? rowRanges
@@ -726,78 +726,78 @@ const StopDoingPage = ({
               setMeasureTick={setMeasureTick}
               getGroupForCell={
                 Array.isArray(localGroups) &&
-                Array.isArray(groupIndexMatrix)
+                  Array.isArray(groupIndexMatrix)
                   ? (colIdx, absoluteRowIdx) => {
-                      const grpIdx = groupIndexMatrix?.[colIdx]?.[absoluteRowIdx];
-                      if (
-                        typeof grpIdx === "number" &&
-                        grpIdx >= 0 &&
-                        grpIdx < localGroups.length
-                      ) {
-                        return localGroups[grpIdx];
-                      }
-                      return null;
+                    const grpIdx = groupIndexMatrix?.[colIdx]?.[absoluteRowIdx];
+                    if (
+                      typeof grpIdx === "number" &&
+                      grpIdx >= 0 &&
+                      grpIdx < localGroups.length
+                    ) {
+                      return localGroups[grpIdx];
                     }
+                    return null;
+                  }
                   : undefined
               }
               onCellClick={
                 Array.isArray(localGroups) &&
-                Array.isArray(groupIndexMatrix)
+                  Array.isArray(groupIndexMatrix)
                   ? ({ colIdx, rowIdx }) => {
-                      const grpIdx =
-                        groupIndexMatrix?.[colIdx]?.[rowIdx];
+                    const grpIdx =
+                      groupIndexMatrix?.[colIdx]?.[rowIdx];
+                    if (
+                      typeof grpIdx === "number" &&
+                      grpIdx >= 0 &&
+                      grpIdx < localGroups.length
+                    ) {
+                      const group = localGroups[grpIdx];
                       if (
-                        typeof grpIdx === "number" &&
-                        grpIdx >= 0 &&
-                        grpIdx < localGroups.length
+                        Array.isArray(group?.comments_belong_to_this_group) &&
+                        group.comments_belong_to_this_group.length > 0
                       ) {
-                        const group = localGroups[grpIdx];
-                        if (
-                          Array.isArray(group?.comments_belong_to_this_group) &&
-                          group.comments_belong_to_this_group.length > 0
-                        ) {
-                          setSelectedGroup(group);
-                          setSelectedGroupColIdx(colIdx);
-                        }
+                        setSelectedGroup(group);
+                        setSelectedGroupColIdx(colIdx);
                       }
                     }
+                  }
                   : undefined
               }
               lastChunk={idx === rangesToUse.length - 1}
               renderCell={
                 Array.isArray(localGroups) && Array.isArray(groupIndexMatrix)
                   ? ({ colIdx, rowIdx, value }) => {
-                      const raw = String(value ?? "");
-                      // Match the main text and the existing (xN) suffix
-                      const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
-                      const grpIdx = groupIndexMatrix?.[colIdx]?.[range.start + rowIdx];
-                      
-                      const hasDynamicGroup = typeof grpIdx === "number" &&
-                        grpIdx >= 0 &&
-                        grpIdx < localGroups.length;
+                    const raw = String(value ?? "");
+                    // Match the main text and the existing (xN) suffix
+                    const match = raw.match(/^(.*?)(\(x\d+\)\s*)$/i);
+                    const grpIdx = groupIndexMatrix?.[colIdx]?.[range.start + rowIdx];
 
-                      if (!hasDynamicGroup) {
-                        return (
-                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                            {raw}
-                          </ReactMarkdown>
-                        );
-                      }
+                    const hasDynamicGroup = typeof grpIdx === "number" &&
+                      grpIdx >= 0 &&
+                      grpIdx < localGroups.length;
 
-                      const list = Array.isArray(
-                        localGroups?.[grpIdx]?.comments_belong_to_this_group,
-                      )
-                        ? localGroups[grpIdx].comments_belong_to_this_group
-                        : [];
-
+                    if (!hasDynamicGroup) {
                       return (
-                        <span className="cd-group-cell">
-                          <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                            {match ? String(match[1] ?? "").trim() : raw}
-                          </ReactMarkdown>
-                        </span>
+                        <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                          {raw}
+                        </ReactMarkdown>
                       );
                     }
+
+                    const list = Array.isArray(
+                      localGroups?.[grpIdx]?.comments_belong_to_this_group,
+                    )
+                      ? localGroups[grpIdx].comments_belong_to_this_group
+                      : [];
+
+                    return (
+                      <span className="cd-group-cell">
+                        <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                          {match ? String(match[1] ?? "").trim() : raw}
+                        </ReactMarkdown>
+                      </span>
+                    );
+                  }
                   : undefined
               }
             />
@@ -820,7 +820,7 @@ const StopDoingPage = ({
 
     out.push(
       <div className="sd-traits-container">
-      <StopDoingTraits
+        {/* <StopDoingTraits
         key="sd-traits"
         traits={localTraits}
         traitsTitle={traitsTitle}
@@ -829,11 +829,11 @@ const StopDoingPage = ({
       />
       <div key="sd-foot" className="sd-footnote">
         {footnote}
-      </div>
+      </div> */}
       </div>
     );
 
- 
+
 
     return out;
   }, [
@@ -894,12 +894,12 @@ const StopDoingPage = ({
           setLocalColumns((prevColumns) => {
             const nextColumns = Array.isArray(prevColumns) ? [...prevColumns] : [];
             if (nextColumns.length === 0) return nextColumns;
-            
+
             const fallbackIdx = nextColumns.length - 1;
             const colIdx =
               typeof targetColumnIdx === "number" &&
-              targetColumnIdx >= 0 &&
-              targetColumnIdx < nextColumns.length
+                targetColumnIdx >= 0 &&
+                targetColumnIdx < nextColumns.length
                 ? targetColumnIdx
                 : fallbackIdx;
 
