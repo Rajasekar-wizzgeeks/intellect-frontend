@@ -35,6 +35,7 @@ const GroupCommentsModal = ({
   selectedGroup,
   onUpdateGroup,
   onMoveComment,
+  columnCount,
 }) => {
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState("");
@@ -43,11 +44,24 @@ const GroupCommentsModal = ({
   const [isEditingRep, setIsEditingRep] = useState(false);
   const [repEditValue, setRepEditValue] = useState("");
 
+  const [isColumnPickerOpen, setIsColumnPickerOpen] = useState(false);
+  const [pendingMoveIdx, setPendingMoveIdx] = useState(null);
+
   if (!isOpen || !selectedGroup) return null;
+
+  const safeColumnCount =
+    typeof columnCount === "number" && columnCount > 0
+      ? Math.floor(columnCount)
+      : 3;
 
   const comments = Array.isArray(selectedGroup.comments_belong_to_this_group)
     ? selectedGroup.comments_belong_to_this_group
     : [];
+
+  const closeColumnPicker = () => {
+    setIsColumnPickerOpen(false);
+    setPendingMoveIdx(null);
+  };
 
   const handleUpdateRep = () => {
     if (repEditValue.trim()) {
@@ -210,7 +224,8 @@ const GroupCommentsModal = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onMoveComment?.(i);
+                          setPendingMoveIdx(i);
+                          setIsColumnPickerOpen(true);
                         }}
                         className="cd-group-modal__action-btn cd-group-modal__action-btn--move"
                         title="Move to end of table"
@@ -232,6 +247,47 @@ const GroupCommentsModal = ({
             ))}
           </div>
         </div>
+
+        {isColumnPickerOpen ? (
+          <div
+            className="cd-group-modal__column-picker-overlay"
+            onClick={closeColumnPicker}
+          >
+            <div
+              className="cd-group-modal__column-picker"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="cd-group-modal__column-picker-title">
+                    Which column would you like to add this comment to?              
+              </div>
+              <div className="cd-group-modal__column-picker-actions">
+                {Array.from({ length: safeColumnCount }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="cd-group-modal__column-picker-btn"
+                    onClick={() => {
+                      if (pendingMoveIdx == null) return;
+                      onMoveComment?.(pendingMoveIdx, idx);
+                      closeColumnPicker();
+                    }}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="cd-group-modal__column-picker-cancel"
+                onClick={closeColumnPicker}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
