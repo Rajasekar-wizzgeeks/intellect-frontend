@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { FileText, Target } from "lucide-react";
+import { FileText, Target, FileChartColumn } from "lucide-react";
 import "../styles/home.scss";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
@@ -118,6 +118,40 @@ const HomePage = () => {
             </button>
           </div>
         </div>
+
+        {/* <div className="home-card">
+          <div className="home-card__topbar home-card__topbar--dav360" />
+
+          <div className="home-card__body">
+            <div className="home-card__head">
+              <div className="home-card__icon home-card__icon--dav360">
+                <FileChartColumn
+                  style={{ width: 26, height: 26, color: "var(--color-white)" }}
+                />
+              </div>
+
+              <div className="home-card__badge home-card__badge--dav360">
+                NEW
+              </div>
+            </div>
+
+            <div className="home-card__content">
+              <h2 className="home-card__title">DAV 360° Report</h2>
+              <div className="home-card__desc">
+                DAV 360 Degree Feedback summary report for institutional review
+                and leadership insights.
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="home-card__cta home-card__cta--dav360"
+              onClick={() => navigate("/user/dav360")}
+            >
+              View DAV 360° PDF
+            </button>
+          </div>
+        </div> */}
       </div>
     </div>
   );

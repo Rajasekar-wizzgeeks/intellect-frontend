@@ -218,7 +218,11 @@ const NomineesLeadershipStyleAdjectives = React.memo(
                   onSave={(newValue) => {
                     setLocalAdjectives((prev) => {
                       const updated = [...(prev || [])];
-                      updated[idx] = newValue;
+                      if (newValue.trim() === "") {
+                        updated.splice(idx, 1);
+                      } else {
+                        updated[idx] = newValue;
+                      }
                       return updated;
                     });
                     setEditing(null);

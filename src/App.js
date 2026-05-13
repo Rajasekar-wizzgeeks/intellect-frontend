@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Feedback360Report from "./pages/feedback360Report";
+import Dav360SummaryReport from "./pages/dav360SummaryReport";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="reports/user/list" element={<UserReportsPage />} />
           <Route path="reports/user/:id" element={<MainPage />} />
           <Route path="user/feedback" element={<Feedback360Report />} />
+          <Route path="user/dav360" element={<Dav360SummaryReport />} />
         </Route>
         {/* <Route path="/" element={<Feedback360Report />} /> */}
       </Routes>

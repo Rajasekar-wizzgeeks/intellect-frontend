@@ -1120,7 +1120,8 @@ const ContinueDoingPage = ({
         }}
         selectedGroup={selectedGroup}
         onUpdateGroup={updateGroupData}
-        onMoveComment={(commentIdx) => {
+        columnCount={Array.isArray(localColumns) ? localColumns.length : 0}
+        onMoveComment={(commentIdx, targetColumnIdx) => {
           if (!selectedGroup) return;
 
           const list = Array.isArray(selectedGroup?.comments_belong_to_this_group)
@@ -1141,15 +1142,22 @@ const ContinueDoingPage = ({
           updateGroupData(updatedGroup);
           setSelectedGroup(updatedGroup);
 
-          // Append to end of the LAST column in the table
+          // Append to end of the selected column (fallback to last column)
           setLocalColumns((prevColumns) => {
             const nextColumns = Array.isArray(prevColumns) ? [...prevColumns] : [];
             if (nextColumns.length === 0) return nextColumns;
 
-            const lastColIdx = nextColumns.length - 1;
-            if (!Array.isArray(nextColumns[lastColIdx])) nextColumns[lastColIdx] = [];
+            const fallbackIdx = nextColumns.length - 1;
+            const colIdx =
+              typeof targetColumnIdx === "number" &&
+              targetColumnIdx >= 0 &&
+              targetColumnIdx < nextColumns.length
+                ? targetColumnIdx
+                : fallbackIdx;
 
-            nextColumns[lastColIdx] = [...nextColumns[lastColIdx], moved];
+            if (!Array.isArray(nextColumns[colIdx])) nextColumns[colIdx] = [];
+
+            nextColumns[colIdx] = [...nextColumns[colIdx], moved];
             return nextColumns;
           });
 
