@@ -119,7 +119,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* <div className="home-card">
+        <div className="home-card">
           <div className="home-card__topbar home-card__topbar--dav360" />
 
           <div className="home-card__body">
@@ -136,9 +136,9 @@ const HomePage = () => {
             </div>
 
             <div className="home-card__content">
-              <h2 className="home-card__title">DAV 360° Report</h2>
+              <h2 className="home-card__title">360° Feedback Summary Report</h2>
               <div className="home-card__desc">
-                DAV 360 Degree Feedback summary report for institutional review
+                360 Degree Feedback summary report for institutional review
                 and leadership insights.
               </div>
             </div>
@@ -151,7 +151,7 @@ const HomePage = () => {
               View DAV 360° PDF
             </button>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

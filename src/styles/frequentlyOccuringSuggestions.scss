@@ -8,13 +8,15 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .fos-col {
   width: 100%;
   border: 2px solid #2f66c5;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .fos-col__title {
@@ -29,6 +31,7 @@
 .fos-table {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .fos-row {
@@ -36,10 +39,16 @@
   grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid #2f66c5;
 
+  &:last-child {
+    border-bottom: none;
+    flex: 1;
+  }
+
   &--head {
     background: #5d94e6;
     font-weight: 700;
     color: #fff;
+    flex: 0 0 auto;
   }
 
   > div {
