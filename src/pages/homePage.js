@@ -119,7 +119,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="home-card">
+        {/* <div className="home-card">
           <div className="home-card__topbar home-card__topbar--dav360" />
 
           <div className="home-card__body">
@@ -151,7 +151,7 @@ const HomePage = () => {
               View DAV 360° PDF
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

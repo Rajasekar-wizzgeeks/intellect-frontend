@@ -1,17 +1,19 @@
+import React, { useMemo } from "react";
+import AutoPaginatedSections from "./AutoPaginatedSections";
+import DavCommonHeader from "./DavCommonHeader";
 import "../styles/headlinesPage.scss";
 
 export default function Headlines() {
-  return (
-    <div className="headlines">
-      <h1 className="headlines-title">Headlines</h1>
-      <div className="headlines-title-rule" />
-
-      <div className="headlines-section">
+  const blocks = useMemo(() => {
+    return [
+      <div key="headlines-header">
+        <DavCommonHeader title="Headlines" />
+      </div>,
+      <div key="headlines-section-1" className="headlines-section">
         <span className="headlines-bullet">▪</span>
         <span className="headlines-section-title">Highest &amp; Lowest Institutional Averages</span>
-      </div>
-
-      <table className="headlines-table headlines-table--green">
+      </div>,
+      <table key="table-green" className="headlines-table headlines-table--green">
         <colgroup>
           <col style={{ width: "180px" }} />
           <col />
@@ -41,9 +43,8 @@ export default function Headlines() {
             </td>
           </tr>
         </tbody>
-      </table>
-
-      <table className="headlines-table headlines-table--peach">
+      </table>,
+      <table key="table-peach" className="headlines-table headlines-table--peach">
         <colgroup>
           <col style={{ width: "180px" }} />
           <col />
@@ -73,11 +74,9 @@ export default function Headlines() {
             </td>
           </tr>
         </tbody>
-      </table>
-
-      <hr className="headlines-divider" />
-
-      <div className="headlines-principals">
+      </table>,
+      <hr key="divider" className="headlines-divider" />,
+      <div key="principals" className="headlines-principals">
         <div className="headlines-principals-heading">
           <span className="headlines-bullet">▪</span>
           <span>Principals who have rated themselves 5 in most questions :</span>
@@ -90,9 +89,18 @@ export default function Headlines() {
             <strong>Smt. Bhuvaneshwari G and Thiru. Ramana Velavan Venkatachalam</strong> (Rating 5 for 20 out of 24 questions)
           </li>
         </ul>
-      </div>
+      </div>,
+    ];
+  }, []);
 
-      <div className="headlines-page-number">3</div>
-    </div>
+  return (
+    <AutoPaginatedSections
+      blocks={blocks}
+      pageWidth={894}
+      pageHeight={1123}
+      pagePadding={40}
+      contentClassName="headlines"
+      componentId="headlines"
+    />
   );
 }

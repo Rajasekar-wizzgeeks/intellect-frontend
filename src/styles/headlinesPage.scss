@@ -8,15 +8,10 @@ $textDark: #1f1f1f;
 $textMuted: #404040;
 
 .headlines {
-  width: 794px;
-  min-height: 1123px;
-  background: #fff;
-  padding: 40px 60px;
+  width: 100%;
   font-family: "Calibri", "Segoe UI", Arial, sans-serif;
   color: $textDark;
   position: relative;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-  margin: 24px auto;
   box-sizing: border-box;
 }
 

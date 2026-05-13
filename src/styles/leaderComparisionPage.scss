@@ -8,19 +8,17 @@ $textMuted: #404040;
 $footRed: #c00000;
 
 .leaders {
-  width: 794px;
-  min-height: 600px;
-  background: #fff;
-  padding: 18px 24px 28px;
+  width: 100%;
+  padding: 10px 0;
   font-family: "Calibri", "Segoe UI", Arial, sans-serif;
   color: $textDark;
   position: relative;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  margin: 24px auto;
   box-sizing: border-box;
 }
 
 .leaders-global-row {
+  margin-top: 10px;
+
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
@@ -110,7 +108,7 @@ $footRed: #c00000;
 .leader-body {
   display: flex;
   flex-direction: column;
-  margin-top: 14px;
+  margin-top: 24px;
   position: relative;
 }
 

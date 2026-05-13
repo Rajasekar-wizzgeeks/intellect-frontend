@@ -1,4 +1,7 @@
+import React, { useMemo } from "react";
+import AutoPaginatedSections from "./AutoPaginatedSections";
 import "../styles/leaderComparisionPage.scss";
+
 const LeaderPart = ({
   type, // "green" or "red"
   highest,
@@ -154,41 +157,48 @@ export default function LeaderProfiles() {
     ],
   };
 
-  return (
-    <div className="leaders">
-      {/* Header Row */}
-      <div className="leaders-global-row">
+  const blocks = useMemo(() => {
+    return [
+      /* Header Row */
+      <div key="leaders-header" className="leaders-global-row">
         <LeaderHeader {...left} />
         <LeaderHeader {...right} />
-      </div>
+      </div>,
 
-      <div className="leader-body">
-        {/* GREEN BOX ROW - Shared across both leaders */}
-        <div className="leaders-global-row">
-          <LeaderPart type="green" {...left} />
-          <LeaderPart type="green" {...right} />
-        </div>
+      /* GREEN BOX ROW - Shared across both leaders */
+      <div key="leaders-green" className="leaders-global-row">
+        <LeaderPart type="green" {...left} />
+        <LeaderPart type="green" {...right} />
+      </div>,
 
-        {/* GLOBAL ARROW DIVIDER */}
-        <div className="leaders-global-divider">
-          <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
-          <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
-        </div>
+      /* GLOBAL ARROW DIVIDER */
+      <div key="leaders-divider" className="leaders-global-divider">
+        <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
+        <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
+      </div>,
 
-        {/* RED BOX ROW - Shared across both leaders */}
-        <div className="leaders-global-row">
-          <LeaderPart type="red" {...left} />
-          <LeaderPart type="red" {...right} />
-        </div>
-      </div>
+      /* RED BOX ROW - Shared across both leaders */
+      <div key="leaders-red" className="leaders-global-row">
+        <LeaderPart type="red" {...left} />
+        <LeaderPart type="red" {...right} />
+      </div>,
 
-      {/* Footnote Row */}
-      <div className="leaders-global-row" style={{ marginTop: "16px" }}>
+      /* Footnote Row */
+      <div key="leaders-footnote" className="leaders-global-row" style={{ marginTop: "16px" }}>
         <LeaderFootnote {...left} />
         <LeaderFootnote {...right} />
-      </div>
+      </div>,
+    ];
+  }, []);
 
-      <div className="leaders-page-number">8</div>
-    </div>
+  return (
+    <AutoPaginatedSections
+      blocks={blocks}
+      pageWidth={894}
+      pageHeight={1123}
+      pagePadding={20}
+      contentClassName="leaders"
+      componentId="leaders-comparison"
+    />
   );
 }
