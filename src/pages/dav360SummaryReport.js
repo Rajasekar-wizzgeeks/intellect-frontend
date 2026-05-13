@@ -8,6 +8,7 @@ import OverallAveragesByPrincipalPage from "../components/OverallAveragesByPrinc
 import FrequentlyOccuringSuggestions from "../components/frequentlyOccuringSuggestions"
 import LeaderComparisonPage from "../components/leaderComparisionPage"
 import SurveySummaryRecap from "../components/SurveySummaryRecap"
+import SectionTitle from "../components/SectionTitle"
 import "../styles/feedback360Report.scss";
 
 const Dav360SummaryReport = () => {
@@ -79,19 +80,13 @@ const Dav360SummaryReport = () => {
         </button>
       </div>
 
-      <div className="section-page pdf-section">
-        <Dav360CoverPage />
-      </div>
-
+      <Dav360CoverPage />
       <SurveySummaryRecap/>
       <HeadlinesPage highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
-
       <SummaryByCompetencyInstitutionPage items={competencyItems} />
-
       <OverallAveragesByPrincipalPage teamRows={teamRows} managerRows={managerRows} />
-
       <FrequentlyOccuringSuggestions/>
-
+      <SectionTitle/>
       <LeaderComparisonPage/>
     </div>
   );

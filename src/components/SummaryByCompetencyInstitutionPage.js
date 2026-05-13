@@ -13,23 +13,23 @@ const SummaryByCompetencyInstitutionPage = ({
 }) => {
   const blocks = useMemo(() => {
     return [
-      <div key="sbi" className="sbi-page">
+      <div key="sbi-header">
         <DavCommonHeader title={title} />
-        <div className="sbi-page__chart">
-          <CompetencyRangeChart items={items} minX={minX} maxX={maxX} showTitle={false} />
-        </div>
-        {footnote ? <div className="sbi-page__footnote">{footnote}</div> : null}
       </div>,
+      <div key="sbi-chart" className="sbi-page__chart">
+        <CompetencyRangeChart items={items} minX={minX} maxX={maxX} showTitle={false} />
+      </div>,
+      /* {footnote ? <div key="sbi-footnote" className="sbi-page__footnote">{footnote}</div> : null} */
     ];
-  }, [footnote, items, maxX, minX, title]);
+  }, [items, maxX, minX, title]);
 
   return (
     <AutoPaginatedSections
       blocks={blocks}
-      pageWidth={794}
+      pageWidth={894}
       pageHeight={1123}
-      pagePadding={0}
-      contentClassName="summary-by-competency-institution-page"
+      pagePadding={40}
+      contentClassName="sbi-page"
       componentId="summary-by-competency-institution"
     />
   );

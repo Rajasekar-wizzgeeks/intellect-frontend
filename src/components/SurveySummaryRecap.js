@@ -1,3 +1,6 @@
+import React, { useMemo } from "react";
+import AutoPaginatedSections from "./AutoPaginatedSections";
+import DavCommonHeader from "./DavCommonHeader";
 import "../styles/SurveySummaryRecap.scss";
 import LeadhipforStaff from "../assets/png/leadershipForStaffPerformance.png"
 import LeadhipPersonality from "../assets/png/leadershipPersonalityAndStyle.png"
@@ -7,6 +10,7 @@ import engagementAndManagement from "../assets/png/engagementAndManagement.png"
 import noofPrinciplesAssesed from "../assets/png/NoofPrinciplesAssesed.png"
 import responsesGivenBy from "../assets/png/responsesGivenBy.png"
 import totalNoOfQuestions from "../assets/png/totalNoOfQuestions.png"
+
 const competencies = [
   { title: "Leadership for\nStaff performance\n& Development", icon:LeadhipforStaff },
   { title: "Leadership\nPersonality &\nStyle", icon: LeadhipPersonality },
@@ -16,72 +20,81 @@ const competencies = [
 ];
 
 const SurveySummaryRecap = () => {
-  return (
-    <div className="sfr-page">
-      <div className="sfr">
-        <h2 className="sfr__title">Survey Framework - Recap</h2>
-        <div className="sfr__title-rule" />
+  const blocks = useMemo(() => {
+    return [
+      <div key="recap-header">
+        <DavCommonHeader title="Survey Framework - Recap" />
+      </div>,
+      <div key="row1" className="sfr__row">
+        <img className="sfr__row-icon" aria-hidden src={noofPrinciplesAssesed}/>
+        <span className="sfr__row-label">No of Principals Assessed</span>
+        <span className="sfr__row-colon">:</span>
+        <span className="sfr__row-value" />
+      </div>,
+      <div key="div1" className="sfr__divider" />,
 
-        <div className="sfr__row">
-          <img className="sfr__row-icon" aria-hidden src={noofPrinciplesAssesed}/>
-          <span className="sfr__row-label">No of Principals Assessed</span>
-          <span className="sfr__row-colon">:</span>
-          <span className="sfr__row-value" />
-        </div>
-        <div className="sfr__divider" />
+      <div key="row2" className="sfr__row">
+        <img className="sfr__row-icon" aria-hidden src={responsesGivenBy}/>
+        <span className="sfr__row-label">Responses given by</span>
+        <span className="sfr__row-colon">:</span>
+        <span className="sfr__row-value sfr__row-value--red">
+          Self, Managers &amp; Staff members (Teachers / Office staff)
+        </span>
+      </div>,
+      <div key="div2" className="sfr__divider" />,
 
-        <div className="sfr__row">
-          <img className="sfr__row-icon" aria-hidden src={responsesGivenBy}/>
-          <span className="sfr__row-label">Responses given by</span>
-          <span className="sfr__row-colon">:</span>
-          <span className="sfr__row-value sfr__row-value--red">
-            Self, Managers &amp; Staff members (Teachers / Office staff)
-          </span>
-        </div>
-        <div className="sfr__divider" />
+      <div key="row3" className="sfr__row">
+        <img className="sfr__row-icon" aria-hidden src={totalNoOfQuestions}/>
+        <span className="sfr__row-label">Total number of questions</span>
+        <span className="sfr__row-colon">:</span>
+        <span className="sfr__row-value sfr__row-value--red">
+          29 (24 survey questions + 5 qualitative questions)
+        </span>
+      </div>,
+      <div key="div3" className="sfr__divider" />,
 
-        <div className="sfr__row">
-          <img className="sfr__row-icon" aria-hidden src={totalNoOfQuestions}/>
-          <span className="sfr__row-label">Total number of questions</span>
-          <span className="sfr__row-colon">:</span>
-          <span className="sfr__row-value sfr__row-value--red">
-            29 (24 survey questions + 5 qualitative questions)
-          </span>
-        </div>
-        <div className="sfr__divider" />
+      <div key="bullet1" className="sfr__bullet">
+        <span className="sfr__triangle" />
+        <span>The 24 survey questions were clustered into the following 5 competencies</span>
+      </div>,
 
-        <div className="sfr__bullet">
-          <span className="sfr__triangle" />
-          <span>The 24 survey questions were clustered into the following 5 competencies</span>
-        </div>
-
-        <div className="sfr__competencies">
-          {competencies.map((c, i) => (
-            <div key={i} className="sfr__comp">
-              <div className="sfr__comp-circle">
-                <img className="sfr__comp-icon" src={c.icon}/>
-              </div>
-              <div className="sfr__comp-title">
-                {c.title.split("\n").map((line, idx) => (
-                  <div key={idx}>{line}</div>
-                ))}
-              </div>
+      <div key="competencies" className="sfr__competencies">
+        {competencies.map((c, i) => (
+          <div key={i} className="sfr__comp">
+            <div className="sfr__comp-circle">
+              <img className="sfr__comp-icon" src={c.icon}/>
             </div>
-          ))}
-        </div>
+            <div className="sfr__comp-title">
+              {c.title.split("\n").map((line, idx) => (
+                <div key={idx}>{line}</div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>,
 
-        <div className="sfr__bullet sfr__bullet--last">
-          <span className="sfr__triangle" />
-          <span>
-            The 5 Qualitative comments questions were on{" "}
-            <span className="sfr__red">
-              “Leadership Style”, “Workplace culture”, “Leadership trait” and one thing the
-              nominee should “continue doing” &amp; “stop doing”
-            </span>
+      <div key="bullet2" className="sfr__bullet sfr__bullet--last">
+        <span className="sfr__triangle" />
+        <span>
+          The 5 Qualitative comments questions were on{" "}
+          <span className="sfr__red">
+            “Leadership Style”, “Workplace culture”, “Leadership trait” and one thing the
+            nominee should “continue doing” &amp; “stop doing”
           </span>
-        </div>
-      </div>
-    </div>
+        </span>
+      </div>,
+    ];
+  }, []);
+
+  return (
+    <AutoPaginatedSections
+      blocks={blocks}
+      pageWidth={894}
+      pageHeight={1123}
+      pagePadding={40}
+      contentClassName="sfr"
+      componentId="survey-summary-recap"
+    />
   );
 };
 

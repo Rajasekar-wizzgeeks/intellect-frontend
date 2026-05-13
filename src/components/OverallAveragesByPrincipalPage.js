@@ -1,3 +1,6 @@
+import React, { useMemo } from "react";
+import AutoPaginatedSections from "./AutoPaginatedSections";
+import DavCommonHeader from "./DavCommonHeader";
 import "../styles/overallAveragesByPrincipalPage.scss";
 
 const MAX = 5;
@@ -50,46 +53,54 @@ const Bar = ({ row, color, showResponses }) => {
 };
 
 const OverallAveragesByPrincipalPage = () => {
+  const blocks = useMemo(() => {
+    return [
+      <div key="oap-header">
+        <DavCommonHeader title="Overall Averages By Principal" />
+      </div>,
+      <div key="oap-sub-headers" className="oap__headers">
+        <div className="oap__header">Team</div>
+        <div className="oap__header-divider" />
+        <div className="oap__header">Manager</div>
+      </div>,
+      <div key="oap-legend" className="oap__legend-row">
+        <div className="oap__legend">
+          <span className="oap__legend-square oap__legend-square--green" />
+          <span className="oap__legend-text">Group Mean (Teachers &amp; Office Staff)</span>
+        </div>
+        <div className="oap__legend-spacer" />
+        <div className="oap__legend">
+          <span className="oap__legend-square oap__legend-square--red" />
+          <span className="oap__legend-text">Manager Rating</span>
+        </div>
+      </div>,
+      <div key="oap-columns" className="oap__columns">
+        <div className="oap__col">
+          {teamRows.map((r) => (
+            <Bar key={r.name} row={r} color="green" showResponses />
+          ))}
+        </div>
+
+        <div className="oap__col-divider" />
+
+        <div className="oap__col">
+          {managerRows.map((r) => (
+            <Bar key={r.name} row={r} color="red" />
+          ))}
+        </div>
+      </div>,
+    ];
+  }, []);
+
   return (
-    <div className="oap-page">
-      <div className="oap">
-        <h2 className="oap__title">Overall Averages By Principal</h2>
-
-        <div className="oap__headers">
-          <div className="oap__header">Team</div>
-          <div className="oap__header-divider" />
-          <div className="oap__header">Manager</div>
-        </div>
-
-        <div className="oap__legend-row">
-          <div className="oap__legend">
-            <span className="oap__legend-square oap__legend-square--green" />
-            <span className="oap__legend-text">Group Mean (Teachers &amp; Office Staff)</span>
-          </div>
-          <div className="oap__legend-spacer" />
-          <div className="oap__legend">
-            <span className="oap__legend-square oap__legend-square--red" />
-            <span className="oap__legend-text">Manager Rating</span>
-          </div>
-        </div>
-
-        <div className="oap__columns">
-          <div className="oap__col">
-            {teamRows.map((r) => (
-              <Bar key={r.name} row={r} color="green" showResponses />
-            ))}
-          </div>
-
-          <div className="oap__col-divider" />
-
-          <div className="oap__col">
-            {managerRows.map((r) => (
-              <Bar key={r.name} row={r} color="red" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    <AutoPaginatedSections
+      blocks={blocks}
+      pageWidth={894}
+      pageHeight={1123}
+      pagePadding={40}
+      contentClassName="oap"
+      componentId="overall-averages-by-principal"
+    />
   );
 };
 

@@ -71,67 +71,65 @@ const FrequentlyOccuringSuggestions = ({
 
   const blocks = useMemo(() => {
     return [
-      <div key="fos" className="fos-page">
+      <div key="fos-header">
         <DavCommonHeader title={title} />
+      </div>,
+      <div key="fos-grid" className="fos-grid">
+        {/* LEFT */}
+        <div className="fos-col">
+          <div className="fos-col__title">Team Feedback</div>
 
-        <div className="fos-grid">
-          {/* LEFT */}
-          <div className="fos-col">
-            <div className="fos-col__title">Team Feedback</div>
-
-            <div className="fos-table">
-              <div className="fos-row fos-row--head">
-                <div>Action Items</div>
-                <div>Feedback Given For</div>
-              </div>
-
-              {teamData.map((item, idx) => (
-                <div key={idx} className="fos-row">
-                  <div className="fos-action">{item.action}</div>
-
-                  <div className="fos-feedback">
-                    {item.people.map((p, i) => (
-                      <div key={i}>▪ {p}</div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+          <div className="fos-table">
+            <div className="fos-row fos-row--head">
+              <div>Action Items</div>
+              <div>Feedback Given For</div>
             </div>
-          </div>
 
-          {/* RIGHT */}
-          <div className="fos-col">
-            <div className="fos-col__title">Manager Perception</div>
-
-            <div className="fos-table">
-              <div className="fos-row fos-row--head">
-                <div>Action Items</div>
-                <div>Feedback Given For</div>
-              </div>
-
-              <div className="fos-row">
-                <div className="fos-action">{managerData.action}</div>
+            {teamData.map((item, idx) => (
+              <div key={idx} className="fos-row">
+                <div className="fos-action">{item.action}</div>
 
                 <div className="fos-feedback">
-                  {managerData.people.map((p, i) => (
+                  {item.people.map((p, i) => (
                     <div key={i}>▪ {p}</div>
                   ))}
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div className="fos-col">
+          <div className="fos-col__title">Manager Perception</div>
+
+          <div className="fos-table">
+            <div className="fos-row fos-row--head">
+              <div>Action Items</div>
+              <div>Feedback Given For</div>
+            </div>
+
+            <div className="fos-row">
+              <div className="fos-action">{managerData.action}</div>
+              <div className="fos-feedback">
+                {managerData.people.map((p, i) => (
+                  <div key={i}>▪ {p}</div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </div>,
     ];
-  }, [title]);
+  }, [managerData, teamData, title]);
 
   return (
     <AutoPaginatedSections
       blocks={blocks}
-      pageWidth={794}
+      pageWidth={894}
       pageHeight={1123}
-      pagePadding={0}
-      contentClassName="frequently-occuring-suggestions-page"
+      pagePadding={40}
+      contentClassName="fos-page"
       componentId="frequently-occuring-suggestions"
     />
   );

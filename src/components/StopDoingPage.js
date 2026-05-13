@@ -1,5 +1,5 @@
 import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ArrowRight } from "lucide-react";
 import { Reorder } from "framer-motion";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
@@ -166,6 +166,7 @@ const StopDoingGrid = ({
 }) => {
   const [editing, setEditing] = useState(null); // { colIdx, rowIdx }
   const [addingTo, setAddingTo] = useState(null); // { colIdx, rowIdx }
+  const [activeColumnPicker, setActiveColumnPicker] = useState(null); // { colIdx, rowIdx, value }
   const [dragState, setDragState] = useState(() => ({
     colIdx: null,
     valuesByCol: {},
@@ -312,28 +313,46 @@ const StopDoingGrid = ({
                       )}
                     </div>
 
-                    {(() => {
-                      const group = getGroupForCell?.(colIdx, absoluteRowIdx);
-                      const hasGroupComments =
-                        Array.isArray(group?.comments_belong_to_this_group) &&
-                        group.comments_belong_to_this_group.length > 0;
+                    <div className="cd-row-actions">
+                      {(() => {
+                        const group = getGroupForCell?.(colIdx, absoluteRowIdx);
+                        const hasGroupComments =
+                          Array.isArray(group?.comments_belong_to_this_group) &&
+                          group.comments_belong_to_this_group.length > 0;
 
-                      if (hasGroupComments) return null;
+                        if (hasGroupComments) return null;
 
-                      return (
-                        <button
-                          type="button"
-                          className="cd-add-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAddingTo({ colIdx, rowIdx: absoluteRowIdx });
-                          }}
-                          title="Add similar comment"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      );
-                    })()}
+                        return (
+                          <button
+                            type="button"
+                            className="cd-add-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAddingTo({ colIdx, rowIdx: absoluteRowIdx });
+                            }}
+                            title="Add similar comment"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        );
+                      })()}
+                      <button
+                        type="button"
+                        className="cd-move-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const value = columns?.[colIdx]?.[localRowIdx];
+                          setActiveColumnPicker({
+                            colIdx,
+                            rowIdx: absoluteRowIdx,
+                            value,
+                          });
+                        }}
+                        title="Add this comment to another column"
+                      >
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
                   </Reorder.Item>
 
                   {isAddingHere ? (
@@ -376,6 +395,69 @@ const StopDoingGrid = ({
           </Reorder.Group>
         );
       })}
+
+      {activeColumnPicker && (
+        <div
+          className="cd-group-modal-overlay"
+          onClick={() => setActiveColumnPicker(null)}
+        >
+          <div
+            className="cd-group-modal__column-picker"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="cd-group-modal__column-picker-title">
+              Which column would you like to add this comment to?
+            </div>
+            <div className="cd-group-modal__column-picker-actions">
+              {columns.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className="cd-group-modal__column-picker-btn"
+                  onClick={() => {
+                    const { colIdx: sourceColIdx, rowIdx: sourceRowIdx, value } = activeColumnPicker;
+                    onColumnsChange((prevColumns) => {
+                      const nextColumns = Array.isArray(prevColumns)
+                        ? [...prevColumns]
+                        : [];
+                      
+                      // 1. Remove from source
+                      if (Array.isArray(nextColumns[sourceColIdx])) {
+                        const nextSourceCol = [...nextColumns[sourceColIdx]];
+                        nextSourceCol.splice(sourceRowIdx, 1);
+                        nextColumns[sourceColIdx] = nextSourceCol;
+                      }
+
+                      // 2. Add to target
+                      if (!nextColumns[idx]) {
+                        nextColumns[idx] = [];
+                      } else {
+                        nextColumns[idx] = [...nextColumns[idx]];
+                      }
+                      nextColumns[idx].push(value);
+                      
+                      return nextColumns;
+                    });
+                    setMeasureTick?.((t) => t + 1);
+                    setActiveColumnPicker(null);
+                  }}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="cd-group-modal__column-picker-cancel"
+              onClick={() => setActiveColumnPicker(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
