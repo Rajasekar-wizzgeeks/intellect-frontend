@@ -130,6 +130,7 @@ const FrequentlyOccuringSuggestions = ({
       pageHeight={1123}
       pagePadding={40}
       contentClassName="fos-page"
+      pageClassName="dav360-page"
       componentId="frequently-occuring-suggestions"
     />
   );

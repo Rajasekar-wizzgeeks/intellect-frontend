@@ -22,6 +22,7 @@ const SectionTitle = ({ children = "3 Highest & Lowest Team Averages By Principa
       pageHeight={1123}
       pagePadding={40}
       contentClassName="section-title-page"
+      pageClassName="dav360-page"
       componentId="section-title"
     />
   );

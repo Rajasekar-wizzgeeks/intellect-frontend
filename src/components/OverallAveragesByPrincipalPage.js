@@ -99,6 +99,7 @@ const OverallAveragesByPrincipalPage = () => {
       pageHeight={1123}
       pagePadding={40}
       contentClassName="oap"
+      pageClassName="dav360-page"
       componentId="overall-averages-by-principal"
     />
   );

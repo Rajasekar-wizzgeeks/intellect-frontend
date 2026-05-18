@@ -93,6 +93,7 @@ const SurveySummaryRecap = () => {
       pageHeight={1123}
       pagePadding={40}
       contentClassName="sfr"
+      pageClassName="dav360-page"
       componentId="survey-summary-recap"
     />
   );

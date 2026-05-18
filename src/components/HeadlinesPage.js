@@ -100,6 +100,7 @@ export default function Headlines() {
       pageHeight={1123}
       pagePadding={40}
       contentClassName="headlines"
+      pageClassName="dav360-page"
       componentId="headlines"
     />
   );

@@ -23,6 +23,7 @@ const Dav360CoverPage = ({ title = "DAV 360 Degree Feedback\nSummary Report", im
       pageHeight={1123}
       pagePadding={0}
       contentClassName="dav360-cover-page"
+      pageClassName="dav360-page"
       componentId="dav360-cover"
     />
   );

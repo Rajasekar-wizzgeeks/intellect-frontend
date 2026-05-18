@@ -198,6 +198,7 @@ export default function LeaderProfiles() {
       pageHeight={1123}
       pagePadding={20}
       contentClassName="leaders"
+      pageClassName="dav360-page"
       componentId="leaders-comparison"
     />
   );

@@ -4,6 +4,7 @@
   gap: 24px;
   counter-reset: page;
   overflow-x: auto;
+  overflow-y: hidden;
 
   .section-page-container {
     counter-reset: none;
