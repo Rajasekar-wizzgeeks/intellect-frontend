@@ -7,6 +7,7 @@ const LeaderPart = ({
   highest,
   lowest,
   profile,
+  developmentAreas,
 }) => {
   if (type === "green") {
     return (
@@ -34,7 +35,7 @@ const LeaderPart = ({
         <div className="leader-profile-col">
           <div className="leader-profile-header">LEADER PROFILE</div>
           <ul className="leader-profile-list">
-            {profile.slice(0, 3).map((p, i) => (
+            {(profile || []).map((p, i) => (
               <li key={i}>{p}</li>
             ))}
           </ul>
@@ -73,7 +74,7 @@ const LeaderPart = ({
 
       <div className="leader-profile-col">
         <ul className="leader-profile-list">
-          {profile.slice(3).map((p, i) => (
+          {(developmentAreas || []).map((p, i) => (
             <li key={i}>{p}</li>
           ))}
         </ul>
@@ -102,94 +103,73 @@ const LeaderFootnote = ({ footnote }) => (
   </div>
 );
 
-export default function LeaderProfiles() {
-  const left = {
-    name: "Smt. Kanakalakshmi S",
-    responses: 151,
-    highest: [
-      { text: "*Does not misuse his/her power or authority in any direct or indirect ways", score: "4.58" },
-      { text: "*Visits classrooms to observe and monitor the quality of curriculum, assessments and instruction that engage students in successful learning", score: "4.5" },
-      { text: "*Provides enough support, direction and guidance, for effective performance of team members", score: "4.5" },
-    ],
-    lowest: [
-      { text: "Makes the team members feel empowered to take decisions", score: "4.26" },
-      { text: "Leads without aggression or arrogance", score: "4.27" },
-      { text: "*Values diverse perspectives, even if they are different from his/her own", score: "4.34" },
-      { text: "*Has created a work culture that rewards merit", score: "4.34" },
-    ],
-    profile: [
-      "Strong leader with a clear vision for the school",
-      "Empathetic listener",
-      "Manages tough or ambiguous situations well",
-      "Needs to increase meetings with teachers",
-      "Needs to provide feedback in a private & constructive manner",
-      "Needs to enhance opportunities for teachers' professional growth",
-      "To ensure broader allocation of work among teachers",
-    ],
-    footnote: [
-      "No significant change noticed in any of the above areas as compared to last year",
-    ],
-  };
+export default function LeaderProfiles({ data }) {
+  const leaders = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return [];
+    }
 
-  const right = {
-    name: "Smt. Nandhini S",
-    responses: 96,
-    highest: [
-      { text: "Provides enough support, direction and guidance, for effective performance of team members", score: "4.51" },
-      { text: "Helps in resolving issues/remove roadblocks in the job", score: "4.42" },
-      { text: "*Works with teachers to set high academic standards that rise above minimum expectations", score: "4.41" },
-    ],
-    lowest: [
-      { text: "*Leads without aggression or arrogance", score: "4.01" },
-      { text: "Builds rapport with people and treats team members with respect and dignity", score: "4.1" },
-      { text: "*Makes one feel valued as an individual", score: "4.2" },
-    ],
-    profile: [
-      "Bold, confident and decisive leader with practical problem-solving abilities",
-      "Inspires and motivates team",
-      "Balances high expectations with encouragement",
-      "Needs to be calm & composed in all situations",
-      "Needs to ensure feedback is provided in a constructive manner",
-      "Needs to minimize waiting time for staff members to meet her",
-    ],
-    footnote: [
-      "No significant change noticed in any of the above areas as compared to last year except, \"Builds rapport with people\" which has come down by 0.25",
-    ],
-  };
+    return data.map(leader => ({
+      name: leader.employee,
+      responses: leader.team_responses,
+      highest: (leader.highest_team_avg || []).map(q => ({ text: q.question, score: q.average.toFixed(2) })),
+      lowest: (leader.lowest_team_avg || []).map(q => ({ text: q.question, score: q.average.toFixed(2) })),
+      profile: (leader.leader_profiles?.highest_team_avg?.structured?.strengths || []),
+      developmentAreas: (leader.leader_profiles?.lowest_team_avg?.structured?.strengths || []),
+      footnote: []
+    }));
+  }, [data]);
 
   const blocks = useMemo(() => {
-    return [
-      /* Header Row */
-      <div key="leaders-header" className="leaders-global-row">
-        <LeaderHeader {...left} />
-        <LeaderHeader {...right} />
-      </div>,
+    const chunkedLeaders = [];
+    for (let i = 0; i < leaders.length; i += 2) {
+      chunkedLeaders.push(leaders.slice(i, i + 2));
+    }
 
-      /* GREEN BOX ROW - Shared across both leaders */
-      <div key="leaders-green" className="leaders-global-row">
-        <LeaderPart type="green" {...left} />
-        <LeaderPart type="green" {...right} />
-      </div>,
+    const allBlocks = [];
+    chunkedLeaders.forEach((pair, pairIdx) => {
+      const left = pair[0];
+      const right = pair[1] || { name: "", responses: 0, highest: [], lowest: [], profile: [], footnote: [] };
 
-      /* GLOBAL ARROW DIVIDER */
-      <div key="leaders-divider" className="leaders-global-divider">
-        <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
-        <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
-      </div>,
+      allBlocks.push(
+        /* Header Row */
+        <div key={`leaders-header-${pairIdx}`} className="leaders-global-row">
+          <LeaderHeader {...left} />
+          <LeaderHeader {...right} />
+        </div>,
 
-      /* RED BOX ROW - Shared across both leaders */
-      <div key="leaders-red" className="leaders-global-row">
-        <LeaderPart type="red" {...left} />
-        <LeaderPart type="red" {...right} />
-      </div>,
+        /* GREEN BOX ROW */
+        <div key={`leaders-green-${pairIdx}`} className="leaders-global-row">
+          <LeaderPart type="green" {...left} />
+          <LeaderPart type="green" {...right} />
+        </div>,
 
-      /* Footnote Row */
-      <div key="leaders-footnote" className="leaders-global-row" style={{ marginTop: "16px" }}>
-        <LeaderFootnote {...left} />
-        <LeaderFootnote {...right} />
-      </div>,
-    ];
-  }, []);
+        /* GLOBAL ARROW DIVIDER */
+        <div key={`leaders-divider-${pairIdx}`} className="leaders-global-divider">
+          <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
+          <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
+        </div>,
+
+        /* RED BOX ROW */
+        <div key={`leaders-red-${pairIdx}`} className="leaders-global-row">
+          <LeaderPart type="red" {...left} />
+          <LeaderPart type="red" {...right} />
+        </div>,
+
+        /* Footnote Row */
+        <div key={`leaders-footnote-${pairIdx}`} className="leaders-global-row" style={{ marginTop: "16px" }}>
+          <LeaderFootnote {...left} />
+          <LeaderFootnote {...right} />
+        </div>
+      );
+
+      if (pairIdx < chunkedLeaders.length - 1) {
+        allBlocks.push(<div key={`spacer-${pairIdx}`} style={{ height: "40px" }} />);
+      }
+    });
+
+    return allBlocks;
+  }, [leaders]);
 
   return (
     <AutoPaginatedSections

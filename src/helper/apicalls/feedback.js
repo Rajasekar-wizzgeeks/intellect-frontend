@@ -1,4 +1,4 @@
-import { feedbackExcelUrl, lbscore360ExcelUrl } from "../apiurls";
+import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl } from "../apiurls";
 
 const parseSSEStream = async (response) => {
   const reader = response.body.getReader();
@@ -93,6 +93,30 @@ const parseSSEStream = async (response) => {
 
             case "predominant_leader_thing":
               result.predominant_leader_thing = json.predominant_leader_thing || json.data?.predominant_leader_thing || json.data;
+              break;
+
+            case "summary_by_competency_for_the_institution":
+              result.summary_by_competency_for_the_institution = json.summary_by_competency_for_the_institution || json.data;
+              break;
+
+            case "institution_competency_summary":
+              result.institution_competency_summary = json.institution_competency_summary || json.data;
+              break;
+
+            case "summary_framework_recap":
+              result.summary_framework_recap = json.summary_framework_recap || json.data;
+              break;
+
+            case "overall_principal_averages":
+              result.overall_principal_averages = json.overall_principal_averages || json.data;
+              break;
+
+            case "leadership_profile_data":
+              result.leadership_profile_data = json.leadership_profile_data || json.data;
+              break;
+
+            case "headlines":
+              result.headlines = json.headlines || json.data;
               break;
 
             case "action_areas_thing":
@@ -238,6 +262,45 @@ export const excelSheetLbScore360 = async (fileOrFiles) => {
     return data;
   } catch (error) {
     console.error("Error fetching lbscore360 data:", error);
+    throw error;
+  }
+};
+
+export const excelSheetDav360Summary = async (fileOrFiles) => {
+  try {
+    const files = Array.isArray(fileOrFiles)
+      ? fileOrFiles.filter(Boolean)
+      : [fileOrFiles].filter(Boolean);
+
+    const formData = new FormData();
+    for (const f of files) formData.append("files", f);
+
+    const fetchOptions = {
+      method: "POST",
+      headers: {
+        Accept: "text/event-stream",
+      },
+      body: formData,
+    };
+
+    const res = await fetch(dav360SummaryExcelUrl, fetchOptions);
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`DAV360SUMMARY failed: ${res.status} ${text}`);
+    }
+
+    const data = await parseSSEStream(res).catch((e) => {
+      console.error("DAV360SUMMARY stream error:", e);
+      if (e.message.includes("network error") || e.message.includes("Reader has been released")) {
+         return {}; 
+      }
+      throw new Error(`DAV360SUMMARY stream failed: ${e.message}`);
+    });
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching dav360 summary data:", error);
     throw error;
   }
 };

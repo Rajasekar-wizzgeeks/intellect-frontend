@@ -23,12 +23,13 @@ const rows = [
   },
 ];
 
-const pct = (v) => ((v - X_MIN) / (X_MAX - X_MIN)) * 100;
+const CompetencyChart = ({ items, minX = X_MIN, maxX = X_MAX, showTitle = true }) => {
+  const activeRows = Array.isArray(items) && items.length > 0 ? items : rows;
+  const rowHeight = 100 / activeRows.length;
 
-const fmt = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
+  const pct = (v) => ((v - minX) / (maxX - minX)) * 100;
 
-const CompetencyChart = ({ showTitle = true }) => {
-  const rowHeight = 100 / rows.length;
+  const fmt = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
 
   const leftStyle = (v) =>
     `calc(${PLOT_LEFT}px + (100% - ${PLOT_LEFT}px) * ${pct(v) / 100})`;
@@ -54,7 +55,7 @@ const CompetencyChart = ({ showTitle = true }) => {
       </div>
 
       <div className="cc__plot">
-        {rows.map((r, i) => {
+        {activeRows.map((r, i) => {
           const top = `${i * rowHeight}%`;
           const height = `${rowHeight}%`;
           const rangeLeft = leftStyle(r.min);
