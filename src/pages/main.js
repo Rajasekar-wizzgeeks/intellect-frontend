@@ -22,6 +22,9 @@ import QualitativeFeedbackIntro from "../components/QualitativeFeedbackIntro";
 import QualitativeFeedbackSection from "../components/QualitativeFeedbackSection";
 import QualitativeFeedbackList from "../components/QualitativeFeedbackList";
 import Highlights from "../components/Highlights";
+import GlobalLoader from "../components/globalLoader";
+import ShareModal from "../components/ShareModal";
+import StatusModal from "../components/StatusModal";
 import CoachingActionPlan from "../components/CoachingActionPlan";
 import CoachingActionPlanPage2 from "../components/CoachingActionPlanPage2";
 import IndividualDevelopmentPlan from "../components/IndividualDevelopmentPlan";
@@ -31,17 +34,27 @@ import MarketingIcon from "../assets/png/marketingIcon.png";
 import ChessIcon from "../assets/png/chessIcon.png";
 import EyeIcon from "../assets/png/eye.png";
 import { useOutletContext, useSearchParams } from "react-router-dom";
-import { excelSheetLbScore360 } from "../helper/apicalls/feedback";
+import { excelSheetLbScore360, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
 import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
 
 const MainPage = () => {
   const { setIsHeader, setHeaderName } = useOutletContext();
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get("draft_id");
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [excelFile, setExcelFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [behaviouralEdits, setBehaviouralEdits] = useState({});
+  const [overviewEdits, setOverviewEdits] = useState(null);
+  const [evaluatorEdits, setEvaluatorEdits] = useState(null);
+  const [qualitativeEdits, setQualitativeEdits] = useState({});
+  const [highlightsEdits, setHighlightsEdits] = useState({});
+  const [blindSpotsEdits, setBlindSpotsEdits] = useState({});
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
   const fileInputRef = useRef(null);
 
   const handleExcelUpload = async () => {
@@ -229,6 +242,9 @@ const MainPage = () => {
   }, [reportData]);
 
   const evaluatorCategoryBreakdownData = useMemo(() => {
+    if (reportData?.evaluator_category_data) {
+      return reportData.evaluator_category_data;
+    }
     if (!reportData?.overall_behavioural_indications) return [];
 
     const rawData = reportData.overall_behavioural_indications;
@@ -387,6 +403,9 @@ const MainPage = () => {
   }, [reportData]);
 
   const overviewSummaryData = useMemo(() => {
+    if (reportData?.overview_summary_data) {
+      return reportData.overview_summary_data;
+    }
     if (!reportData?.overall_behavioural_indications) return [];
 
     const rawData = reportData.overall_behavioural_indications;
@@ -400,12 +419,180 @@ const MainPage = () => {
     });
   }, [reportData]);
 
+  const handleSaveData = async () => {
+    // Construct the final data object by merging original data with any updates
+    const finalData = {
+      ...reportData,
+      behavioural_indications: {
+        ...(reportData?.behavioural_indications || {}),
+      },
+      // Keep overview and evaluator data in separate fields as requested
+      overview_summary_data: overviewSummaryData,
+      evaluator_category_data: evaluatorCategoryBreakdownData,
+    };
+
+    // Update overview_summary_data if edits exist
+    if (overviewEdits) {
+      finalData.overview_summary_data = overviewEdits.map(row => ({
+        label: row.label,
+        self: Number(row.self),
+        others: Number(row.others),
+      }));
+    }
+
+    // Update evaluator_category_data if edits exist
+    if (evaluatorEdits) {
+      finalData.evaluator_category_data = evaluatorEdits.map(row => ({
+        label: row.label,
+        values: {
+          self: Number(row.values.self),
+          manager: Number(row.values.manager),
+          team: Number(row.values.team),
+          peers: Number(row.values.peers),
+        }
+      }));
+    }
+
+    // Merge behavioural edits if they exist
+    if (Object.keys(behaviouralEdits).length > 0) {
+        const indicatorsKeys = Object.keys(reportData?.behavioural_indications || {});
+        Object.entries(behaviouralEdits).forEach(([idx, newRows]) => {
+          const key = indicatorsKeys[idx];
+          if (key && finalData.behavioural_indications[key] && finalData.behavioural_indications[key][0]) {
+            const scores = {};
+            newRows.forEach((row) => {
+              const role = row.label === "Team Members" ? "Subordinate" : row.label;
+              scores[role] = Number(row.score);
+            });
+  
+            finalData.behavioural_indications[key][0] = {
+              ...finalData.behavioural_indications[key][0],
+              score: {
+                ...finalData.behavioural_indications[key][0].score,
+                ...scores,
+              },
+            };
+          }
+        });
+      }
+
+      // Merge qualitative feedback edits
+      if (Object.keys(qualitativeEdits).length > 0) {
+        Object.entries(qualitativeEdits).forEach(([sectionIdx, updatedQuestions]) => {
+          const sectionKey = Object.keys(reportData.feedbacks)[sectionIdx];
+          if (sectionKey) {
+            finalData.feedbacks[sectionKey] = updatedQuestions.map((q) => {
+              const questionText = q.text;
+              const rolesData = {};
+              q.comments.forEach((c) => {
+                const parts = c.split(": ");
+                const role = parts[0];
+                const text = parts.slice(1).join(": ");
+                if (!rolesData[role]) rolesData[role] = [];
+                rolesData[role].push(text);
+              });
+              return { [questionText]: rolesData };
+            });
+          }
+        });
+      }
+
+      // Merge highlights edits (strengths and improvements)
+      if (Object.keys(highlightsEdits).length > 0) {
+        Object.entries(highlightsEdits).forEach(([idx, items]) => {
+          const type = idx === "0" ? "strengths" : "area_of_improvements";
+          finalData[type] = items.map((it) => ({
+            question: it.desc,
+            others_avg: Number(it.score),
+          }));
+        });
+      }
+
+      // Merge blind spots and hidden strengths edits
+      if (Object.keys(blindSpotsEdits).length > 0) {
+        Object.entries(blindSpotsEdits).forEach(([idx, items]) => {
+          const type = idx === "0" ? "hidden_strengths" : "blind_spots";
+          finalData[type] = items.map((it) => ({
+            question: it.desc,
+            self: Number(it.self),
+            others: Number(it.others),
+            gap: Number(it.score),
+          }));
+        });
+      }
+
+    const payload = {
+      feedback_data: [finalData],
+      excel_name: excelFile?.name || reportData?.name || "LBSCORE Report",
+      report_type: "lbscore360"
+    };
+
+    if (draftId) {
+      payload.feedback_draft_id = draftId;
+    }
+
+    try {
+      setLoading(true);
+      if (draftId) {
+        await updateFeedbackDraft(payload);
+        setStatusModal({
+          isOpen: true,
+          type: "success",
+          message: "Draft updated successfully!",
+          title: "Update Success"
+        });
+      } else {
+        await saveDraft(payload);
+        setStatusModal({
+          isOpen: true,
+          type: "success",
+          message: "Draft saved successfully!",
+          title: "Save Success"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save draft", error);
+      setStatusModal({
+        isOpen: true,
+        type: "error",
+        message: error.message || "Failed to save draft. Please try again.",
+        title: "Save Failed"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     setHeaderName("Report");
-  }, []);
+
+    if (draftId) {
+      const fetchDraft = async () => {
+        try {
+          setLoading(true);
+          const response = await getOneFeedbackDraft(draftId);
+          if (response && response.feedback_data && response.feedback_data[0]) {
+            setReportData(response.feedback_data[0]);
+          }
+        } catch (error) {
+          console.error("Failed to load draft:", error);
+          setStatusModal({
+            isOpen: true,
+            type: "error",
+            message: "Failed to load draft. Please try again.",
+            title: "Load Failed"
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDraft();
+    }
+  }, [draftId]);
 
   return (
     <div>
+      <GlobalLoader visible={loading} />
       <div
         style={{
           display: "flex",
@@ -414,6 +601,34 @@ const MainPage = () => {
           gap: 8,
         }}
       >
+        <button
+          onClick={handleSaveData}
+          style={{
+            padding: "8px 14px",
+            background: "var(--color-accent)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+        >
+          Save
+        </button>
+        {draftId && (
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            style={{
+              padding: "8px 14px",
+              background: "#4f46e5",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            Share
+          </button>
+        )}
         <button
           onClick={downloadPdfSplitByHeader}
           style={{
@@ -571,9 +786,21 @@ const MainPage = () => {
           </div>
         </div>
       )}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        draftId={draftId}
+      />
+      <StatusModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+        type={statusModal.type}
+        message={statusModal.message}
+        title={statusModal.title}
+      />
       <div className="section-page-container">
         <section className="section-page pdf-section">
-          <InitialPage />
+          <InitialPage initialName={reportData?.name || ""} />
         </section>
         <section className="section-page pdf-section">
           <ContentPage rows={profileRows} />
@@ -730,17 +957,35 @@ const MainPage = () => {
             },
           ]}
         />
-        <CompetencySummary />
-        <OverviewSummary items={overviewSummaryData} />
-        <SpiderChartSummary 
+        <CompetencySummary overallScore={reportData?.overall_score || 370} />
+        <OverviewSummary
+          items={overviewEdits || overviewSummaryData}
+          onDataChange={(nextRows) => setOverviewEdits(nextRows)}
+        />
+        <SpiderChartSummary
           categories={spiderChartData.categories}
           self={spiderChartData.self}
           manager={spiderChartData.manager}
           others={spiderChartData.others}
         />
-        <EvaluatorCategoryBreakdown items={evaluatorCategoryBreakdownData} />
-        <BehaviouralIndicators items={behaviouralIndicatorsData} />
-        <ParticipantCohortSummary />
+        <EvaluatorCategoryBreakdown
+          items={evaluatorEdits || evaluatorCategoryBreakdownData}
+          onDataChange={(nextRows) => setEvaluatorEdits(nextRows)}
+        />
+        <BehaviouralIndicators
+          items={behaviouralIndicatorsData}
+          onDataChange={(idx, newRows) => {
+            setBehaviouralEdits((prev) => ({
+              ...prev,
+              [idx]: newRows,
+            }));
+          }}
+        />
+        <ParticipantCohortSummary
+          competencies={reportData?.participant_cohort_summary?.competencies}
+          selfRatings={reportData?.participant_cohort_summary?.self_ratings}
+          cohortRatings={reportData?.participant_cohort_summary?.cohort_ratings}
+        />
         <QualitativeFeedbackIntro />
         {qualitativeSections.map((sec, i) => (
           <QualitativeFeedbackList
@@ -748,32 +993,60 @@ const MainPage = () => {
             startPage={31 + i}
             titleIndex={sec.titleIndex}
             titleText={sec.titleText}
-            questions={sec.questions}
+            questions={qualitativeEdits[i] || sec.questions}
+            onDataChange={(nextQuestions) => {
+              setQualitativeEdits((prev) => ({
+                ...prev,
+                [i]: nextQuestions,
+              }));
+            }}
           />
         ))}
-        {highlightsSections.map((sec, i) => (
-          <Highlights key={`hl-${i}`} {...sec} />
-        ))}
-        {blindSpotsSectionsData.map((sec, i) => (
-          <BlindSpots
-            key={`bs-${i}`}
-            startPage={sec.startPage}
-            titleIndex={sec.subIndex}
-            titleText={sec.subText}
-            description={sec.note}
-            arcColor={sec.arcColor}
-            chipColor={sec.chipColor}
-            leftIcon={sec.leftIcon}
-            items={sec.items.map((it) => ({
-              score: it.score ?? 2.5,
-              text: it.desc ?? "Text",
-              self: it.self,
-              others: it.others,
-            }))}
-            scoreShip={sec.scoreShip}
-            key_id={`bs-${i}`}
-          />
-        ))}
+        {highlightsSections.map((sec, i) => {
+          const liveItems = highlightsEdits[i] || sec.items;
+          return (
+            <Highlights
+              key={`hl-${i}`}
+              {...sec}
+              items={liveItems}
+              onDataChange={(nextItems) => {
+                setHighlightsEdits((prev) => ({
+                  ...prev,
+                  [i]: nextItems,
+                }));
+              }}
+            />
+          );
+        })}
+        {blindSpotsSectionsData.map((sec, i) => {
+          const liveItems = blindSpotsEdits[i] || sec.items;
+          return (
+            <BlindSpots
+              key={`bs-${i}`}
+              startPage={sec.startPage}
+              titleIndex={sec.subIndex}
+              titleText={sec.subText}
+              description={sec.note}
+              arcColor={sec.arcColor}
+              chipColor={sec.chipColor}
+              leftIcon={sec.leftIcon}
+              items={liveItems.map((it) => ({
+                score: it.score ?? 2.5,
+                desc: it.desc ?? "Text",
+                self: it.self,
+                others: it.others,
+              }))}
+              scoreShip={sec.scoreShip}
+              key_id={`bs-${i}`}
+              onDataChange={(nextItems) => {
+                setBlindSpotsEdits((prev) => ({
+                  ...prev,
+                  [i]: nextItems,
+                }));
+              }}
+            />
+          );
+        })}
         <CoachingActionPlan />
         <CoachingActionPlanPage2 />
         <IndividualDevelopmentPlan />

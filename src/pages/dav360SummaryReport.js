@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { downloadPdfSplitByHeader } from "../utils/pdf";
 import Dav360CoverPage from "../components/Dav360CoverPage";
 import HeadlinesPage from "../components/HeadlinesPage";
@@ -9,21 +9,49 @@ import FrequentlyOccuringSuggestions from "../components/frequentlyOccuringSugge
 import LeaderComparisonPage from "../components/leaderComparisionPage"
 import SurveySummaryRecap from "../components/SurveySummaryRecap"
 import SectionTitle from "../components/SectionTitle"
-import { excelSheetDav360Summary } from "../helper/apicalls/feedback";
+import GlobalLoader from "../components/globalLoader";
+import StatusModal from "../components/StatusModal";
+import { excelSheetDav360Summary, getOneFeedbackDraft } from "../helper/apicalls/feedback";
 import { AlertCircle, FileSpreadsheet, Upload, X, Download } from "lucide-react";
 import "../styles/feedback360Report.scss";
 
 const Dav360SummaryReport = () => {
   const { setHeaderName } = useOutletContext();
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get("draft_id");
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [excelFiles, setExcelFiles] = useState([]);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
 
   useEffect(() => {
     setHeaderName("DAV 360 Report");
-  }, [setHeaderName]);
+
+    if (draftId) {
+      const fetchDraft = async () => {
+        try {
+          setLoading(true);
+          const response = await getOneFeedbackDraft(draftId);
+          if (response && response.feedback_data && response.feedback_data[0]) {
+            setReportData(response.feedback_data[0]);
+          }
+        } catch (error) {
+          console.error("Failed to load draft:", error);
+          setStatusModal({
+            isOpen: true,
+            type: "error",
+            message: "Failed to load draft. Please try again.",
+            title: "Load Failed"
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDraft();
+    }
+  }, [setHeaderName, draftId]);
 
   const handleExcelUpload = async () => {
     if (excelFiles.length === 0) return;
@@ -54,9 +82,9 @@ const Dav360SummaryReport = () => {
     setExcelFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const mapHeadlinesToRows = (data) => {
+  const mapSummaryToRows = (data) => {
     if (!data) return null;
-
+    
     const formatItem = ([text, scores], isTeam) => {
       const avg = isTeam ? scores.Subordinates : scores.Manager;
       return `${text} [Avg : ${avg || 0}]`;
@@ -87,7 +115,7 @@ const Dav360SummaryReport = () => {
     return { highest, lowest };
   };
 
-  const headlinesData = mapHeadlinesToRows(reportData?.headlines);
+  const summaryData = mapSummaryToRows(reportData?.summary_by_competency_for_the_institution);
 
   const mapPrincipalAverages = (data) => {
     if (!data) return null;
@@ -105,49 +133,25 @@ const Dav360SummaryReport = () => {
 
   const principalAverages = mapPrincipalAverages(reportData?.overall_principal_averages);
 
-  const highestRows = headlinesData?.highest || [];
-  const lowestRows = headlinesData?.lowest || [];
+  const highestRows = summaryData?.highest || [];
+  const lowestRows = summaryData?.lowest || [];
   const notes = reportData?.notes || [];
 
-  const competencyItems = useMemo(() => {
-    const summary = reportData?.institution_competency_summary;
-    if (!summary) return [];
-
-    const keys = [
-      { key: "educational_quality", label: "Educational Quality & Student Outcomes" },
-      { key: "leadership_staff_dev", label: "Leadership for Staff Performance & Development" },
-      { key: "leadership_style", label: "Leadership Personality & Style" },
-      { key: "right_culture", label: "Creating the Right Culture" },
-      { key: "engagement_with_management", label: "Engagement with Management", sub: "(Rated only by the Manager)" },
-    ];
-
-    return keys.map(({ key, label, sub }) => {
-      const data = summary[key] || { min: 0, avg: 0, max: 0 };
-      return {
-        label,
-        sub,
-        min: data.min || 0,
-        avg: data.avg || 0,
-        max: data.max || 0,
-      };
-    });
-  }, [reportData?.institution_competency_summary]);
+  const competencyItems = reportData?.competency_items || [];
 
   const teamRows = principalAverages?.team || [];
   const managerRows = principalAverages?.manager || [];
 
-  const chunkedLeadershipData = useMemo(() => {
-    const rawData = reportData?.leadership_profile_data;
-    if (!Array.isArray(rawData)) return [];
-    const chunks = [];
-    for (let i = 0; i < rawData.length; i += 2) {
-      chunks.push(rawData.slice(i, i + 2));
-    }
-    return chunks;
-  }, [reportData?.leadership_profile_data]);
-
   return (
     <div className="feedbackreport-main-container">
+      <GlobalLoader visible={loading} />
+      <StatusModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+        type={statusModal.type}
+        message={statusModal.message}
+        title={statusModal.title}
+      />
       <div className="feedbackreport-toolbar">
         <button
           onClick={() => setIsUploadModalOpen(true)}
@@ -176,7 +180,7 @@ const Dav360SummaryReport = () => {
               </button>
             </div>
             <div className="feedbackreport-modal__body">
-              <div
+              <div 
                 className={`feedbackreport-dropzone ${excelFiles.length > 0 ? 'feedbackreport-dropzone--has-file' : ''}`}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -222,8 +226,8 @@ const Dav360SummaryReport = () => {
                     <div key={`${file.name}-${index}`} className="feedbackreport-file-item">
                       <FileSpreadsheet size={16} className="feedbackreport-file-item__icon" />
                       <span className="feedbackreport-file-item__name">{file.name}</span>
-                      <button
-                        className="feedbackreport-file-item__remove"
+                      <button 
+                        className="feedbackreport-file-item__remove" 
                         onClick={() => removeFile(index)}
                         title="Remove file"
                       >
@@ -266,20 +270,13 @@ const Dav360SummaryReport = () => {
       {reportData ? (
         <>
           <Dav360CoverPage />
-          <SurveySummaryRecap recap={reportData?.summary_framework_recap} />
-          <HeadlinesPage
-            headlines={reportData?.headlines}
-            highestRows={highestRows}
-            lowestRows={lowestRows}
-            notes={notes}
-          />
+          <SurveySummaryRecap />
+          <HeadlinesPage highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
           <SummaryByCompetencyInstitutionPage items={competencyItems} />
           <OverallAveragesByPrincipalPage teamRows={teamRows} managerRows={managerRows} />
           <FrequentlyOccuringSuggestions />
           <SectionTitle />
-          {chunkedLeadershipData.map((chunk, index) => (
-            <LeaderComparisonPage key={`leader-comp-${index}`} data={chunk} />
-          ))}
+          <LeaderComparisonPage data={reportData?.leadership_profile_data} />
         </>
       ) : (
         <div className="feedbackreport-empty-state">

@@ -12,15 +12,19 @@ import QualitativeFeedbackCoverPage from "../components/QualitativeFeedbackCover
 import ContinueDoingPage from "../components/ContinueDoingPage";
 import StopDoingPage from "../components/StopDoingPage";
 import GlobalLoader from "../components/globalLoader";
+import ShareModal from "../components/ShareModal";
+import StatusModal from "../components/StatusModal";
 import { downloadPdfSplitByHeader } from "../utils/pdf";
-import { excelSheetFeedback } from "../helper/apicalls/feedback";
-import { useOutletContext } from "react-router-dom";
+import { excelSheetFeedback, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
 
 const Feedback360Report = () => {
   const [feedbackOverallData, setFeedbackOverallData] = useState(null);
   const { setHeaderName } = useOutletContext();
   const [isUploading, setIsUploading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get("draft_id");
   const [showComparisonTable, setShowComparisonTable] = useState(true);
   const currentYearFileInputRef = useRef(null);
   const previousYearFileInputRef = useRef(null);
@@ -33,6 +37,9 @@ const Feedback360Report = () => {
   const [uploadError, setUploadError] = useState("");
   const [averageCompentency, setAverageCompentency] = useState(null);
   const [dragOverKey, setDragOverKey] = useState(null);
+  const [strengthsEdits, setStrengthsEdits] = useState(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
 
   const currentYearLabel = new Date().getFullYear();
   const previousYearLabel = currentYearLabel - 1;
@@ -658,9 +665,93 @@ const Feedback360Report = () => {
     }
   };
 
+  const handleSaveData = async () => {
+    // Construct the final data object by merging original data with any updates
+    const finalData = {
+      ...feedbackOverallData,
+      // Merge competency updates if they exist
+      ...(averageCompentency || {}),
+      // Merge strengths and improvements edits
+      strengths: {
+        ...(feedbackOverallData?.strengths || {}),
+        ...(strengthsEdits?.strengthsGroupItems ? { Subordinates: strengthsEdits.strengthsGroupItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+        ...(strengthsEdits?.strengthsManagerItems ? { Manager: strengthsEdits.strengthsManagerItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+      },
+      area_of_improvement: {
+        ...(feedbackOverallData?.area_of_improvement || {}),
+        ...(strengthsEdits?.improvementsGroupItems ? { Subordinates: strengthsEdits.improvementsGroupItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+        ...(strengthsEdits?.improvementsManagerItems ? { Manager: strengthsEdits.improvementsManagerItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+      }
+    };
+
+    const payload = {
+      feedback_data: [finalData],
+      excel_name: currentYearExcelFile?.name || feedbackOverallData?.name || "Feedback Report",
+      report_type: "feedback360"
+    };
+
+    if (draftId) {
+      payload.feedback_draft_id = draftId;
+    }
+
+    try {
+      setIsUploading(true); // Using isUploading as a general loading state
+      if (draftId) {
+        await updateFeedbackDraft(payload);
+        setStatusModal({
+          isOpen: true,
+          type: "success",
+          message: "Draft updated successfully!",
+          title: "Update Success"
+        });
+      } else {
+        await saveDraft(payload);
+        setStatusModal({
+          isOpen: true,
+          type: "success",
+          message: "Draft saved successfully!",
+          title: "Save Success"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save draft", error);
+      setStatusModal({
+        isOpen: true,
+        type: "error",
+        message: error.message || "Failed to save draft. Please try again.",
+        title: "Save Failed"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   useEffect(() => {
     setHeaderName("Feedback");
-  }, []);
+
+    if (draftId) {
+      const fetchDraft = async () => {
+        try {
+          setIsUploading(true);
+          const response = await getOneFeedbackDraft(draftId);
+          if (response && response.feedback_data && response.feedback_data[0]) {
+            setFeedbackOverallData(response.feedback_data[0]);
+          }
+        } catch (error) {
+          console.error("Failed to load draft:", error);
+          setStatusModal({
+            isOpen: true,
+            type: "error",
+            message: "Failed to load draft. Please try again.",
+            title: "Load Failed"
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      fetchDraft();
+    }
+  }, [draftId]);
 
   return (
     <div className="feedbackreport-main-container">
@@ -677,6 +768,28 @@ const Feedback360Report = () => {
           </span>
           <span className="feedbackreport-switch__label">Show comparison table</span>
         </label>
+        <button
+          onClick={handleSaveData}
+          className="feedbackreport-btn feedbackreport-btn--save"
+          style={{
+            background: "var(--color-accent)",
+            color: "#fff",
+          }}
+        >
+          Save
+        </button>
+        {draftId && (
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            className="feedbackreport-btn feedbackreport-btn--save"
+            style={{
+              background: "#4f46e5",
+              color: "#fff",
+            }}
+          >
+            Share
+          </button>
+        )}
         <button
           onClick={downloadPdfSplitByHeader}
           className="feedbackreport-btn feedbackreport-btn--download"
@@ -1044,6 +1157,18 @@ const Feedback360Report = () => {
           </div>
         </div>
       ) : null}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        draftId={draftId}
+      />
+      <StatusModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+        type={statusModal.type}
+        message={statusModal.message}
+        title={statusModal.title}
+      />
       <div className="section-page pdf-section">
         <FeedbackInitialPage
           initialName={
@@ -1069,6 +1194,7 @@ const Feedback360Report = () => {
         managerItems={strengthsManagerItems}
         improvementsGroupItems={improvementsGroupItems}
         improvementsManagerItems={improvementsManagerItems}
+        onDataChange={(data) => setStrengthsEdits(data)}
       />
 
       <SummaryByCompetencyPage

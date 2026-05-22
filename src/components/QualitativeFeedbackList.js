@@ -35,11 +35,30 @@ const QualitativeFeedbackList = ({
   titleIndex = "3.1.",
   titleText = "Leadership",
   questions = [],
+  onDataChange,
 }) => {
   const measurementId = useRef(
     `qfl-${Date.now()}-${Math.random().toString(36).slice(2)}`
   );
   const [chunks, setChunks] = useState(null);
+  const [localQuestions, setLocalQuestions] = useState(questions);
+
+  useEffect(() => {
+    setLocalQuestions(questions);
+  }, [questions]);
+
+  const handleCommentChange = (qi, ci, newVal) => {
+    const nextQuestions = [...localQuestions];
+    const q = { ...nextQuestions[qi] };
+    const nextComments = [...q.comments];
+    nextComments[ci] = newVal;
+    q.comments = nextComments;
+    nextQuestions[qi] = q;
+    setLocalQuestions(nextQuestions);
+    if (onDataChange) {
+      onDataChange(nextQuestions);
+    }
+  };
 
   const flatItems = useMemo(() => {
     const out = [];
@@ -51,7 +70,7 @@ const QualitativeFeedbackList = ({
       </h2>
     );
 
-    questions.forEach((q, qi) => {
+    localQuestions.forEach((q, qi) => {
       const theme = THEME[q.colorTheme] || THEME.green;
 
       const headerEl = (
@@ -79,6 +98,9 @@ const QualitativeFeedbackList = ({
               borderColor={theme.borderColor}
               avatarBg={theme.avatarBg}
               textColor={theme.textColor}
+              value={typeof c === "string" ? c : c?.text || ""}
+              onChange={(e) => {}} // dummy to enable editing in bubble
+              onBlur={(val) => handleCommentChange(qi, i, val)}
               icon={
                 <img
                   src={theme.icon}
@@ -110,7 +132,7 @@ const QualitativeFeedbackList = ({
     });
 
     return out;
-  }, [titleIndex, titleText, questions]);
+  }, [titleIndex, titleText, localQuestions]);
 
   useEffect(() => {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";

@@ -218,6 +218,7 @@ const CompetencySummary = ({
   pagePadding = 10,
   cohortQuartiles,
   streamQuartiles,
+  overallScore = 370,
 }) => {
   const cohortRows = useMemo(
     () => [
@@ -293,7 +294,7 @@ const CompetencySummary = ({
         <div className="cs-gauge-wrap">
           <div className="cs-gauge">
             <div className="cs-gauge__label">Your Overall Score</div>
-            <Gauge />
+            <Gauge score={overallScore} />
           </div>
         </div>
         <ul className="cs-overall__bullets">

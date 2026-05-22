@@ -82,6 +82,16 @@ const Navbar = () => {
                 <span className="rh-nav__link-text">Home</span>
               </NavLink>
 
+              <NavLink
+                to="/reports/drafts"
+                className={({ isActive }) =>
+                  `rh-nav__link ${isActive ? "is-active" : ""}`
+                }
+              >
+                <FileText className="rh-nav__link-icon" />
+                <span className="rh-nav__link-text">Drafts</span>
+              </NavLink>
+
               {/* <NavLink
                 to="/user/reports"
                 className={({ isActive }) =>

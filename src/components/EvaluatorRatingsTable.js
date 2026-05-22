@@ -35,6 +35,7 @@ const EvaluatorRatingsTable = ({
   max = 5,
   title,
   compact = false,
+  onDataChange,
 }) => {
   const initialRows = useMemo(() => rows, [rows]);
   const [tableRows, setTableRows] = useState(initialRows);
@@ -72,16 +73,18 @@ const EvaluatorRatingsTable = ({
       return;
     }
 
-    setTableRows((prev) => {
-      const next = [...prev];
-      const row = next[currentEdit.rowIndex];
-      if (!row) return prev;
+    const next = [...tableRows];
+    const row = next[currentEdit.rowIndex];
+    if (row) {
       next[currentEdit.rowIndex] = {
         ...row,
         score: editValue,
       };
-      return next;
-    });
+      setTableRows(next);
+      if (onDataChange) {
+        onDataChange(next);
+      }
+    }
 
     setCurrentEdit({ rowIndex: null });
   };
