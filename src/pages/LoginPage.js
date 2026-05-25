@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import { Eye, EyeOff } from "lucide-react";
-import { loginUser } from "../helper/apicalls/auth";
+import { loginUser, storeLoginSession } from "../helper/apicalls/auth";
 import intellectLogo from "../assets/png/intellectBrownLogo.png";
 import "../styles/loginPage.scss";
 
@@ -21,14 +20,7 @@ const LoginPage = () => {
 
     try {
       const data = await loginUser(email, password);
-      
-      // Store token and user info in cookies
-      if (data.token) {
-        Cookies.set("token", data.token, { expires: 7, secure: true, sameSite: 'strict' });
-      }
-      if (data.user) {
-        Cookies.set("user", JSON.stringify(data.user), { expires: 7, secure: true, sameSite: 'strict' });
-      }
+      storeLoginSession(data, email);
 
       // Redirect to home or intended page
       navigate("/");

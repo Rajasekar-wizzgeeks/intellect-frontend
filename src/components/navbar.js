@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "../styles/navbar.scss";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import DeleteConfirmPopup from "./DeleteConfirmPopup";
+import { getStoredUser } from "../helper/getStoredUser";
+import { logoutUser } from "../helper/apicalls/auth";
 import {
   BarChart3,
   Bell,
@@ -16,15 +19,58 @@ import {
 } from "lucide-react";
 import logoGreen from "../assets/png/intellectGreenLogo.png";
 
+const navLinkClassName = ({ isActive }) =>
+  `rh-nav__link ${isActive ? "is-active" : ""}`;
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(true);
-  const [activePath, setActivePath] = useState("");
+  const [storedUser, setStoredUser] = useState(() => getStoredUser());
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
 
-  useEffect(()=>{
-    console.log(location);
-    setActivePath(location.pathname === "/" ? "/" :"/");
-  },[location])
+  useEffect(() => {
+    setStoredUser(getStoredUser());
+  }, [location]);
+
+  const displayName =
+    storedUser?.name ||
+    storedUser?.full_name ||
+    storedUser?.username ||
+    (storedUser?.email ? String(storedUser.email).split("@")[0] : "User");
+
+  const displayEmail = storedUser?.email || "";
+
+  const openLogoutConfirm = () => {
+    if (isLoggingOut) return;
+    setLogoutError("");
+    setShowLogoutConfirm(true);
+  };
+
+  const closeLogoutConfirm = () => {
+    if (isLoggingOut) return;
+    setShowLogoutConfirm(false);
+    setLogoutError("");
+  };
+
+  const confirmLogout = async () => {
+    if (isLoggingOut) return;
+    try {
+      setIsLoggingOut(true);
+      setLogoutError("");
+      await logoutUser();
+      setShowLogoutConfirm(false);
+      setStoredUser(null);
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      setLogoutError(err.message || "Failed to sign out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -71,23 +117,12 @@ const Navbar = () => {
             <div className="rh-nav__section">
               {/* <div className="rh-nav__section-title">MAIN MENU</div> */}
 
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `rh-nav__link ${isActive || activePath === "/" ? "is-active" : ""}`
-                }
-              >
+              <NavLink to="/" end className={navLinkClassName}>
                 <Home className="rh-nav__link-icon" />
                 <span className="rh-nav__link-text">Home</span>
               </NavLink>
 
-              <NavLink
-                to="/reports/drafts"
-                className={({ isActive }) =>
-                  `rh-nav__link ${isActive ? "is-active" : ""}`
-                }
-              >
+              <NavLink to="/reports/drafts" className={navLinkClassName}>
                 <FileText className="rh-nav__link-icon" />
                 <span className="rh-nav__link-text">Drafts</span>
               </NavLink>
@@ -146,13 +181,19 @@ const Navbar = () => {
                 <User className="rh-nav__profile-avatar-icon" />
               </div>
               <div className="rh-nav__profile-meta">
-                <div className="rh-nav__profile-name">John Doe</div>
-                <div className="rh-nav__profile-role">Admin</div>
+                <div className="rh-nav__profile-name" title={displayName}>
+                  {displayName}
+                </div>
+                <div className="rh-nav__profile-role" title={displayEmail}>
+                  {displayEmail || "—"}
+                </div>
               </div>
               <button
                 type="button"
                 className="rh-nav__logout"
                 aria-label="Logout"
+                onClick={openLogoutConfirm}
+                disabled={isLoggingOut}
               >
                 <LogOut className="rh-nav__logout-icon" />
               </button>
@@ -170,6 +211,30 @@ const Navbar = () => {
           </div>
         </div>
       </aside>
+
+      <DeleteConfirmPopup
+        isOpen={showLogoutConfirm}
+        onClose={closeLogoutConfirm}
+        onConfirm={confirmLogout}
+        title="Sign out?"
+        message={
+          <>
+            Are you sure you want to sign out
+            {displayEmail ? (
+              <>
+                {" "}
+                as <strong>{displayEmail}</strong>
+              </>
+            ) : null}
+            ?
+          </>
+        }
+        isDeleting={isLoggingOut}
+        error={logoutError}
+        confirmLabel="Sign out"
+        loadingLabel="Signing out..."
+        ConfirmIcon={LogOut}
+      />
     </>
   );
 };

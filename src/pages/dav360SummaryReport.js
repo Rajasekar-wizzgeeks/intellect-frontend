@@ -12,6 +12,7 @@ import SectionTitle from "../components/SectionTitle"
 import GlobalLoader from "../components/globalLoader";
 import StatusModal from "../components/StatusModal";
 import { excelSheetDav360Summary, getOneFeedbackDraft } from "../helper/apicalls/feedback";
+import { getApiErrorMessage } from "../helper/getApiErrorMessage";
 import { AlertCircle, FileSpreadsheet, Upload, X, Download } from "lucide-react";
 import "../styles/feedback360Report.scss";
 
@@ -42,7 +43,7 @@ const Dav360SummaryReport = () => {
           setStatusModal({
             isOpen: true,
             type: "error",
-            message: "Failed to load draft. Please try again.",
+            message: getApiErrorMessage(error, "Failed to load draft. Please try again."),
             title: "Load Failed"
           });
         } finally {

@@ -1,5 +1,9 @@
-import Cookies from "js-cookie";
+import { apiFetch } from "../apiFetch";
+import { parseApiErrorBody } from "../getApiErrorMessage";
 import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl, deleteFeedbackDraftUrl } from "../apiurls";
+
+const apiRequestError = (errorData, fallback) =>
+  new Error(parseApiErrorBody(errorData) || fallback);
 
 const parseSSEStream = async (response) => {
   const reader = response.body.getReader();
@@ -162,20 +166,18 @@ export const excelSheetFeedback = async (fileOrFiles) => {
     const formData = new FormData();
     for (const f of files) formData.append("files", f);
 
-    const token = Cookies.get("token");
     const fetchOptions = {
       method: "POST",
       headers: {
         Accept: "text/event-stream",
-        "Authorization": token || "",
       },
       body: formData,
     };
 
     const [baseRes, contRes, stopRes] = await Promise.all([
-      fetch(`${feedbackExcelUrl}/base`, fetchOptions),
-      fetch(`${feedbackExcelUrl}/continue`, fetchOptions),
-      fetch(`${feedbackExcelUrl}/stop`, fetchOptions),
+      apiFetch(`${feedbackExcelUrl}/base`, fetchOptions),
+      apiFetch(`${feedbackExcelUrl}/continue`, fetchOptions),
+      apiFetch(`${feedbackExcelUrl}/stop`, fetchOptions),
     ]);
 
     if (!baseRes.ok) {
@@ -228,19 +230,17 @@ export const excelSheetFeedback = async (fileOrFiles) => {
 
 export const saveDraft = async (payload) => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(savedDraftUrl, {
+    const response = await apiFetch(savedDraftUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token || "",
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to save draft");
+      throw apiRequestError(errorData, "Failed to save draft");
     }
 
     return await response.json();
@@ -252,19 +252,17 @@ export const saveDraft = async (payload) => {
 
 export const updateFeedbackDraft = async (payload) => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(updateFeedbackDraftUrl, {
+    const response = await apiFetch(updateFeedbackDraftUrl, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token || "",
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to update draft");
+      throw apiRequestError(errorData, "Failed to update draft");
     }
 
     return await response.json();
@@ -283,17 +281,15 @@ export const excelSheetLbScore360 = async (fileOrFiles) => {
     const formData = new FormData();
     for (const f of files) formData.append("files", f);
 
-    const token = Cookies.get("token");
     const fetchOptions = {
       method: "POST",
       headers: {
         Accept: "text/event-stream",
-        "Authorization": token || "",
       },
       body: formData,
     };
 
-    const res = await fetch(`${lbscore360ExcelUrl}/base`, fetchOptions);
+    const res = await apiFetch(`${lbscore360ExcelUrl}/base`, fetchOptions);
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -324,17 +320,15 @@ export const excelSheetDav360Summary = async (fileOrFiles) => {
     const formData = new FormData();
     for (const f of files) formData.append("files", f);
 
-    const token = Cookies.get("token");
     const fetchOptions = {
       method: "POST",
       headers: {
         Accept: "text/event-stream",
-        "Authorization": token || "",
       },
       body: formData,
     };
 
-    const res = await fetch(dav360SummaryExcelUrl, fetchOptions);
+    const res = await apiFetch(dav360SummaryExcelUrl, fetchOptions);
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -358,17 +352,13 @@ export const excelSheetDav360Summary = async (fileOrFiles) => {
 
 export const getFeedbackDrafts = async () => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(getFeedbackDraftUrl, {
+    const response = await apiFetch(getFeedbackDraftUrl, {
       method: "GET",
-      headers: {
-        "Authorization": token || "",
-      },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to fetch drafts");
+      throw apiRequestError(errorData, "Failed to fetch drafts");
     }
 
     return await response.json();
@@ -380,17 +370,14 @@ export const getFeedbackDrafts = async () => {
 
 export const getOneFeedbackDraft = async (draftId) => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(`${getOneFeedbackDraftUrl}?feedback_draft_id=${draftId}`, {
-      method: "GET",
-      headers: {
-        "Authorization": token || "",
-      },
-    });
+    const response = await apiFetch(
+      `${getOneFeedbackDraftUrl}?feedback_draft_id=${draftId}`,
+      { method: "GET" },
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to fetch draft");
+      throw apiRequestError(errorData, "Failed to fetch draft");
     }
 
     return await response.json();
@@ -402,20 +389,14 @@ export const getOneFeedbackDraft = async (draftId) => {
 
 export const deleteFeedbackDraft = async (draftId) => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(
+    const response = await apiFetch(
       `${deleteFeedbackDraftUrl}?feedback_draft_id=${draftId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: token || "",
-        },
-      },
+      { method: "DELETE" },
     );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to delete draft");
+      throw apiRequestError(errorData, "Failed to delete draft");
     }
 
     return await response.json().catch(() => ({}));
@@ -427,17 +408,13 @@ export const deleteFeedbackDraft = async (draftId) => {
 
 export const getAllUsers = async () => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(getAllUsersUrl, {
+    const response = await apiFetch(getAllUsersUrl, {
       method: "GET",
-      headers: {
-        "Authorization": token || "",
-      },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to fetch users");
+      throw apiRequestError(errorData, "Failed to fetch users");
     }
 
     return await response.json();
@@ -449,19 +426,17 @@ export const getAllUsers = async () => {
 
 export const giveAccess = async (payload) => {
   try {
-    const token = Cookies.get("token");
-    const response = await fetch(giveAccessUrl, {
+    const response = await apiFetch(giveAccessUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": token || "",
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to give access");
+      throw apiRequestError(errorData, "Failed to give access");
     }
 
     return await response.json();

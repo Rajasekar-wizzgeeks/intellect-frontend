@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { X, Search, User, Shield, Eye, Loader2 } from "lucide-react";
 import { getAllUsers, giveAccess } from "../helper/apicalls/feedback";
+import { getApiErrorMessage } from "../helper/getApiErrorMessage";
+import { canGrantEditorAccess } from "../helper/draftAccess";
 import StatusModal from "./StatusModal";
 import "../styles/shareModal.scss";
 
-const ShareModal = ({ isOpen, onClose, draftId }) => {
+const ShareModal = ({ isOpen, onClose, draftId, draftUserAccessType }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [givingAccess, setGivingAccess] = useState(false);
@@ -13,11 +15,16 @@ const ShareModal = ({ isOpen, onClose, draftId }) => {
   const [accessType, setAccessType] = useState("viewers"); // 'viewers' or 'editors'
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
 
+  const allowEditorAccess = canGrantEditorAccess(draftUserAccessType);
+
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
+      if (!allowEditorAccess) {
+        setAccessType("viewers");
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, allowEditorAccess]);
 
   const fetchUsers = async () => {
     try {
@@ -53,7 +60,7 @@ const ShareModal = ({ isOpen, onClose, draftId }) => {
       setStatusModal({
         isOpen: true,
         type: "error",
-        message: err.message || "Failed to give access. Please try again.",
+        message: getApiErrorMessage(err, "Failed to give access. Please try again."),
         title: "Access Failed"
       });
     } finally {
@@ -105,19 +112,27 @@ const ShareModal = ({ isOpen, onClose, draftId }) => {
             />
           </div>
 
-          <div className="share-modal__access-toggle">
+          <div
+            className={`share-modal__access-toggle${
+              allowEditorAccess ? "" : " share-modal__access-toggle--viewer-only"
+            }`}
+          >
             <button
+              type="button"
               className={`share-modal__toggle-btn ${accessType === "viewers" ? "active" : ""}`}
               onClick={() => setAccessType("viewers")}
             >
               <Eye size={16} /> Viewer
             </button>
-            <button
-              className={`share-modal__toggle-btn ${accessType === "editors" ? "active" : ""}`}
-              onClick={() => setAccessType("editors")}
-            >
-              <Shield size={16} /> Editor
-            </button>
+            {allowEditorAccess ? (
+              <button
+                type="button"
+                className={`share-modal__toggle-btn ${accessType === "editors" ? "active" : ""}`}
+                onClick={() => setAccessType("editors")}
+              >
+                <Shield size={16} /> Editor
+              </button>
+            ) : null}
           </div>
 
           <div className="share-modal__user-list">

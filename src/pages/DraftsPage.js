@@ -111,10 +111,10 @@ const DraftsPage = () => {
 
   return (
     <div className="drafts-page">
-      <div className="drafts-header">
+      {/* <div className="drafts-header">
         <h1 className="drafts-title">Saved Drafts</h1>
         <p className="drafts-subtitle">Continue working on your saved reports and assessments</p>
-      </div>
+      </div> */}
 
       {drafts.length === 0 ? (
         <div className="drafts-empty">

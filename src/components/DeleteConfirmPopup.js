@@ -6,11 +6,23 @@ const DeleteConfirmPopup = ({
   isOpen,
   onClose,
   onConfirm,
+  title = "Delete draft?",
+  message,
   draftName = "this draft",
   isDeleting = false,
   error = "",
+  confirmLabel = "Delete",
+  loadingLabel = "Deleting...",
+  ConfirmIcon = Trash2,
 }) => {
   if (!isOpen) return null;
+
+  const defaultMessage = (
+    <>
+      Are you sure you want to delete{" "}
+      <strong>&quot;{draftName}&quot;</strong>? This action cannot be undone.
+    </>
+  );
 
   return (
     <div
@@ -40,12 +52,11 @@ const DeleteConfirmPopup = ({
         </div>
 
         <h3 id="delete-confirm-popup-title" className="delete-confirm-popup__title">
-          Delete draft?
+          {title}
         </h3>
 
         <p className="delete-confirm-popup__message">
-          Are you sure you want to delete{" "}
-          <strong>&quot;{draftName}&quot;</strong>? This action cannot be undone.
+          {message ?? defaultMessage}
         </p>
 
         {error ? (
@@ -72,12 +83,12 @@ const DeleteConfirmPopup = ({
             {isDeleting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                Deleting...
+                {loadingLabel}
               </>
             ) : (
               <>
-                <Trash2 size={18} />
-                Delete
+                <ConfirmIcon size={18} />
+                {confirmLabel}
               </>
             )}
           </button>

@@ -35,6 +35,8 @@ import ChessIcon from "../assets/png/chessIcon.png";
 import EyeIcon from "../assets/png/eye.png";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { excelSheetLbScore360, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
+import { getApiErrorMessage } from "../helper/getApiErrorMessage";
+import { canEditDraft, canShareDraftAccess } from "../helper/draftAccess";
 import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
 
 const MainPage = () => {
@@ -54,6 +56,7 @@ const MainPage = () => {
   const [highlightsEdits, setHighlightsEdits] = useState({});
   const [blindSpotsEdits, setBlindSpotsEdits] = useState({});
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [draftAccessType, setDraftAccessType] = useState(null);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
   const fileInputRef = useRef(null);
 
@@ -419,7 +422,18 @@ const MainPage = () => {
     });
   }, [reportData]);
 
+  const canSaveDraft = draftId ? canEditDraft(draftAccessType) : true;
+  const canShareDraft = draftId ? canShareDraftAccess(draftAccessType) : false;
+
+  const saveDisabledTitle = !canSaveDraft
+    ? draftId && !canShareDraftAccess(draftAccessType)
+      ? "No access to edit this draft"
+      : "View-only access"
+    : undefined;
+
   const handleSaveData = async () => {
+    if (!canSaveDraft) return;
+
     // Construct the final data object by merging original data with any updates
     const finalData = {
       ...reportData,
@@ -555,7 +569,7 @@ const MainPage = () => {
       setStatusModal({
         isOpen: true,
         type: "error",
-        message: error.message || "Failed to save draft. Please try again.",
+        message: getApiErrorMessage(error, "Failed to save draft. Please try again."),
         title: "Save Failed"
       });
     } finally {
@@ -571,6 +585,9 @@ const MainPage = () => {
         try {
           setLoading(true);
           const response = await getOneFeedbackDraft(draftId);
+          setDraftAccessType(
+            response?.access_type ?? response?.accessType ?? null,
+          );
           if (response && response.feedback_data && response.feedback_data[0]) {
             setReportData(response.feedback_data[0]);
           }
@@ -579,7 +596,7 @@ const MainPage = () => {
           setStatusModal({
             isOpen: true,
             type: "error",
-            message: "Failed to load draft. Please try again.",
+            message: getApiErrorMessage(error, "Failed to load draft. Please try again."),
             title: "Load Failed"
           });
         } finally {
@@ -603,27 +620,33 @@ const MainPage = () => {
       >
         <button
           onClick={handleSaveData}
+          disabled={!canSaveDraft}
+          title={saveDisabledTitle}
           style={{
             padding: "8px 14px",
             background: "var(--color-accent)",
             color: "#fff",
             border: "none",
             borderRadius: 6,
-            cursor: "pointer",
+            cursor: canSaveDraft ? "pointer" : "not-allowed",
+            opacity: canSaveDraft ? 1 : 0.5,
           }}
         >
           Save
         </button>
         {draftId && (
           <button
-            onClick={() => setIsShareModalOpen(true)}
+            onClick={() => canShareDraft && setIsShareModalOpen(true)}
+            disabled={!canShareDraft}
+            title={!canShareDraft ? "No access to share this draft" : undefined}
             style={{
               padding: "8px 14px",
               background: "#4f46e5",
               color: "#fff",
               border: "none",
               borderRadius: 6,
-              cursor: "pointer",
+              cursor: canShareDraft ? "pointer" : "not-allowed",
+              opacity: canShareDraft ? 1 : 0.5,
             }}
           >
             Share
@@ -790,6 +813,7 @@ const MainPage = () => {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         draftId={draftId}
+        draftUserAccessType={draftAccessType}
       />
       <StatusModal
         isOpen={statusModal.isOpen}
