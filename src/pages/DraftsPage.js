@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { getFeedbackDrafts } from "../helper/apicalls/feedback";
-import { FileText, Clock, AlertCircle, Loader2, Calendar, ArrowRight } from "lucide-react";
+import { getFeedbackDrafts, deleteFeedbackDraft } from "../helper/apicalls/feedback";
+import DeleteConfirmPopup from "../components/DeleteConfirmPopup";
+import { FileText, Clock, AlertCircle, Loader2, Calendar, ArrowRight, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "../styles/draftsPage.scss";
 
@@ -8,6 +9,9 @@ const DraftsPage = () => {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [draftToDelete, setDraftToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
   const navigate = useNavigate();
   const fetchedRef = useRef(false);
 
@@ -51,6 +55,36 @@ const DraftsPage = () => {
       path = "/user/dav360";
     }
     navigate(`${path}?draft_id=${draft.id}`);
+  };
+
+  const openDeleteConfirm = (e, draft) => {
+    e.stopPropagation();
+    if (!draft?.id || deletingId) return;
+    setDeleteError("");
+    setDraftToDelete(draft);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deletingId) return;
+    setDraftToDelete(null);
+    setDeleteError("");
+  };
+
+  const confirmDelete = async () => {
+    if (!draftToDelete?.id || deletingId) return;
+
+    try {
+      setDeletingId(draftToDelete.id);
+      setDeleteError("");
+      await deleteFeedbackDraft(draftToDelete.id);
+      setDrafts((prev) => prev.filter((d) => d.id !== draftToDelete.id));
+      setDraftToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete draft:", err);
+      setDeleteError(err.message || "Failed to delete draft. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (loading) {
@@ -99,10 +133,26 @@ const DraftsPage = () => {
                 <div className="draft-card__icon-wrap">
                   <FileText size={24} />
                 </div>
-                <div className={`draft-card__type-badge ${
-                  draft.reporttype === "lbscore360" ? "type-lbscore" : draft.reporttype === "dav360" ? "type-dav360" : "type-feedback"
-                }`}>
-                  {draft.reporttype === "lbscore360" ? "LBSCORE 360" : draft.reporttype === "dav360" ? "DAV 360" : "Feedback 360"}
+                <div className="draft-card__header-actions">
+                  <div className={`draft-card__type-badge ${
+                    draft.reporttype === "lbscore360" ? "type-lbscore" : draft.reporttype === "dav360" ? "type-dav360" : "type-feedback"
+                  }`}>
+                    {draft.reporttype === "lbscore360" ? "LBSCORE 360" : draft.reporttype === "dav360" ? "DAV 360" : "Feedback 360"}
+                  </div>
+                  <button
+                    type="button"
+                    className="draft-card__delete"
+                    onClick={(e) => openDeleteConfirm(e, draft)}
+                    disabled={deletingId === draft.id}
+                    aria-label={`Delete ${draft.excel_name || "draft"}`}
+                    title="Delete draft"
+                  >
+                    {deletingId === draft.id ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={18} />
+                    )}
+                  </button>
                 </div>
               </div>
               
@@ -131,6 +181,15 @@ const DraftsPage = () => {
           ))}
         </div>
       )}
+
+      <DeleteConfirmPopup
+        isOpen={Boolean(draftToDelete)}
+        onClose={closeDeleteConfirm}
+        onConfirm={confirmDelete}
+        draftName={draftToDelete?.excel_name || "Untitled Report"}
+        isDeleting={Boolean(deletingId)}
+        error={deleteError}
+      />
     </div>
   );
 };

@@ -20,3 +20,5 @@ export const updateFeedbackDraftUrl = `${BASEURL}/api/user/feedback-draft/update
 export const getAllUsersUrl = `${BASEURL}/api/user/all`;
 
 export const giveAccessUrl = `${BASEURL}/api/user/feedback-draft/giveAccess`;
+
+export const deleteFeedbackDraftUrl = `${BASEURL}/api/user/feedback-draft/delete`;

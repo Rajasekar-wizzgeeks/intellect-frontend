@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl } from "../apiurls";
+import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl, deleteFeedbackDraftUrl } from "../apiurls";
 
 const parseSSEStream = async (response) => {
   const reader = response.body.getReader();
@@ -233,8 +233,7 @@ export const saveDraft = async (payload) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNmEwZWY3NTc3Y2EyMTQwYTRiZjIwMzA3IiwiZW1haWwiOiJ2ZWxAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJleHAiOjE3Nzk0NTIyNDd9.L0fi8XfFIHSANaA_Gb5aRYdZfZQnb2Kr2xXol4kKSx0"
- || "",
+        "Authorization": token || "",
       },
       body: JSON.stringify(payload),
     });
@@ -397,6 +396,31 @@ export const getOneFeedbackDraft = async (draftId) => {
     return await response.json();
   } catch (error) {
     console.error("Error fetching draft:", error);
+    throw error;
+  }
+};
+
+export const deleteFeedbackDraft = async (draftId) => {
+  try {
+    const token = Cookies.get("token");
+    const response = await fetch(
+      `${deleteFeedbackDraftUrl}?feedback_draft_id=${draftId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: token || "",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to delete draft");
+    }
+
+    return await response.json().catch(() => ({}));
+  } catch (error) {
+    console.error("Error deleting draft:", error);
     throw error;
   }
 };

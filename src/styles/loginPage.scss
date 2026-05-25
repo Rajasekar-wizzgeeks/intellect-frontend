@@ -61,6 +61,40 @@
   box-sizing: border-box;
 }
 
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-input-wrapper input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  line-height: 0;
+
+  &:hover {
+    color: #555;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #b3792e;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
 .form-group input:focus {
   outline: none;
   border-color: #b3792e; /* Using the accent color found in previous components */
