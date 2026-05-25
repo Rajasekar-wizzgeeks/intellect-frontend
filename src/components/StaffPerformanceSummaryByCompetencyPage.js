@@ -35,6 +35,7 @@ const StaffPerformanceSummaryByCompetencyPage = ({
   items2 = [],
   barHeight = 12,
   setAverageCompentency,
+  onDataChange,
   totalResponse = {
     total: 1,
     Self: 0,
@@ -109,6 +110,9 @@ const StaffPerformanceSummaryByCompetencyPage = ({
         ...prev,
         leadership_staff_dev_competency: sortedRows,
       }));
+      if (onDataChange) {
+        onDataChange({ leadership_staff_dev_competency: sortedRows });
+      }
     } else if (section === "right") {
       setRightRows(sortedRows);
       setRightOverallScore(computeOverallFromRows(sortedRows));
@@ -116,6 +120,9 @@ const StaffPerformanceSummaryByCompetencyPage = ({
         ...prev,
         educational_quality_competency: sortedRows,
       }));
+      if (onDataChange) {
+        onDataChange({ educational_quality_competency: sortedRows });
+      }
     }
   };
 

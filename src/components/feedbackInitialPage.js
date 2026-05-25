@@ -1,14 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../styles/feedbackInitialPage.scss";
 import ReportCycle from "../assets/png/ReportCycle.png";
 
-const FeedbackInitialPage = ({ initialName = "", date = "" }) => {
+const FeedbackInitialPage = ({ initialName = "", date = "", onDataChange }) => {
   const [name, setName] = useState(initialName);
   const [dateValue, setDateValue] = useState(date);
 
   const [isDateEditing, setIsDateEditing] = useState(false);
   const [dateDraft, setDateDraft] = useState(date);
 
+  const onDataChangeRef = useRef(onDataChange);
+  const lastEmittedSigRef = useRef("");
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
+
+  const emitDataChange = (nextName, nextDate) => {
+    const cb = onDataChangeRef.current;
+    if (!cb) return;
+    const payload = { name: nextName, date: nextDate };
+    let sig;
+    try {
+      sig = JSON.stringify(payload);
+    } catch {
+      return;
+    }
+    if (sig === lastEmittedSigRef.current) return;
+    lastEmittedSigRef.current = sig;
+    cb(payload);
+  };
 
   useEffect(() => {
     setName(initialName);
@@ -44,7 +64,11 @@ const FeedbackInitialPage = ({ initialName = "", date = "" }) => {
               <textarea
                 className="feedback-initial-name-field"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  const nextName = e.target.value;
+                  setName(nextName);
+                  emitDataChange(nextName, dateValue);
+                }}
                 aria-label="Name"
                 rows={1}
                 onInput={(e) => {
@@ -75,12 +99,14 @@ const FeedbackInitialPage = ({ initialName = "", date = "" }) => {
                   onBlur={() => {
                     setDateValue(dateDraft);
                     setIsDateEditing(false);
+                    emitDataChange(name, dateDraft);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
                       setDateValue(dateDraft);
                       setIsDateEditing(false);
+                      emitDataChange(name, dateDraft);
                     } else if (e.key === "Escape") {
                       e.preventDefault();
                       setDateDraft(dateValue || "");

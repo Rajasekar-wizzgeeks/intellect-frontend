@@ -647,6 +647,7 @@ const ContinueDoingPage = ({
   componentId,
   // continue: shouldReMeasure = false,
   continue: isContinue = false,
+  onDataChange,
 }) => {
   const [localColumns, setLocalColumns] = useState(columns);
   const [rowRanges, setRowRanges] = useState(null);
@@ -719,6 +720,52 @@ const ContinueDoingPage = ({
   const lastIaSerializedRef = useRef(
     serializeIaColumns(immediateActionSummary?.columns),
   );
+
+  const onDataChangeRef = useRef(onDataChange);
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
+
+  const lastEmittedSigRef = useRef("");
+  const localColumnsSig = useMemo(
+    () => serializeColumns(localColumns),
+    [localColumns, serializeColumns],
+  );
+  const localGroupsSig = useMemo(
+    () => serializeGroups(localGroups),
+    [localGroups, serializeGroups],
+  );
+  const iaColumnsSig = useMemo(() => serializeIaColumns(iaColumns), [iaColumns]);
+  const hasImmediateAction = Boolean(immediateActionSummary);
+
+  useEffect(() => {
+    const cb = onDataChangeRef.current;
+    if (!cb) return;
+
+    const payload = {
+      columns: localColumns,
+      groups: localGroups,
+      ...(hasImmediateAction ? { immediateActionColumns: iaColumns } : {}),
+    };
+
+    let sig;
+    try {
+      sig = JSON.stringify(payload);
+    } catch {
+      return;
+    }
+    if (sig === lastEmittedSigRef.current) return;
+    lastEmittedSigRef.current = sig;
+    cb(payload);
+  }, [
+    localColumnsSig,
+    localGroupsSig,
+    iaColumnsSig,
+    hasImmediateAction,
+    localColumns,
+    localGroups,
+    iaColumns,
+  ]);
 
   const isBrowser =
     typeof window !== "undefined" && typeof document !== "undefined";

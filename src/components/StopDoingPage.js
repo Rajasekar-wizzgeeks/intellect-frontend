@@ -487,7 +487,7 @@ const StopDoingPage = ({
   traits = [],
   tableFootnote,
   footnote = "* This excludes self feedback ; The larger fonts indicate more number of responses",
-
+  onDataChange,
 }) => {
   const [localColumns, setLocalColumns] = useState(() =>
     Array.isArray(columns) ? columns : [left, right],
@@ -737,6 +737,58 @@ const StopDoingPage = ({
   useEffect(() => {
     setLocalTraits(traits);
   }, [traits]);
+
+  const onDataChangeRef = useRef(onDataChange);
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
+
+  const lastEmittedSigRef = useRef("");
+  const localColumnsSig = useMemo(
+    () => serializeColumns(localColumns),
+    [localColumns, serializeColumns],
+  );
+  const localGroupsSig = useMemo(
+    () => serializeGroups(localGroups),
+    [localGroups, serializeGroups],
+  );
+  const localTraitsSig = useMemo(() => {
+    try {
+      return JSON.stringify(
+        Array.isArray(localTraits) ? localTraits.map((t) => String(t ?? "")) : [],
+      );
+    } catch {
+      return "";
+    }
+  }, [localTraits]);
+
+  useEffect(() => {
+    const cb = onDataChangeRef.current;
+    if (!cb) return;
+
+    const payload = {
+      columns: localColumns,
+      groups: localGroups,
+      traits: localTraits,
+    };
+
+    let sig;
+    try {
+      sig = JSON.stringify(payload);
+    } catch {
+      return;
+    }
+    if (sig === lastEmittedSigRef.current) return;
+    lastEmittedSigRef.current = sig;
+    cb(payload);
+  }, [
+    localColumnsSig,
+    localGroupsSig,
+    localTraitsSig,
+    localColumns,
+    localGroups,
+    localTraits,
+  ]);
 
   const updateGroupData = useCallback((updatedGroup, oldRepComment) => {
     setLocalGroups((prev) => {
