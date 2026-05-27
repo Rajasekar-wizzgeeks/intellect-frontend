@@ -60,6 +60,23 @@ const MainPage = () => {
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
   const fileInputRef = useRef(null);
 
+
+  const QUALITATIVE_ROLES = ["Manager", "Peer", "Subordinate", "Self"];
+
+const parseQualitativeComment = (c)=> {
+  if (c && typeof c === "object" && c.role) {
+    return { role: c.role, text: String(c.text ?? "") };
+  }
+  if (typeof c === "string") {
+    for (const role of QUALITATIVE_ROLES) {
+      const prefix = `${role}: `;
+      if (c.startsWith(prefix)) {
+        return { role, text: c.slice(prefix.length) };
+      }
+    }
+  }
+  return null;
+}
   const handleExcelUpload = async () => {
     if (!excelFile) return;
 
@@ -144,7 +161,7 @@ const MainPage = () => {
             ["Manager", "Peer", "Subordinate", "Self"].forEach(role => {
               if (Array.isArray(rolesData[role])) {
                 rolesData[role].forEach(comment => {
-                  if (comment) allComments.push(`${role}: ${comment}`);
+                  if (comment) allComments.push({ role, text: comment });
                 });
               }
             });
@@ -499,11 +516,10 @@ const MainPage = () => {
               const questionText = q.text;
               const rolesData = {};
               q.comments.forEach((c) => {
-                const parts = c.split(": ");
-                const role = parts[0];
-                const text = parts.slice(1).join(": ");
-                if (!rolesData[role]) rolesData[role] = [];
-                rolesData[role].push(text);
+                const parsed = parseQualitativeComment(c);
+                if (!parsed?.role || !parsed.text) return;
+                if (!rolesData[parsed.role]) rolesData[parsed.role] = [];
+                rolesData[parsed.role].push(parsed.text);
               });
               return { [questionText]: rolesData };
             });

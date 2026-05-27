@@ -91,21 +91,7 @@
   z-index: 2;
 }
 
-// .fb-bubble::before {
-//   content: "";
-//   position: absolute;
-//   left: -14px;
-//   top: -1px;
-//   width: 13px;
-//   height: 13px;
-//   border-left: 2px solid var(--fb-border, var(--color-border));
-//   border-right: 2px solid var(--fb-border, var(--color-border));
-//   border-bottom: 2px solid var(--fb-border, var(--color-border));
-//   background: white;
-//   transform: rotate(90deg);
-//   z-index: 1;
-//   border-bottom-right-radius: 20px;
-// }
+
 
 .fb-text {
   font-size: var(--fs-md);
@@ -115,7 +101,6 @@
   overflow-wrap: anywhere;
 }
 
-/* new textarea style */
 .fb-textarea {
   width: 100%;
   min-height: 20px;
@@ -130,154 +115,5 @@
   font-size: var(--fs-md);
 }
 
-// /* RCE overrides removed: we are using the custom .fb-bubble implementation */
-// ============================================================
-// FEEDBACK BUBBLE - Exact UI Design Implementation
-// ============================================================
 
-// .fb-row {
-//   display: flex;
-//   align-items: flex-start;
-//   gap: 0;
-//   overflow: visible;
-//   margin-bottom: 12px;
-// }
 
-// .fb-row--compact {
-//   gap: 0;
-// }
-
-// // ============================================================
-// // AVATAR STYLING
-// // ============================================================
-
-// .fb-avatar-wrap {
-//   padding-top: 8px;
-//   flex-shrink: 0;
-//   z-index: 10;
-// }
-
-// .fb-avatar {
-//   width: 44px;
-//   height: 44px;
-//   min-width: 44px;
-//   border-radius: 50%;
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-//   border: 2.5px solid var(--fb-border, var(--color-border));
-//   background: var(--fb-avatar-bg, var(--color-green));
-//   flex-shrink: 0;
-// }
-
-// // ============================================================
-// // BUBBLE CONTAINER & CURVE CONNECTION
-// // ============================================================
-
-// .fb-bubble-container {
-//   flex: 1;
-//   display: flex;
-//   align-items: stretch;
-//   gap: 0;
-//   margin-left: -12px;
-//   padding-left: 0;
-//   position: relative;
-// }
-
-// .fb-curve {
-//   width: 20px;
-//   height: 100%;
-//   min-height: 60px;
-//   flex-shrink: 0;
-//   display: block;
-
-//   path {
-//     vector-effect: non-scaling-stroke;
-//   }
-// }
-
-// // ============================================================
-// // BUBBLE STYLING
-// // ============================================================
-
-// .fb-bubble {
-//   flex: 1;
-//   position: relative;
-//   border: 2.5px solid var(--fb-border, var(--color-border));
-//   border-radius: 18px;
-//   padding: 14px 16px;
-//   background: var(--fb-bubble-bg, var(--color-bg));
-//   min-height: 60px;
-//   display: flex;
-//   align-items: center;
-// }
-
-// .fb-row--compact .fb-bubble {
-//   border-radius: 14px;
-//   padding: 10px 14px;
-//   min-height: 48px;
-// }
-
-// // ============================================================
-// // TEXTAREA STYLING
-// // ============================================================
-
-// .fb-textarea {
-//   width: 100%;
-//   min-height: 20px;
-//   border: none;
-//   outline: none;
-//   background: transparent;
-//   resize: none;
-//   font: inherit;
-//   color: var(--fb-text-color, var(--color-text));
-//   line-height: 1.5;
-//   padding: 0;
-//   margin: 0;
-//   font-size: 14px;
-//   font-weight: 500;
-//   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-//     sans-serif;
-
-//   &::placeholder {
-//     color: rgba(0, 0, 0, 0.4);
-//     opacity: 1;
-//   }
-
-//   // Remove scrollbar
-//   &::-webkit-scrollbar {
-//     display: none;
-//   }
-//   -ms-overflow-style: none;
-//   scrollbar-width: none;
-// }
-
-// .fb-textarea:disabled {
-//   cursor: not-allowed;
-//   opacity: 0.7;
-// }
-
-// // ============================================================
-// // RESPONSIVE ADJUSTMENTS
-// // ============================================================
-
-// @media (max-width: 640px) {
-//   .fb-row {
-//     gap: 0;
-//   }
-
-//   .fb-avatar {
-//     width: 40px;
-//     height: 40px;
-//     min-width: 40px;
-//   }
-
-//   .fb-bubble {
-//     border-radius: 16px;
-//     padding: 12px 14px;
-//   }
-
-//   .fb-textarea {
-//     font-size: 13px;
-//   }
-// }

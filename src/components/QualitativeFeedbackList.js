@@ -10,6 +10,20 @@ import greenPersonIcon from "../assets/png/greenPersonIcon.png";
 import yellowPersonIcon from "../assets/png/yellowPersonIcon.png";
 import measurementManager from "./measurementManager";
 
+const QUALITATIVE_ROLES = ["Manager", "Peer", "Subordinate", "Self"];
+
+const getCommentDisplayText = (c) => {
+  if (c && typeof c === "object" && "text" in c) {
+    return String(c.text ?? "");
+  }
+  const s = String(c ?? "");
+  for (const role of QUALITATIVE_ROLES) {
+    const prefix = `${role}: `;
+    if (s.startsWith(prefix)) return s.slice(prefix.length);
+  }
+  return s;
+};
+
 const THEME = {
   green: {
     borderColor: "var(--color-green)",
@@ -51,7 +65,12 @@ const QualitativeFeedbackList = ({
     const nextQuestions = [...localQuestions];
     const q = { ...nextQuestions[qi] };
     const nextComments = [...q.comments];
-    nextComments[ci] = newVal;
+    const prev = nextComments[ci];
+    if (prev && typeof prev === "object" && prev.role) {
+      nextComments[ci] = { ...prev, text: newVal };
+    } else {
+      nextComments[ci] = newVal;
+    }
     q.comments = nextComments;
     nextQuestions[qi] = q;
     setLocalQuestions(nextQuestions);
@@ -89,16 +108,17 @@ const QualitativeFeedbackList = ({
 
       const comments = Array.isArray(q.comments) ? q.comments : [];
       comments.forEach((c, i) => {
+        const displayText = getCommentDisplayText(c);
         const commentEl = (
           <div key={`qc-${qi}-${i}`} className="qfl-comment-block">
             <FeedbackBubble
-              text={typeof c === "string" ? c : c?.text || ""}
+              text={displayText}
               compact={true}
               bubbleColor={theme.bubbleColor}
               borderColor={theme.borderColor}
               avatarBg={theme.avatarBg}
               textColor={theme.textColor}
-              value={typeof c === "string" ? c : c?.text || ""}
+              value={displayText}
               onChange={(e) => {}} // dummy to enable editing in bubble
               onBlur={(val) => handleCommentChange(qi, i, val)}
               icon={
