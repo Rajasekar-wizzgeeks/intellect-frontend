@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
@@ -57,12 +57,23 @@ const QualitativeFeedbackList = ({
   const [chunks, setChunks] = useState(null);
   const [localQuestions, setLocalQuestions] = useState(questions);
 
+  const localQuestionsRef = useRef(localQuestions);
+  const onDataChangeRef = useRef(onDataChange);
+
+  useEffect(() => {
+    localQuestionsRef.current = localQuestions;
+  }, [localQuestions]);
+
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
+
   useEffect(() => {
     setLocalQuestions(questions);
   }, [questions]);
 
-  const handleCommentChange = (qi, ci, newVal) => {
-    const nextQuestions = [...localQuestions];
+  const handleCommentChange = useCallback((qi, ci, newVal) => {
+    const nextQuestions = [...localQuestionsRef.current];
     const q = { ...nextQuestions[qi] };
     const nextComments = [...q.comments];
     const prev = nextComments[ci];
@@ -73,11 +84,25 @@ const QualitativeFeedbackList = ({
     }
     q.comments = nextComments;
     nextQuestions[qi] = q;
+    // Update ref immediately so subsequent blurs see the latest state
+    localQuestionsRef.current = nextQuestions;
     setLocalQuestions(nextQuestions);
-    if (onDataChange) {
-      onDataChange(nextQuestions);
+    if (onDataChangeRef.current) {
+      onDataChangeRef.current(nextQuestions);
     }
-  };
+  }, []);
+
+  const structureKey = useMemo(() => {
+    return (
+      titleIndex +
+      "|" +
+      titleText +
+      "|" +
+      localQuestions
+        .map((q) => `${q.index || ""}:${Array.isArray(q.comments) ? q.comments.length : 0}:${q.colorTheme || ""}`)
+        .join(",")
+    );
+  }, [titleIndex, titleText, localQuestions]);
 
   const flatItems = useMemo(() => {
     const out = [];
@@ -152,7 +177,7 @@ const QualitativeFeedbackList = ({
     });
 
     return out;
-  }, [titleIndex, titleText, localQuestions]);
+  }, [structureKey, handleCommentChange]);
 
   useEffect(() => {
     const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
