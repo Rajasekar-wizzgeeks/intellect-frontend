@@ -858,10 +858,10 @@ const parseQualitativeComment = (c)=> {
               r?.profile?.["Associate Name"] ||
               r?.name ||
               `Recipient ${i + 1}`;
-            const date =
-              r?.introduction?.["Report Date"] ||
-              r?.profile?.["Report Date"] ||
-              r?.date ||
+            const email =
+              r?.introduction?.["Email"] ||
+              r?.profile?.["Email"] ||
+              r?.email ||
               "";
             return (
               <button
@@ -877,7 +877,7 @@ const parseQualitativeComment = (c)=> {
                 </div>
                 <div className="lbs-recipient-card__info">
                   <span className="lbs-recipient-card__name">{name}</span>
-                  {date && <span className="lbs-recipient-card__date">{date}</span>}
+                  {email && <span className="lbs-recipient-card__date">{email}</span>}
                 </div>
                 <ChevronLeft size={18} className="lbs-recipient-card__arrow" />
               </button>
