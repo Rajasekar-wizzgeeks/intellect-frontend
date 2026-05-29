@@ -272,6 +272,81 @@ export const updateFeedbackDraft = async (payload) => {
   }
 };
 
+
+export const excelSheetLbScore360Multi = async (file, onRecipient) => {
+  const formData = new FormData();
+  formData.append("files", file);
+
+  const res = await apiFetch(`${lbscore360ExcelUrl}/base`, {
+    method: "POST",
+    headers: { Accept: "text/event-stream" },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`LBSCORE360 failed: ${res.status} ${text}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  const recipients = [];
+  let competencySummary = null;
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        const raw = trimmed.slice("data: ".length);
+        if (raw === "[DONE]") {
+          return { recipients, competencySummary };
+        }
+
+        try {
+          const json = JSON.parse(raw);
+
+          if (json.error || json.type === "error") {
+            throw new Error(json.error || "Unknown stream error");
+          }
+
+          if (json.type === "recipient_data") {
+            // Each recipient_data event is a complete recipient object
+            const recipient = json.data || json;
+            recipients.push(recipient);
+            if (onRecipient) onRecipient(recipient);
+
+          } else if (json.type === "competency_summary") {
+            // Last event — common data shared across all recipients
+            competencySummary = json.data || json;
+
+          } else {
+            // Fallback: unknown event type — log and ignore
+            console.warn("Unknown SSE event type:", json.type, json);
+          }
+        } catch (e) {
+          console.error("Error parsing SSE chunk:", e, raw);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Stream reading error:", e);
+    if (recipients.length > 0) return { recipients, competencySummary };
+    throw e;
+  }
+
+  return { recipients, competencySummary };
+};
+
 export const excelSheetLbScore360 = async (fileOrFiles) => {
   try {
     const files = Array.isArray(fileOrFiles)

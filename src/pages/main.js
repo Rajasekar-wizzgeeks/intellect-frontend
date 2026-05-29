@@ -33,16 +33,27 @@ import ChessKingIcon from "../assets/png/chessKingIcon.png";
 import MarketingIcon from "../assets/png/marketingIcon.png";
 import ChessIcon from "../assets/png/chessIcon.png";
 import EyeIcon from "../assets/png/eye.png";
-import { useOutletContext, useSearchParams } from "react-router-dom";
-import { excelSheetLbScore360, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
+import { useLocation, useOutletContext, useSearchParams } from "react-router-dom";
+import { excelSheetLbScore360, excelSheetLbScore360Multi, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
 import { getApiErrorMessage } from "../helper/getApiErrorMessage";
 import { canEditDraft, canShareDraftAccess } from "../helper/draftAccess";
-import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
+import { AlertCircle, Check, ChevronLeft, FileSpreadsheet, Upload, User, X } from "lucide-react";
+import "../styles/lbscore360.scss";
 
 const MainPage = () => {
   const { setIsHeader, setHeaderName } = useOutletContext();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const draftId = searchParams.get("draft_id");
+
+  const isLbScore360Route = location.pathname === "/user/lbscore360";
+
+
+  const [phase, setPhase] = useState(isLbScore360Route ? "upload" : "report");
+  const [recipients, setRecipients] = useState([]);
+  const [competencySummary, setCompetencySummary] = useState(null);
+  const [streamProgress, setStreamProgress] = useState(0);
+
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -77,6 +88,32 @@ const parseQualitativeComment = (c)=> {
   }
   return null;
 }
+  const handleLbScore360Upload = async () => {
+    if (!excelFile) return;
+    setLoading(true);
+    setError(null);
+    setRecipients([]);
+    setCompetencySummary(null);
+    setStreamProgress(0);
+    try {
+      const { recipients: collected, competencySummary: summary } =
+        await excelSheetLbScore360Multi(excelFile, () => {
+          setStreamProgress((n) => n + 1);
+        });
+      if (!collected || collected.length === 0) {
+        throw new Error("No recipient data received from the server.");
+      }
+      setRecipients(collected);
+      setCompetencySummary(summary);
+      setPhase("list");
+    } catch (err) {
+      setError(err.message || "Upload failed. Please try again.");
+      console.error("LbScore360 upload failed", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExcelUpload = async () => {
     if (!excelFile) return;
 
@@ -553,7 +590,15 @@ const parseQualitativeComment = (c)=> {
 
     const payload = {
       feedback_data: [finalData],
-      excel_name: excelFile?.name || reportData?.name || "LBSCORE Report",
+      excel_name: (() => {
+        if (isLbScore360Route) {
+          const profile = reportData?.introduction || reportData?.profile || {};
+          const name = profile["Associate Name"] || profile["associateName"] || reportData?.name || "";
+          const id = profile["Associate ID"] || profile["associateId"] || profile["employeeId"] || "";
+          if (name || id) return [name, id].filter(Boolean).join(" - ");
+        }
+        return excelFile?.name || reportData?.name || "LBSCORE Report";
+      })(),
       report_type: "lbscore360"
     };
 
@@ -623,6 +668,130 @@ const parseQualitativeComment = (c)=> {
     }
   }, [draftId]);
 
+  // ── Phase: upload (only on /user/lbscore360) ──────────────────────────────
+  if (isLbScore360Route && phase === "upload") {
+    return (
+      <div className="lbs-upload-page">
+        <GlobalLoader visible={loading} />
+        <div className="lbs-upload-card">
+          <div className="lbs-upload-card__header">
+            <FileSpreadsheet size={22} />
+            <span>Upload LBScore 360° Excel</span>
+          </div>
+
+          {/* Dropzone */}
+          <div
+            className={`lbs-dropzone${dragOver ? " lbs-dropzone--over" : ""}${excelFile ? " lbs-dropzone--has-file" : ""}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            {excelFile ? (
+              <div className="lbs-dropzone__file">
+                <Check size={20} color="var(--color-green)" />
+                <span className="lbs-dropzone__filename">{excelFile.name}</span>
+                <button
+                  className="lbs-dropzone__remove"
+                  onClick={(e) => { e.stopPropagation(); setExcelFile(null); setError(null); }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="lbs-dropzone__empty">
+                <Upload size={36} />
+                <p className="lbs-dropzone__label">Click to upload or drag and drop</p>
+                <p className="lbs-dropzone__hint">Excel files only (.xlsx, .xls, .csv)</p>
+              </div>
+            )}
+          </div>
+
+          {loading && (
+            <div className="lbs-progress">
+              <div className="lbs-progress__bar">
+                <div className="lbs-progress__fill" />
+              </div>
+              <p className="lbs-progress__text">
+                Processing recipients… {streamProgress > 0 ? `${streamProgress} received` : ""}
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="lbs-error">
+              <AlertCircle size={14} />
+              {error}
+            </div>
+          )}
+
+          <button
+            className="lbs-upload-btn"
+            onClick={handleLbScore360Upload}
+            disabled={!excelFile || loading}
+          >
+            {loading ? "Processing…" : "Upload and Generate Reports"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLbScore360Route && phase === "list") {
+    return (
+      <div className="lbs-list-page">
+        <GlobalLoader visible={loading} />
+        <div className="lbs-list-toolbar">
+          <button className="lbs-back-btn" onClick={() => { setPhase("upload"); setRecipients([]); setExcelFile(null); setError(null); }}>
+            <ChevronLeft size={16} /> Back
+          </button>
+          <span className="lbs-list-count">{recipients.length} recipient{recipients.length !== 1 ? "s" : ""} found</span>
+        </div>
+
+        <div className="lbs-recipient-grid">
+          {recipients.map((r, i) => {
+            const name =
+              r?.introduction?.["Associate Name"] ||
+              r?.profile?.["Associate Name"] ||
+              r?.name ||
+              `Recipient ${i + 1}`;
+            const date =
+              r?.introduction?.["Report Date"] ||
+              r?.profile?.["Report Date"] ||
+              r?.date ||
+              "";
+            return (
+              <button
+                key={i}
+                className="lbs-recipient-card"
+                onClick={() => {
+                  setReportData(r);
+                  setPhase("report");
+                }}
+              >
+                <div className="lbs-recipient-card__avatar">
+                  <User size={20} />
+                </div>
+                <div className="lbs-recipient-card__info">
+                  <span className="lbs-recipient-card__name">{name}</span>
+                  {date && <span className="lbs-recipient-card__date">{date}</span>}
+                </div>
+                <ChevronLeft size={18} className="lbs-recipient-card__arrow" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <GlobalLoader visible={loading} />
@@ -634,6 +803,14 @@ const parseQualitativeComment = (c)=> {
           gap: 8,
         }}
       >
+        {isLbScore360Route && (
+          <button
+            className="lbs-back-btn"
+            onClick={() => { setPhase("list"); setReportData(null); }}
+          >
+            <ChevronLeft size={16} /> All Recipients
+          </button>
+        )}
         <button
           onClick={handleSaveData}
           disabled={!canSaveDraft}
@@ -682,20 +859,22 @@ const parseQualitativeComment = (c)=> {
         >
           Download PDF
         </button>
-        <button
-          onClick={() => setIsUploadModalOpen(true)}
-          style={{
-            padding: "8px 14px",
-            background: "var(--color-accent)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer",
-          }}
-          disabled={loading}
-        >
-          {loading ? "Uploading..." : "Upload Excel"}
-        </button>
+        {!isLbScore360Route && (
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            style={{
+              padding: "8px 14px",
+              background: "var(--color-accent)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+            disabled={loading}
+          >
+            {loading ? "Uploading..." : "Upload Excel"}
+          </button>
+        )}
       </div>
 
       {isUploadModalOpen && (

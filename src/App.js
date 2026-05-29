@@ -32,6 +32,7 @@ function App() {
           <Route path="reports/user/draft" element={<MainPage />} />
           <Route path="user/feedback" element={<Feedback360Report />} />
           <Route path="user/dav360" element={<Dav360SummaryReport />} />
+          <Route path="user/lbscore360" element={<MainPage />} />
         </Route>
         {/* <Route path="/" element={<Feedback360Report />} /> */}
       </Routes>
