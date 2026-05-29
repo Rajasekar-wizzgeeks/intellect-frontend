@@ -194,12 +194,21 @@ const parseQualitativeComment = (c)=> {
           const isPositive = /strength|effectively|positively|contribute/i.test(questionText);
           
           const allComments = [];
-          if (rolesData) {
+          if (rolesData && typeof rolesData === "object") {
             ["Manager", "Peer", "Subordinate", "Self"].forEach(role => {
-              if (Array.isArray(rolesData[role])) {
-                rolesData[role].forEach(comment => {
-                  if (comment) allComments.push({ role, text: comment });
+              const val = rolesData[role];
+              if (Array.isArray(val)) {
+                val.forEach(comment => {
+                  const text = String(comment ?? "").trim();
+                  if (text && !/^\d+(\.\d+)?$/.test(text)) {
+                    allComments.push({ role, text });
+                  }
                 });
+              } else if (val !== null && val !== undefined) {
+                const text = String(val).trim();
+                if (text && !/^\d+(\.\d+)?$/.test(text)) {
+                  allComments.push({ role, text });
+                }
               }
             });
           }
@@ -265,18 +274,20 @@ const parseQualitativeComment = (c)=> {
       const scores = data.score || {};
       const gaps = data.gap || {};
       const selfScore = scores.Self ?? 0;
+      const highlight = data.highlight ?? "";
 
       const cleanedIndicator = indicatorText.replace(/^\d+\.\s*/, "");
 
       return {
         indicator: cleanedIndicator,
         self: selfScore,
+        highlight: highlight,
         others: [
           {
             label: "Manager",
             score: scores.Manager ?? 0,
             gapFromSelf: gaps.manager_gap ?? 0,
-            highlight: "",
+            highlight: highlight,
             color: "#b8860b",
           },
           {
@@ -476,6 +487,99 @@ const parseQualitativeComment = (c)=> {
     });
   }, [reportData]);
 
+  // Derive CompetencySummary props from reportData.competency_summary
+  const competencySummaryProps = useMemo(() => {
+    const cs = reportData?.competency_summary;
+    if (!cs) return {};
+
+    const overallScore = cs.overall_score ?? reportData?.overall_score ?? 370;
+
+    // Backend shape:
+    // quartile_by_cohort / quartile_by_stream: { position: "1st Quartile", quartiles: { minimum_score, first_quartile, median, third_quartile, maximum_score } }
+    // QuartilePositionCard expects valuesByQuartile: { 1: [v0..v4], 2: [...], 3: [...], 4: [...] }
+    // We map the single quartiles row into all 4 tab slots (same values, position drives initialSelected)
+    const positionToTab = (pos) => {
+      if (!pos) return 2;
+      const lower = String(pos).toLowerCase();
+      if (lower.includes("1st") || lower.includes("first"))  return 1;
+      if (lower.includes("2nd") || lower.includes("second")) return 2;
+      if (lower.includes("3rd") || lower.includes("third"))  return 3;
+      if (lower.includes("4th") || lower.includes("fourth")) return 4;
+      return 2;
+    };
+
+    const buildQuartileMap = (block) => {
+      if (!block?.quartiles) return undefined;
+      const q = block.quartiles;
+      const row = [
+        String(q.minimum_score ?? ""),
+        String(q.first_quartile ?? ""),
+        String(q.median ?? ""),
+        String(q.third_quartile ?? ""),
+        String(q.maximum_score ?? ""),
+      ];
+      // Same row for all 4 tabs — user can still switch tabs to compare
+      return { 1: row, 2: row, 3: row, 4: row };
+    };
+
+    const cohortBlock   = cs.quartile_by_cohort;
+    const streamBlock   = cs.quartile_by_stream;
+
+    return {
+      overallScore,
+      cohortQuartiles:        buildQuartileMap(cohortBlock),
+      streamQuartiles:        buildQuartileMap(streamBlock),
+      cohortInitialSelected:  positionToTab(cohortBlock?.position),
+      streamInitialSelected:  positionToTab(streamBlock?.position),
+    };
+  }, [reportData]);
+
+  const participantCohortProps = useMemo(() => {
+    const raw = reportData?.participant_and_cohort_summary;
+    if (!raw || typeof raw !== "object") return {};
+
+    const COMPETENCY_ORDER = [
+      "Leadership",
+      "Bandwidth",
+      "Sales and Customer Centricity",
+      "Collaboration",
+      "Operational Excellence",
+      "Result Orientation",
+      "Expertise and Communication",
+    ];
+
+    const competencies = Object.keys(raw).sort((a, b) => {
+      const ai = COMPETENCY_ORDER.indexOf(a);
+      const bi = COMPETENCY_ORDER.indexOf(b);
+      // Known items sorted by defined order; unknown items go to the end
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+
+    const mapRatings = (ratingObj) => {
+      if (!ratingObj) return {};
+      return {
+        self:        ratingObj.self        ?? "",
+        manager:     ratingObj.manager     ?? "",
+        peers:       ratingObj.peer        ?? ratingObj.peers       ?? "",
+        teamMembers: ratingObj.team_member ?? ratingObj.teamMembers ?? ratingObj.team ?? "",
+      };
+    };
+
+    const selfRatings   = {};
+    const cohortRatings = {};
+
+    competencies.forEach((name) => {
+      const entry = raw[name];
+      selfRatings[name]   = mapRatings(entry?.your_rating);
+      cohortRatings[name] = mapRatings(entry?.cohort_rating);
+    });
+
+    return { competencies, selfRatings, cohortRatings };
+  }, [reportData]);
+
   const canSaveDraft = draftId ? canEditDraft(draftAccessType) : true;
   const canShareDraft = draftId ? canShareDraftAccess(draftAccessType) : false;
 
@@ -488,18 +592,15 @@ const parseQualitativeComment = (c)=> {
   const handleSaveData = async () => {
     if (!canSaveDraft) return;
 
-    // Construct the final data object by merging original data with any updates
     const finalData = {
       ...reportData,
       behavioural_indications: {
         ...(reportData?.behavioural_indications || {}),
       },
-      // Keep overview and evaluator data in separate fields as requested
       overview_summary_data: overviewSummaryData,
       evaluator_category_data: evaluatorCategoryBreakdownData,
     };
 
-    // Update overview_summary_data if edits exist
     if (overviewEdits) {
       finalData.overview_summary_data = overviewEdits.map(row => ({
         label: row.label,
@@ -508,7 +609,6 @@ const parseQualitativeComment = (c)=> {
       }));
     }
 
-    // Update evaluator_category_data if edits exist
     if (evaluatorEdits) {
       finalData.evaluator_category_data = evaluatorEdits.map(row => ({
         label: row.label,
@@ -521,7 +621,6 @@ const parseQualitativeComment = (c)=> {
       }));
     }
 
-    // Merge behavioural edits if they exist
     if (Object.keys(behaviouralEdits).length > 0) {
         const indicatorsKeys = Object.keys(reportData?.behavioural_indications || {});
         Object.entries(behaviouralEdits).forEach(([idx, newRows]) => {
@@ -544,7 +643,6 @@ const parseQualitativeComment = (c)=> {
         });
       }
 
-      // Merge qualitative feedback edits
       if (Object.keys(qualitativeEdits).length > 0) {
         Object.entries(qualitativeEdits).forEach(([sectionIdx, updatedQuestions]) => {
           const sectionKey = Object.keys(reportData.feedbacks)[sectionIdx];
@@ -564,7 +662,6 @@ const parseQualitativeComment = (c)=> {
         });
       }
 
-      // Merge highlights edits (strengths and improvements)
       if (Object.keys(highlightsEdits).length > 0) {
         Object.entries(highlightsEdits).forEach(([idx, items]) => {
           const type = idx === "0" ? "strengths" : "area_of_improvements";
@@ -575,7 +672,6 @@ const parseQualitativeComment = (c)=> {
         });
       }
 
-      // Merge blind spots and hidden strengths edits
       if (Object.keys(blindSpotsEdits).length > 0) {
         Object.entries(blindSpotsEdits).forEach(([idx, items]) => {
           const type = idx === "0" ? "hidden_strengths" : "blind_spots";
@@ -1176,7 +1272,13 @@ const parseQualitativeComment = (c)=> {
             },
           ]}
         />
-        <CompetencySummary overallScore={reportData?.overall_score || 370} />
+        <CompetencySummary
+          overallScore={competencySummaryProps.overallScore ?? reportData?.overall_score ?? 370}
+          cohortQuartiles={competencySummaryProps.cohortQuartiles}
+          streamQuartiles={competencySummaryProps.streamQuartiles}
+          cohortInitialSelected={competencySummaryProps.cohortInitialSelected}
+          streamInitialSelected={competencySummaryProps.streamInitialSelected}
+        />
         <OverviewSummary
           items={overviewEdits || overviewSummaryData}
           onDataChange={(nextRows) => setOverviewEdits(nextRows)}
@@ -1201,9 +1303,9 @@ const parseQualitativeComment = (c)=> {
           }}
         />
         <ParticipantCohortSummary
-          competencies={reportData?.participant_cohort_summary?.competencies}
-          selfRatings={reportData?.participant_cohort_summary?.self_ratings}
-          cohortRatings={reportData?.participant_cohort_summary?.cohort_ratings}
+          competencies={participantCohortProps.competencies ?? reportData?.participant_cohort_summary?.competencies}
+          selfRatings={participantCohortProps.selfRatings ?? reportData?.participant_cohort_summary?.self_ratings}
+          cohortRatings={participantCohortProps.cohortRatings ?? reportData?.participant_cohort_summary?.cohort_ratings}
         />
         <QualitativeFeedbackIntro />
         {qualitativeSections.map((sec, i) => (
@@ -1266,7 +1368,16 @@ const parseQualitativeComment = (c)=> {
             />
           );
         })}
-        <CoachingActionPlan />
+        <CoachingActionPlan
+          profile={{
+            date:          (() => { const d = profileRows?.find(r => r.label === "Report Date")?.value; return (!d || d === "None") ? new Date().toLocaleDateString("en-GB") : d; })(),
+            associateName: profileRows?.find(r => r.label === "Associate Name")?.value ?? "",
+            associateId:   profileRows?.find(r => r.label === "Associate ID")?.value ?? "",
+            role:          profileRows?.find(r => r.label === "Stream")?.value ?? "",
+            lob:           profileRows?.find(r => r.label === "LOB")?.value ?? "",
+            email:         profileRows?.find(r => r.label === "Email ID")?.value ?? "",
+          }}
+        />
         <CoachingActionPlanPage2 />
         <IndividualDevelopmentPlan />
       </div>

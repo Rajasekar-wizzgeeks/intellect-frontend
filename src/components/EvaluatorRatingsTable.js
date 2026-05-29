@@ -159,7 +159,7 @@ const EvaluatorRatingsTable = ({
                   r.score
                 )}
               </td>
-              <td className="et-gap">{Math.abs(tableRows[0].score- r.score)}</td>
+              <td className="et-gap">{parseFloat(Math.abs(tableRows[0].score - r.score).toFixed(2))}</td>
               <td className="et-highlight">{r.highlight}</td>
             </tr>
           ))}

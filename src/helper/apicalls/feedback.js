@@ -330,8 +330,19 @@ export const excelSheetLbScore360Multi = async (file, onRecipient) => {
             competencySummary = json.data || json;
 
           } else {
-            // Fallback: unknown event type — log and ignore
-            console.warn("Unknown SSE event type:", json.type, json);
+            const payload = json.data || json;
+            const looksLikeRecipient =
+              payload &&
+              typeof payload === "object" &&
+              (payload.feedbacks ||
+                payload.overall_behavioural_indications ||
+                payload.behavioural_indications ||
+                payload.introduction ||
+                payload.profile);
+            if (looksLikeRecipient) {
+              recipients.push(payload);
+              if (onRecipient) onRecipient(payload);
+            }
           }
         } catch (e) {
           console.error("Error parsing SSE chunk:", e, raw);
