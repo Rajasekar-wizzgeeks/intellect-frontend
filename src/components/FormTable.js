@@ -12,18 +12,22 @@ const FormTable = ({ header, rows = [], labelWidth = 170 }) => {
         className="cap-table"
         style={{ gridTemplateColumns: `${labelWidth}px 1fr` }}
       >
-        {rows.map((label, i) => (
-          <div
-            className="cap-tr"
-            key={i}
-            style={{ gridTemplateColumns: `${labelWidth}px 1fr` }}
-          >
-            <div className="cap-td cap-td--label">{label}</div>
-            <div className="cap-td">
-              <input className="cap-input" type="text" defaultValue="" />
+        {rows.map((row, i) => {
+          const label = typeof row === "object" && row !== null ? row.label : row;
+          const value = typeof row === "object" && row !== null ? (row.value ?? "") : "";
+          return (
+            <div
+              className="cap-tr"
+              key={i}
+              style={{ gridTemplateColumns: `${labelWidth}px 1fr` }}
+            >
+              <div className="cap-td cap-td--label">{label}</div>
+              <div className="cap-td">
+                <input className="cap-input" type="text" defaultValue={value} />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

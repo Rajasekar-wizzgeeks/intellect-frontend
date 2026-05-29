@@ -52,7 +52,37 @@ const Bar = ({ row, color, showResponses }) => {
   );
 };
 
-const OverallAveragesByPrincipalPage = () => {
+const OverallAveragesByPrincipalPage = ({ teamRows: propTeamRows, managerRows: propManagerRows }) => {
+  const finalTeamRows = useMemo(() => {
+    return Array.isArray(propTeamRows) ? propTeamRows : [
+      { name: "Mr. Ramana Velavan Venkatachalam", responses: 43, value: 4.65 },
+      { name: "Ms. Bhuvaneshwari G", responses: 36, value: 4.54 },
+      { name: "Ms. Kanakalakshmi S", responses: 151, value: 4.4 },
+      { name: "Ms. Nandhini Srinivasan", responses: 96, value: 4.3 },
+      { name: "Ms. Swarna Karpagavalli S", responses: 93, value: 4.26 },
+      { name: "Ms. Sindhu S", responses: 92, value: 4.26 },
+      { name: "Ms. Hemamala Balasubramanian", responses: 22, value: 4.26 },
+      { name: "Ms. Uma Parvathy", responses: 66, value: 4.25 },
+      { name: "Mr. Veeramurugan G", responses: 77, value: 4.16 },
+      { name: "Mr. T. Rangarajan", responses: 33, value: 4.04 },
+    ];
+  }, [propTeamRows]);
+
+  const finalManagerRows = useMemo(() => {
+    return Array.isArray(propManagerRows) ? propManagerRows : [
+      { name: "Ms. Kanakalakshmi S", value: 4.38 },
+      { name: "Ms. Sindhu S", value: 4.38 },
+      { name: "Ms. Hemamala Balasubramanian", value: 3.85 },
+      { name: "Mr. Ramana Velavan...", value: 3.77 },
+      { name: "Mr. T. Rangarajan", value: 3.69 },
+      { name: "Mr. Veeramurugan G", value: 3.54 },
+      { name: "Ms. Swarna Karpagavalli S", value: 3.54 },
+      { name: "Ms. Nandhini Srinivasan", value: 3.54 },
+      { name: "Ms. Bhuvaneshwari G", value: 3.38 },
+      { name: "Ms. Uma Parvathy", value: 2.92 },
+    ];
+  }, [propManagerRows]);
+
   const blocks = useMemo(() => {
     return [
       <div key="oap-header">
@@ -76,7 +106,7 @@ const OverallAveragesByPrincipalPage = () => {
       </div>,
       <div key="oap-columns" className="oap__columns">
         <div className="oap__col">
-          {teamRows.map((r) => (
+          {finalTeamRows.map((r) => (
             <Bar key={r.name} row={r} color="green" showResponses />
           ))}
         </div>
@@ -84,13 +114,13 @@ const OverallAveragesByPrincipalPage = () => {
         <div className="oap__col-divider" />
 
         <div className="oap__col">
-          {managerRows.map((r) => (
+          {finalManagerRows.map((r) => (
             <Bar key={r.name} row={r} color="red" />
           ))}
         </div>
       </div>,
     ];
-  }, []);
+  }, [finalTeamRows, finalManagerRows]);
 
   return (
     <AutoPaginatedSections
@@ -99,6 +129,7 @@ const OverallAveragesByPrincipalPage = () => {
       pageHeight={1123}
       pagePadding={40}
       contentClassName="oap"
+      pageClassName="dav360-page"
       componentId="overall-averages-by-principal"
     />
   );

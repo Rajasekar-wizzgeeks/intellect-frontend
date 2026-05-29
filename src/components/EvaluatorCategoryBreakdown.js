@@ -19,6 +19,7 @@ const EvaluatorCategoryBreakdown = ({
   pageHeight = 852,
   pagePadding = 10,
   items = [],
+  onDataChange,
 }) => {
   const initialRows = useMemo(() => items, [items]);
   const [rows, setRows] = useState(initialRows);
@@ -75,15 +76,13 @@ const EvaluatorCategoryBreakdown = ({
               showTicks={true}
               editableValues={true}
               onRowsChange={(nextBarRows) => {
-                setRows((prev) => {
-                  const next = [...prev];
-                  const cur = next[idx];
-                  if (!cur) return prev;
-
+                const nextRows = [...rows];
+                const cur = nextRows[idx];
+                if (cur) {
                   const getVal = (label) =>
                     nextBarRows?.find((r) => r.label === label)?.value;
 
-                  next[idx] = {
+                  nextRows[idx] = {
                     ...cur,
                     values: {
                       ...cur.values,
@@ -94,8 +93,11 @@ const EvaluatorCategoryBreakdown = ({
                     },
                   };
 
-                  return next;
-                });
+                  setRows(nextRows);
+                  if (onDataChange) {
+                    onDataChange(nextRows);
+                  }
+                }
               }}
             />
           </div>

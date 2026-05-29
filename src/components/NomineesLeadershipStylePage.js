@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import AutoPaginatedSections from "./AutoPaginatedSections";
@@ -182,13 +182,34 @@ const EditableAdjective = ({ value, onSave }) => {
 };
 
 const NomineesLeadershipStyleAdjectives = React.memo(
-  ({ adjectivesSubtitle, adjectives = [], footnote }) => {
+  ({ adjectivesSubtitle, adjectives = [], footnote, onDataChange }) => {
     const [localAdjectives, setLocalAdjectives] = useState(adjectives);
     const [editing, setEditing] = useState(null); // { idx }
+    const onDataChangeRef = useRef(onDataChange);
+    const lastEmittedSigRef = useRef("");
+
+    useEffect(() => {
+      onDataChangeRef.current = onDataChange;
+    }, [onDataChange]);
 
     useEffect(() => {
       setLocalAdjectives(adjectives);
     }, [adjectives]);
+
+    const emitAdjectivesChange = (updated) => {
+      const cb = onDataChangeRef.current;
+      if (!cb) return;
+      const payload = { adjectives: updated };
+      let sig;
+      try {
+        sig = JSON.stringify(payload);
+      } catch {
+        return;
+      }
+      if (sig === lastEmittedSigRef.current) return;
+      lastEmittedSigRef.current = sig;
+      cb(payload);
+    };
 
     return (
       <div key="nls-adj" className="nls-adj">
@@ -223,6 +244,7 @@ const NomineesLeadershipStyleAdjectives = React.memo(
                       } else {
                         updated[idx] = newValue;
                       }
+                      emitAdjectivesChange(updated);
                       return updated;
                     });
                     setEditing(null);
@@ -255,6 +277,7 @@ const NomineesLeadershipStylePage = ({
   adjectivesSubtitle = "(Adjectives that occur more than once)",
   adjectives = [],
   footnote = "* This excludes self feedback ; The larger fonts indicate more number of responses",
+  onDataChange,
 }) => {  
   const blocks = useMemo(() => {
     const out = [];
@@ -296,11 +319,12 @@ const NomineesLeadershipStylePage = ({
         adjectives={adjectives}
         adjectivesSubtitle={adjectivesSubtitle}
         footnote={footnote}
+        onDataChange={onDataChange}
       />,
     );
 
     return out;
-  }, [adjectives, adjectivesSubtitle, footnote, items, title]);
+  }, [adjectives, adjectivesSubtitle, footnote, items, title, onDataChange]);
 
   return (
     <AutoPaginatedSections

@@ -70,6 +70,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     },
   ],
   setAverageCompentency,
+  onDataChange,
   file2Year,
   file3Year,
   currentYear,
@@ -179,6 +180,35 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
     }
   }, [comparisonNotes]);
 
+  const onDataChangeRef = useRef(onDataChange);
+  const lastEmittedSigRef = useRef("");
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
+
+  const emitDataChange = useCallback(
+    (patch = {}) => {
+      const cb = onDataChangeRef.current;
+      if (!cb) return;
+      const payload = {
+        engagement_with_management_competency: patch.engagement_with_management_competency ?? rows,
+        comparision_average: patch.comparision_average ?? localComparisonAverage,
+        manager_comparision_average:
+          patch.manager_comparision_average ?? localManagerComparisonAverage,
+      };
+      let sig;
+      try {
+        sig = JSON.stringify(payload);
+      } catch {
+        return;
+      }
+      if (sig === lastEmittedSigRef.current) return;
+      lastEmittedSigRef.current = sig;
+      cb(payload);
+    },
+    [rows, localComparisonAverage, localManagerComparisonAverage],
+  );
+
   const handleCellBlur = useCallback((rowIndex, fieldKey, newValue, label) => {
     const numValue = Number(newValue);
     const updatedComparison = { ...normalizeAverageMap(localComparisonAverage) };
@@ -194,8 +224,9 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
         updatedComparison[targetLabel] = numValue;
       }
       setLocalComparisonAverage(updatedComparison);
+      emitDataChange({ comparision_average: updatedComparison });
     }
-  }, [localComparisonAverage, normalizeAverageMap]);
+  }, [localComparisonAverage, normalizeAverageMap, emitDataChange]);
 
   const handleNoteCommit = useCallback((noteIndex, value) => {
     const nextValue = String(value ?? "");
@@ -266,7 +297,8 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
         engagement_with_management_competency: newRows,
       }));
     }
-  }, [computeOverallFromRows, setAverageCompentency]);
+    emitDataChange({ engagement_with_management_competency: newRows });
+  }, [computeOverallFromRows, setAverageCompentency, emitDataChange]);
 
   const blocks = useMemo(() => {
     const out = [];
@@ -556,6 +588,7 @@ const EngagementWithManagementSummaryByCompetencyPage = ({
                     }
                   }
                   setLocalManagerComparisonAverage(updated);
+                  emitDataChange({ manager_comparision_average: updated });
                 }}
                 title="Comparison of Manager Scores"
               />

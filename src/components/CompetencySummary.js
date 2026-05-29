@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
 import QuartilePositionCard from "./QuartilePositionCard";
@@ -218,20 +218,10 @@ const CompetencySummary = ({
   pagePadding = 10,
   cohortQuartiles,
   streamQuartiles,
+  cohortInitialSelected = 2,
+  streamInitialSelected = 2,
+  overallScore = 370,
 }) => {
-  const cohortRows = useMemo(
-    () => [
-      { label: "Score", value: "283.0", extra: "" },
-      { label: "First quartile (25th percentile)", value: "365.5", extra: "" },
-      { label: "Median value (50th percentile)", value: "393.5", extra: "" },
-      { label: "Third quartile (75th percentile)", value: "425.5", extra: "" },
-      { label: "Max Score", value: "483.0", extra: "" },
-    ],
-    [],
-  );
-
-  const streamRows = cohortRows;
-
   const defaultCohortMap = useMemo(
     () => ({
       1: ["250.0", "340.0", "370.0", "400.0", "480.0"],
@@ -251,10 +241,24 @@ const CompetencySummary = ({
     [],
   );
 
-  const [cohortMap, setCohortMap] = useState(defaultCohortMap);
-  const [streamMap, setStreamMap] = useState(defaultStreamMap);
+  const [cohortMap, setCohortMap] = useState(() => cohortQuartiles ?? defaultCohortMap);
+  const [streamMap, setStreamMap] = useState(() => streamQuartiles ?? defaultStreamMap);
 
-  // console.log(cohortMap, streamMap);
+  useEffect(() => {
+    setCohortMap(cohortQuartiles ?? defaultCohortMap);
+  }, [cohortQuartiles]);
+  useEffect(() => {
+    setStreamMap(streamQuartiles ?? defaultStreamMap);
+  }, [streamQuartiles]); 
+
+  const quartileHeaders = [
+    "Minimum Score",
+    "First Quartile (25th percentile)",
+    "Median (50th percentile)",
+    "Third Quartile (75th percentile)",
+    "Maximum Score",
+  ];
+
   const handleCohortChange = (quartile, index, value) => {
     setCohortMap((prev) => ({
       ...prev,
@@ -293,7 +297,7 @@ const CompetencySummary = ({
         <div className="cs-gauge-wrap">
           <div className="cs-gauge">
             <div className="cs-gauge__label">Your Overall Score</div>
-            <Gauge />
+            <Gauge score={overallScore} />
           </div>
         </div>
         <ul className="cs-overall__bullets">
@@ -318,14 +322,16 @@ const CompetencySummary = ({
           <QuartilePositionCard
             title="Your Quartile Position Cohort"
             valuesByQuartile={cohortMap}
-            initialSelected={2}
+            initialSelected={cohortInitialSelected}
+            headers={quartileHeaders}
             onValueChange={handleCohortChange}
           />
           <div className="cs-quartiles__divider" />
           <QuartilePositionCard
             title="Your Quartile Position Stream"
             valuesByQuartile={streamMap}
-            initialSelected={2}
+            initialSelected={streamInitialSelected}
+            headers={quartileHeaders}
             onValueChange={handleStreamChange}
           />
         </div>
@@ -333,7 +339,7 @@ const CompetencySummary = ({
     );
 
     return out;
-  }, [cohortMap, streamMap]);
+  }, [cohortMap, streamMap, quartileHeaders, cohortInitialSelected, streamInitialSelected]);
 
   return (
     <AutoPaginatedSections

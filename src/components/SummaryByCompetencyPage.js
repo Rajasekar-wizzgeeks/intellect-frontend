@@ -11,6 +11,7 @@ const SummaryByCompetencyPage = ({
   leadershipOverallScore = 4.53,
   leadershipItems = [],
   setAverageCompentency,
+  onDataChange,
   setFeedbackOverallData,
   totalResponse = {
     total: 1,
@@ -98,6 +99,9 @@ const SummaryByCompetencyPage = ({
         ...prev,
         right_culture_competency: sortedRows,
       }));
+      if (onDataChange) {
+        onDataChange({ right_culture_competency: sortedRows });
+      }
     }
     if (competency === "leadership_style_competency") {
       setLeadershipCompetencyOverallScore(overallScore);
@@ -106,6 +110,9 @@ const SummaryByCompetencyPage = ({
         ...prev,
         leadership_style_competency: sortedRows,
       }));
+      if (onDataChange) {
+        onDataChange({ leadership_style_competency: sortedRows });
+      }
     }
   };
 

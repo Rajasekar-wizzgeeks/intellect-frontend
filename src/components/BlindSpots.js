@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState,useEffect } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
 import "../styles/mainPage.scss";
@@ -6,8 +6,29 @@ import "../styles/contentPage.scss";
 import "../styles/blindSpots.scss";
 import ArcConnector from "./ArcConnector";
 
-const ScoreChip = ({ score = 2.5, scoreShip = false }) => (
-  <div className="bs-chip">{<span>{score}</span>}</div>
+const ScoreChip = ({ score = 2.5, scoreShip = false, onChange, onBlur }) => (
+  <div className="bs-chip">
+    {onChange ? (
+      <input
+        type="text"
+        className="bs-chip-input"
+        value={score}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        style={{
+          width: "40px",
+          background: "transparent",
+          border: "none",
+          color: "inherit",
+          textAlign: "center",
+          fontWeight: "bold",
+          fontSize: "inherit",
+        }}
+      />
+    ) : (
+      <span>{score}</span>
+    )}
+  </div>
 );
 
 const LeftIcon = ({ leftIcon }) => {
@@ -17,7 +38,7 @@ const LeftIcon = ({ leftIcon }) => {
   return leftIcon;
 };
 
-const RatingBars = ({ self = 4, others = 2 }) => {
+const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur }) => {
   const max = 5;
   const selfPct = Math.max(0, Math.min(100, (self / max) * 100));
   const othersPct = Math.max(0, Math.min(100, (others / max) * 100));
@@ -35,9 +56,32 @@ const RatingBars = ({ self = 4, others = 2 }) => {
         <div className="bs-bar others">
           <div
             className="bs-fill others"
-            style={{ width: `${selfPct}%`, background: colorPicker[self - 1] }}
+            style={{ width: `${selfPct}%`, background: colorPicker[Math.max(0, Math.floor(self - 1))] }}
           />
-          <span className="bs-value others">{self}</span>
+          {onSelfChange ? (
+            <input
+              type="number"
+              className="bs-value-input others"
+              value={self}
+              step="0.1"
+              onChange={(e) => onSelfChange(e.target.value)}
+              onBlur={onBlur}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "40px",
+                border: "none",
+                background: "transparent",
+                color: "#fff",
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            />
+          ) : (
+            <span className="bs-value others">{self}</span>
+          )}
         </div>
       </div>
       <span className="bs-center-label">Others</span>
@@ -46,10 +90,124 @@ const RatingBars = ({ self = 4, others = 2 }) => {
           className="bs-fill others"
           style={{
             width: `${othersPct}%`,
-            background: colorPicker[others - 1],
+            background: colorPicker[Math.max(0, Math.floor(others - 1))],
           }}
         />
-        <span className="bs-value others">{others}</span>-{" "}
+        {onOthersChange ? (
+          <input
+            type="number"
+            className="bs-value-input others"
+            value={others}
+            step="0.1"
+            onChange={(e) => onOthersChange(e.target.value)}
+            onBlur={onBlur}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "40px",
+              border: "none",
+              background: "transparent",
+              color: "#fff",
+              textAlign: "center",
+              fontWeight: "bold",
+            }}
+          />
+        ) : (
+          <span className="bs-value others">{others}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const BlindSpotRow = ({
+  item,
+  index,
+  points,
+  chipColor,
+  scoreShip,
+  onItemChange
+}) => {
+  const [localDesc, setLocalDesc] = useState(item.desc ?? "");
+  const [localScore, setLocalScore] = useState(item.score ?? "");
+  const [localSelf, setLocalSelf] = useState(item.self ?? 0);
+  const [localOthers, setLocalOthers] = useState(item.others ?? 0);
+
+  useEffect(() => {
+    setLocalDesc(item.desc ?? "");
+    setLocalScore(item.score ?? "");
+    setLocalSelf(item.self ?? 0);
+    setLocalOthers(item.others ?? 0);
+  }, [item]);
+
+  const handleBlur = () => {
+    if (
+      localDesc !== item.desc ||
+      localScore !== item.score ||
+      localSelf !== item.self ||
+      localOthers !== item.others
+    ) {
+      onItemChange(index, {
+        ...item,
+        desc: localDesc,
+        score: localScore,
+        self: localSelf,
+        others: localOthers
+      });
+    }
+  };
+
+  if (!points[index]) return null;
+
+  return (
+    <div
+      className="bs-row"
+      style={{
+        position: "absolute",
+        top: points[index].y - 45,
+        width: "100%",
+      }}
+    >
+      <div
+        className="bs-connector"
+        style={{
+          width: 200 - points[index].x,
+          left: -(200 - points[index].x),
+        }}
+      />
+      <ScoreChip
+        score={localScore}
+        scoreShip={scoreShip}
+        onChange={(val) => setLocalScore(val)}
+        onBlur={handleBlur}
+      />
+      <div className="bs-row-content">
+        <div className="bs-row-text">
+          <textarea
+            className="bs-row-text-input"
+            value={localDesc}
+            onChange={(e) => setLocalDesc(e.target.value)}
+            onBlur={handleBlur}
+            rows={2}
+            style={{
+              width: "100%",
+              border: "none",
+              background: "transparent",
+              font: "inherit",
+              color: "inherit",
+              resize: "none",
+            }}
+          />
+        </div>
+        <RatingBars
+          self={localSelf}
+          others={localOthers}
+          onSelfChange={(val) => setLocalSelf(val)}
+          onOthersChange={(val) => setLocalOthers(val)}
+          onBlur={handleBlur}
+        />
       </div>
     </div>
   );
@@ -66,8 +224,23 @@ const BlindSpots = ({
   scoreShip = false,
   items = [],
   key_id = "",
+  onDataChange,
 }) => {
   const [points, setPoints] = useState([]);
+  const [localItems, setLocalItems] = useState(items);
+
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
+
+  const handleItemUpdate = useCallback((idx, nextItem) => {
+    const nextItems = [...localItems];
+    nextItems[idx] = nextItem;
+    setLocalItems(nextItems);
+    if (onDataChange) {
+      onDataChange(nextItems);
+    }
+  }, [localItems, onDataChange]);
 
   const stripLeadingSerial = (text) => {
     const s = String(text ?? "").trim();
@@ -99,18 +272,18 @@ const BlindSpots = ({
     const maxArcHeight = 680;
 
     let rowSpacing = baseRowSpacing;
-    if (items.length > 1) {
-      const idealHeight = topOffset * 2 + (items.length - 1) * baseRowSpacing + 160;
+    if (localItems.length > 1) {
+      const idealHeight = topOffset * 2 + (localItems.length - 1) * baseRowSpacing + 160;
       if (idealHeight > maxArcHeight) {
         const availableForRows = maxArcHeight - topOffset * 2 - 160;
         rowSpacing = Math.max(
           minRowSpacing,
-          availableForRows / (items.length - 1)
+          availableForRows / (localItems.length - 1)
         );
       }
     }
 
-    const arcHeight = topOffset * 2 + (items.length - 1) * rowSpacing + 160;
+    const arcHeight = topOffset * 2 + (localItems.length - 1) * rowSpacing + 160;
     const paddingTop = topOffset;
     const paddingBottom = topOffset;
 
@@ -136,34 +309,8 @@ const BlindSpots = ({
         style={{ "--bs-arc": arcColor, "--bs-chip": chipColor }}
       >
         <div className="bs-left" style={{ minHeight: arcHeight }}>
-          {/* <svg
-            className="bs-arc"
-            viewBox={`0 0 200 ${arcHeight}`}
-            preserveAspectRatio="none"
-          >
-            <path
-              d={`M20 0 C 160 ${Math.round(arcHeight * 0.23)}, 160 ${Math.round(
-                arcHeight * 0.77
-              )}, 20 ${arcHeight}`}
-              stroke={arcColor}
-              strokeWidth="3.0"
-              fill="none"
-              strokeLinecap="round"
-            />
-            {items.map((it, i) => (
-              <circle
-                key={i}
-                cx={
-                  i == 0 || i == items.length - 1 ? 65 : i == 1 ? 110 : i == 2 ? 124 : i == 3 ? 110 : 65
-                }
-                cy={topOffset + i * rowSpacing + i * 40}
-                r={8}
-                fill={arcColor}
-              />
-            ))}
-          </svg> */}
           <ArcConnector
-            items={items}
+            items={localItems}
             arcColor={arcColor}
             arcHeight={arcHeight}
             paddingTop={paddingTop}
@@ -183,33 +330,17 @@ const BlindSpots = ({
           className="bs-right"
           style={{ position: "relative", width: "100%" }}
         >
-          {points.length === items.length &&
-            items.map((it, i) => (
-              <div
+          {points.length === localItems.length &&
+            localItems.map((it, i) => (
+              <BlindSpotRow
                 key={`row-${i}`}
-                className="bs-row"
-                style={{
-                  position: "absolute",
-                  top: points[i].y - 45,
-                  width: "100%",
-                }}
-              >
-                <div
-                  className="bs-connector"
-                  style={{
-                    width: 200 - points[i].x,
-                    left: -(200 - points[i].x),
-                  }}
-                />
-                <ScoreChip score={it.score} scoreShip={scoreShip} />
-                <div className="bs-row-main">
-                  <div className="bs-row-top">
-                    <div className="bs-row-title">Your Rating</div>
-                    <RatingBars self={it.self} others={it.others} />
-                  </div>
-                  <div className="bs-row-text">{stripLeadingSerial(it.text)}</div>
-                </div>
-              </div>
+                item={it}
+                index={i}
+                points={points}
+                chipColor={chipColor}
+                scoreShip={scoreShip}
+                onItemChange={handleItemUpdate}
+              />
             ))}
         </div>
       </div>,
@@ -220,12 +351,13 @@ const BlindSpots = ({
     titleIndex,
     titleText,
     description,
-    items,
+    localItems,
     points,
     arcColor,
     chipColor,
     leftIcon,
     handlePointsLine,
+    handleItemUpdate,
   ]);
 
   return (

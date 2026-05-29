@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import FeedbackCommonHeader from "./FeedbackCommonHeader";
 import "../styles/surveyFeedback.scss";
@@ -73,7 +73,7 @@ const EditableCount = ({ value, onChange }) => {
   );
 };
 
-const SurveyFeedback = ({ overviewData }) => {
+const SurveyFeedback = ({ overviewData, onDataChange }) => {
   const totalSurveyQuestion = useMemo(() => {
     if (!overviewData || typeof overviewData !== "object") return 0;
 
@@ -100,10 +100,41 @@ const SurveyFeedback = ({ overviewData }) => {
   const effectiveTotalQuestionCount =
     effectiveSurveyQuestionCount + effectiveQualitativeQuestionCount;
 
+  const onDataChangeRef = useRef(onDataChange);
+  onDataChangeRef.current = onDataChange;
+  const lastSurveyEditsSigRef = useRef("");
+
+  const emitSurveyEdits = useCallback(
+    (surveyOverride, qualOverride) => {
+      const cb = onDataChangeRef.current;
+      if (!cb) return;
+
+      const surveyCount = surveyOverride ?? totalSurveyQuestion;
+      const qualCount = qualOverride ?? qualitativeQuestionCount;
+      const payload = {
+        survey_question_count: surveyCount,
+        qualitative_question_count: qualCount,
+        total_questions: surveyCount + qualCount,
+      };
+
+      let sig;
+      try {
+        sig = JSON.stringify(payload);
+      } catch {
+        return;
+      }
+      if (sig === lastSurveyEditsSigRef.current) return;
+      lastSurveyEditsSigRef.current = sig;
+      cb(payload);
+    },
+    [totalSurveyQuestion, qualitativeQuestionCount],
+  );
+
   const setTotalQuestionCount = (nextTotal) => {
     if (nextTotal === null || nextTotal === undefined) {
       setSurveyQuestionOverride(null);
       setQualitativeQuestionOverride(null);
+      emitSurveyEdits(null, null);
       return;
     }
 
@@ -111,7 +142,24 @@ const SurveyFeedback = ({ overviewData }) => {
       qualitativeQuestionOverride ?? qualitativeQuestionCount;
     const nextSurvey = Math.max(0, Number(nextTotal) - Number(baseQual));
     setSurveyQuestionOverride(nextSurvey);
+    emitSurveyEdits(nextSurvey, qualitativeQuestionOverride);
   };
+
+  const handleSurveyQuestionOverride = useCallback(
+    (nextSurvey) => {
+      setSurveyQuestionOverride(nextSurvey);
+      emitSurveyEdits(nextSurvey, qualitativeQuestionOverride);
+    },
+    [emitSurveyEdits, qualitativeQuestionOverride],
+  );
+
+  const handleQualitativeQuestionOverride = useCallback(
+    (nextQual) => {
+      setQualitativeQuestionOverride(nextQual);
+      emitSurveyEdits(surveyQuestionOverride, nextQual);
+    },
+    [emitSurveyEdits, surveyQuestionOverride],
+  );
 
   const leadershipStaffDevQuestionCount = useMemo(() => {
     return Object.keys(overviewData?.leadership_staff_dev_competency || {})
@@ -235,12 +283,12 @@ const SurveyFeedback = ({ overviewData }) => {
               (
               <EditableCount
                 value={effectiveSurveyQuestionCount}
-                onChange={setSurveyQuestionOverride}
+                onChange={handleSurveyQuestionOverride}
               />{" "}
               survey questions +{" "}
               <EditableCount
                 value={effectiveQualitativeQuestionCount}
-                onChange={setQualitativeQuestionOverride}
+                onChange={handleQualitativeQuestionOverride}
               />{" "}
               qualitative questions)
             </li>
@@ -350,6 +398,9 @@ const SurveyFeedback = ({ overviewData }) => {
     effectiveSurveyQuestionCount,
     effectiveQualitativeQuestionCount,
     effectiveTotalQuestionCount,
+    handleSurveyQuestionOverride,
+    handleQualitativeQuestionOverride,
+    setTotalQuestionCount,
   ]);
 
   return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import FeedbackInitialPage from "../components/feedbackInitialPage";
 import SurveyFeedback from "../components/surveyFeedback";
 import "../styles/feedback360Report.scss";
@@ -12,15 +12,33 @@ import QualitativeFeedbackCoverPage from "../components/QualitativeFeedbackCover
 import ContinueDoingPage from "../components/ContinueDoingPage";
 import StopDoingPage from "../components/StopDoingPage";
 import GlobalLoader from "../components/globalLoader";
+import ShareModal from "../components/ShareModal";
+import StatusModal from "../components/StatusModal";
 import { downloadPdfSplitByHeader } from "../utils/pdf";
-import { excelSheetFeedback } from "../helper/apicalls/feedback";
-import { useOutletContext } from "react-router-dom";
+import { excelSheetFeedback, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
+import { getApiErrorMessage } from "../helper/getApiErrorMessage";
+import { canEditDraft, canShareDraftAccess } from "../helper/draftAccess";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { AlertCircle, Check, FileSpreadsheet, Upload, X } from "lucide-react";
+
+const setEditsIfChanged = (setter, data) => {
+  setter((prev) => {
+    if (prev === data) return prev;
+    try {
+      if (prev && JSON.stringify(prev) === JSON.stringify(data)) return prev;
+    } catch {
+      // ignore comparison errors
+    }
+    return data;
+  });
+};
 
 const Feedback360Report = () => {
   const [feedbackOverallData, setFeedbackOverallData] = useState(null);
   const { setHeaderName } = useOutletContext();
   const [isUploading, setIsUploading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get("draft_id");
   const [showComparisonTable, setShowComparisonTable] = useState(true);
   const currentYearFileInputRef = useRef(null);
   const previousYearFileInputRef = useRef(null);
@@ -33,6 +51,18 @@ const Feedback360Report = () => {
   const [uploadError, setUploadError] = useState("");
   const [averageCompentency, setAverageCompentency] = useState(null);
   const [dragOverKey, setDragOverKey] = useState(null);
+  const [strengthsEdits, setStrengthsEdits] = useState(null);
+  const [initialPageEdits, setInitialPageEdits] = useState(null);
+  const [surveyFeedbackEdits, setSurveyFeedbackEdits] = useState(null);
+  const [continueDoingEdits, setContinueDoingEdits] = useState(null);
+  const [stopDoingEdits, setStopDoingEdits] = useState(null);
+  const [predominantLeaderEdits, setPredominantLeaderEdits] = useState(null);
+  const [immediateActionEdits, setImmediateActionEdits] = useState(null);
+  const [nomineeEdits, setNomineeEdits] = useState(null);
+  const [engagementEdits, setEngagementEdits] = useState(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [draftAccessType, setDraftAccessType] = useState(null);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
 
   const currentYearLabel = new Date().getFullYear();
   const previousYearLabel = currentYearLabel - 1;
@@ -602,17 +632,197 @@ const Feedback360Report = () => {
     feedbackOverallData?.nominee_leadership,
   );
 
-  const immediateActionAreasSummary = {
-    title: "Immediate Action Areas - Summary",
-    description:
-      "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
-    note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
-    columns: feedbackOverallData?.action_areas_thing || {
-      continue: [],
-      start: [],
-      stop: [],
-    },
-  };
+  const immediateActionAreasSummary = useMemo(
+    () => ({
+      title: "Immediate Action Areas - Summary",
+      description:
+        "Repeated themes, if any are captured as a snapshot to facilitate understanding and further action",
+      note: "Note: If comments have been very diverse with no commonality, it will not be captured here but can be referenced in the individual slides",
+      columns: feedbackOverallData?.action_areas_thing || {
+        continue: [],
+        start: [],
+        stop: [],
+      },
+    }),
+    [feedbackOverallData?.action_areas_thing],
+  );
+
+  const continueDoingPageProps = useMemo(() => {
+    const groups = Array.isArray(feedbackOverallData?.continue_doing_thing)
+      ? feedbackOverallData.continue_doing_thing
+      : [];
+    const built = buildThreeGroupColumns(groups);
+    return {
+      columns: built.columns || [],
+      groups,
+      groupIndexMatrix: built.indexMatrix || [],
+    };
+  }, [feedbackOverallData?.continue_doing_thing]);
+
+  const stopDoingPageProps = useMemo(() => {
+    const groups = Array.isArray(feedbackOverallData?.stop_doing_thing)
+      ? feedbackOverallData.stop_doing_thing
+      : [];
+    const built = buildThreeGroupColumns(groups);
+    return {
+      columns: built.columns || [],
+      groups,
+      groupIndexMatrix: built.indexMatrix || [],
+    };
+  }, [feedbackOverallData?.stop_doing_thing]);
+
+  const predominantLeaderPageProps = useMemo(() => {
+    const raw = Array.isArray(feedbackOverallData?.predominant_leader_thing)
+      ? feedbackOverallData.predominant_leader_thing
+      : [];
+
+    const hasGroupShape = raw.some(
+      (g) =>
+        g &&
+        typeof g === "object" &&
+        ("comments_belong_to_this_group" in g ||
+          "representative_comment" in g),
+    );
+
+    if (!hasGroupShape) {
+      return {
+        columns: buildThreeTextColumns(raw),
+      };
+    }
+
+    const cleaned = [];
+    raw.forEach((g, idx) => {
+      const representative =
+        (g &&
+          typeof g === "object" &&
+          (g.representative_comment ??
+            g.representativeComment ??
+            g.comment ??
+            g.text)) ||
+        "";
+      const t = String(representative).replace(/_x000D_\s*/gi, " ").trim();
+      const plain = t
+        .replace(/&nbsp;?/gi, " ")
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!plain || /^[-–—]{2,}$/.test(plain)) return;
+      cleaned.push({ text: t, idx });
+    });
+
+    if (!cleaned.length) {
+      return {
+        columns: buildThreeTextColumns([]),
+      };
+    }
+
+    const columns = [[], [], []];
+    const indexMatrix = [[], [], []];
+    const rowsPerCol = Math.ceil(cleaned.length / 3);
+
+    cleaned.forEach((row, pos) => {
+      const colIdx = Math.min(2, Math.floor(pos / rowsPerCol));
+      columns[colIdx].push(row.text);
+      indexMatrix[colIdx].push(row.idx);
+    });
+
+    return {
+      continue: true,
+      columns,
+      groups: raw,
+      groupIndexMatrix: indexMatrix,
+    };
+  }, [feedbackOverallData?.predominant_leader_thing]);
+
+  const continueDoingFootnote = useMemo(
+    () => (
+      <>
+        <div>
+          *Similar comments with slight variations in wording will be grouped
+          together for ease of reading and arranged in decreasing order of
+          frequency
+        </div>
+        <div>*This excludes self feedback</div>
+      </>
+    ),
+    [],
+  );
+
+  const predominantLeaderFootnote = useMemo(
+    () => (
+      <>
+        <div>
+          *Similar comments with slight variations in wording will be grouped
+          together for ease of reading and arranged in decreasing order of
+          frequency
+        </div>
+        <div>*This excludes self feedback</div>
+      </>
+    ),
+    [],
+  );
+
+  const handleInitialPageChange = useCallback(
+    (data) => setEditsIfChanged(setInitialPageEdits, data),
+    [],
+  );
+  const handleSurveyFeedbackChange = useCallback(
+    (data) => setEditsIfChanged(setSurveyFeedbackEdits, data),
+    [],
+  );
+  const handleStrengthsChange = useCallback(
+    (data) => setEditsIfChanged(setStrengthsEdits, data),
+    [],
+  );
+  const handleCompetencyDataChange = useCallback((patch) => {
+    setAverageCompentency((prev) => {
+      const next = { ...(prev || {}), ...patch };
+      try {
+        if (prev && JSON.stringify(prev) === JSON.stringify(next)) return prev;
+      } catch {
+        // ignore comparison errors
+      }
+      return next;
+    });
+  }, []);
+  const handleEngagementDataChange = useCallback((patch) => {
+    setEngagementEdits((prev) => {
+      const next = { ...(prev || {}), ...patch };
+      try {
+        if (prev && JSON.stringify(prev) === JSON.stringify(next)) return prev;
+      } catch {
+        // ignore comparison errors
+      }
+      return next;
+    });
+    if (patch.engagement_with_management_competency) {
+      handleCompetencyDataChange({
+        engagement_with_management_competency:
+          patch.engagement_with_management_competency,
+      });
+    }
+  }, [handleCompetencyDataChange]);
+  const handleContinueDoingChange = useCallback(
+    (data) => setEditsIfChanged(setContinueDoingEdits, data),
+    [],
+  );
+  const handleStopDoingChange = useCallback(
+    (data) => setEditsIfChanged(setStopDoingEdits, data),
+    [],
+  );
+  const handlePredominantLeaderChange = useCallback(
+    (data) => setEditsIfChanged(setPredominantLeaderEdits, data),
+    [],
+  );
+  const handleImmediateActionChange = useCallback(
+    (data) => setEditsIfChanged(setImmediateActionEdits, data),
+    [],
+  );
+  const handleNomineeChange = useCallback(
+    (data) => setEditsIfChanged(setNomineeEdits, data),
+    [],
+  );
 
   // console.log("feedbackOverallData", averageCompentency);
 
@@ -658,9 +868,149 @@ const Feedback360Report = () => {
     }
   };
 
+  const flatColumnsToList = (columns) => {
+    if (!Array.isArray(columns)) return [];
+    return columns.flat().map((c) => String(c ?? "").trim()).filter(Boolean);
+  };
+
+  const canSaveDraft = draftId ? canEditDraft(draftAccessType) : true;
+  const canShareDraft = draftId ? canShareDraftAccess(draftAccessType) : false;
+
+  const saveDisabledTitle = !canSaveDraft
+    ? draftId && !canShareDraftAccess(draftAccessType)
+      ? "No access to edit this draft"
+      : "View-only access"
+    : undefined;
+
+  const handleSaveData = async () => {
+    if (!canSaveDraft) return;
+
+    // Construct the final data object by merging original data with any updates
+    const finalData = {
+      ...feedbackOverallData,
+      ...(initialPageEdits?.name !== undefined ? { name: initialPageEdits.name } : {}),
+      ...(initialPageEdits?.date !== undefined ? { date: initialPageEdits.date } : {}),
+      ...(surveyFeedbackEdits?.survey_question_count !== undefined
+        ? { survey_question_count: surveyFeedbackEdits.survey_question_count }
+        : {}),
+      ...(surveyFeedbackEdits?.qualitative_question_count !== undefined
+        ? { qualitative_question_count: surveyFeedbackEdits.qualitative_question_count }
+        : {}),
+      ...(surveyFeedbackEdits?.total_questions !== undefined
+        ? { total_questions: surveyFeedbackEdits.total_questions }
+        : {}),
+      // Merge competency updates if they exist
+      ...(averageCompentency || {}),
+      ...(engagementEdits?.comparision_average
+        ? { comparision_average: engagementEdits.comparision_average }
+        : {}),
+      ...(engagementEdits?.manager_comparision_average
+        ? { manager_comparision_average: engagementEdits.manager_comparision_average }
+        : {}),
+      // Merge strengths and improvements edits
+      strengths: {
+        ...(feedbackOverallData?.strengths || {}),
+        ...(strengthsEdits?.strengthsGroupItems ? { Subordinates: strengthsEdits.strengthsGroupItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+        ...(strengthsEdits?.strengthsManagerItems ? { Manager: strengthsEdits.strengthsManagerItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+      },
+      area_of_improvement: {
+        ...(feedbackOverallData?.area_of_improvement || {}),
+        ...(strengthsEdits?.improvementsGroupItems ? { Subordinates: strengthsEdits.improvementsGroupItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+        ...(strengthsEdits?.improvementsManagerItems ? { Manager: strengthsEdits.improvementsManagerItems.map(it => ({ score: it.score, question: it.text })) } : {}),
+      },
+      ...(continueDoingEdits?.groups?.length
+        ? { continue_doing_thing: continueDoingEdits.groups }
+        : {}),
+      ...(stopDoingEdits?.groups?.length
+        ? { stop_doing_thing: stopDoingEdits.groups }
+        : {}),
+      ...(stopDoingEdits?.traits?.length
+        ? { predominant_leader_most_thing: stopDoingEdits.traits }
+        : {}),
+      ...(predominantLeaderEdits?.groups?.length
+        ? { predominant_leader_thing: predominantLeaderEdits.groups }
+        : predominantLeaderEdits?.columns
+          ? { predominant_leader_thing: flatColumnsToList(predominantLeaderEdits.columns) }
+          : {}),
+      ...(immediateActionEdits?.immediateActionColumns
+        ? { action_areas_thing: immediateActionEdits.immediateActionColumns }
+        : {}),
+      ...(nomineeEdits?.adjectives?.length
+        ? { workplace_culture: nomineeEdits.adjectives }
+        : {}),
+    };
+
+    const payload = {
+      feedback_data: [finalData],
+      excel_name: currentYearExcelFile?.name || feedbackOverallData?.name || "Feedback Report",
+      report_type: "feedback360"
+    };
+
+    if (draftId) {
+      payload.feedback_draft_id = draftId;
+    }
+
+    try {
+      setIsUploading(true); // Using isUploading as a general loading state
+      if (draftId) {
+        await updateFeedbackDraft(payload);
+        setStatusModal({
+          isOpen: true,
+          type: "success",
+          message: "Draft updated successfully!",
+          title: "Update Success"
+        });
+      } else {
+        await saveDraft(payload);
+        setStatusModal({
+          isOpen: true,
+          type: "success",
+          message: "Draft saved successfully!",
+          title: "Save Success"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save draft", error);
+      setStatusModal({
+        isOpen: true,
+        type: "error",
+        message: getApiErrorMessage(error, "Failed to save draft. Please try again."),
+        title: "Save Failed"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   useEffect(() => {
     setHeaderName("Feedback");
-  }, []);
+
+    if (draftId) {
+      const fetchDraft = async () => {
+        try {
+          setIsUploading(true);
+          const response = await getOneFeedbackDraft(draftId);
+          setDraftAccessType(
+            response?.access_type ?? response?.accessType ?? null,
+          );
+          if (response && response.feedback_data && response.feedback_data[0]) {
+            setFeedbackOverallData(response.feedback_data[0]);
+          }
+        } catch (error) {
+          console.error("Failed to load draft:", error);
+          setStatusModal({
+            isOpen: true,
+            type: "error",
+            message: getApiErrorMessage(error, "Failed to load draft. Please try again."),
+            title: "Load Failed"
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      fetchDraft();
+    }
+  }, [draftId]);
 
   return (
     <div className="feedbackreport-main-container">
@@ -677,6 +1027,36 @@ const Feedback360Report = () => {
           </span>
           <span className="feedbackreport-switch__label">Show comparison table</span>
         </label>
+        <button
+          onClick={handleSaveData}
+          className="feedbackreport-btn feedbackreport-btn--save"
+          disabled={!canSaveDraft}
+          title={saveDisabledTitle}
+          style={{
+            background: "var(--color-accent)",
+            color: "#fff",
+            opacity: canSaveDraft ? 1 : 0.5,
+            cursor: canSaveDraft ? "pointer" : "not-allowed",
+          }}
+        >
+          Save
+        </button>
+        {draftId && (
+          <button
+            onClick={() => canShareDraft && setIsShareModalOpen(true)}
+            className="feedbackreport-btn feedbackreport-btn--save"
+            disabled={!canShareDraft}
+            title={!canShareDraft ? "No access to share this draft" : undefined}
+            style={{
+              background: "#4f46e5",
+              color: "#fff",
+              opacity: canShareDraft ? 1 : 0.5,
+              cursor: canShareDraft ? "pointer" : "not-allowed",
+            }}
+          >
+            Share
+          </button>
+        )}
         <button
           onClick={downloadPdfSplitByHeader}
           className="feedbackreport-btn feedbackreport-btn--download"
@@ -1044,6 +1424,19 @@ const Feedback360Report = () => {
           </div>
         </div>
       ) : null}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        draftId={draftId}
+        draftUserAccessType={draftAccessType}
+      />
+      <StatusModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+        type={statusModal.type}
+        message={statusModal.message}
+        title={statusModal.title}
+      />
       <div className="section-page pdf-section">
         <FeedbackInitialPage
           initialName={
@@ -1052,9 +1445,13 @@ const Feedback360Report = () => {
           date={
             feedbackOverallData?.date ? feedbackOverallData?.date : ""
           }
+          onDataChange={handleInitialPageChange}
         />
       </div>
-      <SurveyFeedback overviewData={feedbackOverallData} />
+      <SurveyFeedback
+        overviewData={feedbackOverallData}
+        onDataChange={handleSurveyFeedbackChange}
+      />
 
       <SuggestedGuidelines
         items={biggerPictureItems}
@@ -1069,6 +1466,7 @@ const Feedback360Report = () => {
         managerItems={strengthsManagerItems}
         improvementsGroupItems={improvementsGroupItems}
         improvementsManagerItems={improvementsManagerItems}
+        onDataChange={handleStrengthsChange}
       />
 
       <SummaryByCompetencyPage
@@ -1083,6 +1481,7 @@ const Feedback360Report = () => {
         leadershipItems={summaryByCompetencyLeadershipItems}
         barHeight={12}
         setAverageCompentency={setAverageCompentency}
+        onDataChange={handleCompetencyDataChange}
         totalResponse={feedbackOverallData?.total_response}
       />
 
@@ -1098,6 +1497,7 @@ const Feedback360Report = () => {
         items2={educationalQualityCompetencyItems}
         barHeight={6}
         setAverageCompentency={setAverageCompentency}
+        onDataChange={handleCompetencyDataChange}
         totalResponse={feedbackOverallData?.total_response}
       />
 
@@ -1116,6 +1516,7 @@ const Feedback360Report = () => {
         file2Year={file2Year}
         file3Year={file3Year}
         setAverageCompentency={setAverageCompentency}
+        onDataChange={handleEngagementDataChange}
         totalResponse={feedbackOverallData?.total_response}
         showComparisonTable={showComparisonTable}
       />
@@ -1130,45 +1531,21 @@ const Feedback360Report = () => {
             ? feedbackOverallData?.workplace_culture
             : []
         }
+        onDataChange={handleNomineeChange}
       />
       <ContinueDoingPage
       continue={true}
-        footnote={
-          <>
-            <div>
-              *Similar comments with slight variations in wording will be grouped together for ease of reading and arranged in decreasing order of frequency
-            </div>
-            <div>*This excludes self feedback</div>
-          </>
-        }
-        {...(() => {
-          const groups = Array.isArray(feedbackOverallData?.continue_doing_thing)
-            ? feedbackOverallData.continue_doing_thing
-            : [];
-          const built = buildThreeGroupColumns(groups);
-          return {
-            columns: built.columns || [],
-            groups,
-            groupIndexMatrix: built.indexMatrix || [],
-          };
-        })()}
+      onDataChange={handleContinueDoingChange}
+        footnote={continueDoingFootnote}
+        {...continueDoingPageProps}
       />
       <StopDoingPage
+        onDataChange={handleStopDoingChange}
         tableFootnote={
           "*Similar comments with slight variations in wording will be grouped together for ease of reading and arranged in decreasing order of frequency"
         }
         footnote={"*This excludes self feedback"}
-        {...(() => {
-          const groups = Array.isArray(feedbackOverallData?.stop_doing_thing)
-            ? feedbackOverallData.stop_doing_thing
-            : [];
-          const built = buildThreeGroupColumns(groups);
-          return {
-            columns: built.columns || [],
-            groups,
-            groupIndexMatrix: built.indexMatrix || [],
-          };
-        })()}
+        {...stopDoingPageProps}
         traits={
           feedbackOverallData?.predominant_leader_most_thing
             ? feedbackOverallData?.predominant_leader_most_thing
@@ -1176,83 +1553,14 @@ const Feedback360Report = () => {
         }
       />
       <ContinueDoingPage
+        onDataChange={handlePredominantLeaderChange}
         title={"Predominant Leadership Trait"}
         subtitle={"- All Comments"}
-        footnote={
-          <>
-            <div>
-              *Similar comments with slight variations in wording will be grouped together for ease of reading and arranged in decreasing order of frequency
-            </div>
-            <div>*This excludes self feedback</div>
-          </>
-        }
-        {...(() => {
-          const raw = Array.isArray(feedbackOverallData?.predominant_leader_thing)
-            ? feedbackOverallData.predominant_leader_thing
-            : [];
-
-          const hasGroupShape = raw.some(
-            (g) =>
-              g &&
-              typeof g === "object" &&
-              ("comments_belong_to_this_group" in g ||
-                "representative_comment" in g),
-          );
-
-          if (!hasGroupShape) {
-            return {
-              columns: buildThreeTextColumns(raw),
-            };
-          }
-
-          // Build columns + index matrix aligned to the original group indices.
-          // This enables the (xN) count click popup, same as Continue/Stop Doing.
-          const cleaned = [];
-          raw.forEach((g, idx) => {
-            const representative =
-              (g &&
-              typeof g === "object" &&
-              (g.representative_comment ??
-                g.representativeComment ??
-                g.comment ??
-                g.text)) ||
-              "";
-            const t = String(representative).replace(/_x000D_\s*/gi, " ").trim();
-            const plain = t
-              .replace(/&nbsp;?/gi, " ")
-              .replace(/<br\s*\/?>/gi, " ")
-              .replace(/<[^>]*>/g, " ")
-              .replace(/\s+/g, " ")
-              .trim();
-            if (!plain || /^[-–—]{2,}$/.test(plain)) return;
-            cleaned.push({ text: t, idx });
-          });
-
-          if (!cleaned.length) {
-            return {
-              columns: buildThreeTextColumns([]),
-            };
-          }
-
-          const columns = [[], [], []];
-          const indexMatrix = [[], [], []];
-          const rowsPerCol = Math.ceil(cleaned.length / 3);
-
-          cleaned.forEach((row, pos) => {
-            const colIdx = Math.min(2, Math.floor(pos / rowsPerCol));
-            columns[colIdx].push(row.text);
-            indexMatrix[colIdx].push(row.idx);
-          });
-
-          return {
-            continue: true,
-            columns,
-            groups: raw,
-            groupIndexMatrix: indexMatrix,
-          };
-        })()}
+        footnote={predominantLeaderFootnote}
+        {...predominantLeaderPageProps}
       />
       <ContinueDoingPage
+        onDataChange={handleImmediateActionChange}
         title={"Immediate Action Areas - Summary"}
         columns={[[], [], []]}
         footnote={""}

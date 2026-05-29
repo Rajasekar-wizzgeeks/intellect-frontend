@@ -12,6 +12,7 @@ const OverviewSummary = ({
   pageHeight = 842,
   pagePadding = 10,
   items,
+  onDataChange,
 }) => {
   const initialRows = useMemo(() => {
     return items && items.length
@@ -102,17 +103,19 @@ const OverviewSummary = ({
             others={row.others}
             editableValues={true}
             onValuesChange={(nextValues) => {
-              setRows((prev) => {
-                const next = [...prev];
-                const cur = next[idx];
-                if (!cur) return prev;
-                next[idx] = {
+              const nextRows = [...rows];
+              const cur = nextRows[idx];
+              if (cur) {
+                nextRows[idx] = {
                   ...cur,
                   self: nextValues?.self ?? cur.self,
                   others: nextValues?.others ?? cur.others,
                 };
-                return next;
-              });
+                setRows(nextRows);
+                if (onDataChange) {
+                  onDataChange(nextRows);
+                }
+              }
             }}
           />
         </div>,

@@ -62,9 +62,9 @@ const HomePage = () => {
             <button
               type="button"
               className="home-card__cta home-card__cta--overall"
-              onClick={() => navigate("/reports/user/list")}
+              onClick={() => navigate("/user/lbscore360")}
             >
-              View User List
+              View LBScore 360° Report
             </button>
           </div>
         </div>

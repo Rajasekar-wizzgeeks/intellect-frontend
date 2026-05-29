@@ -29,9 +29,22 @@ const FeedbackBubble = ({
   placeholder,
   rows = 2,
   readOnly = false,
+  onBlur,
 }) => {
   const isEditable = Boolean(onChange) && !readOnly;
   const resolvedText = typeof value === "string" ? value : text;
+
+  const [internalValue, setInternalValue] = React.useState(resolvedText);
+
+  React.useEffect(() => {
+    setInternalValue(resolvedText);
+  }, [resolvedText]);
+
+  const handleBlur = () => {
+    if (onBlur) {
+      onBlur(internalValue);
+    }
+  };
 
   return (
     <div
@@ -59,9 +72,9 @@ const FeedbackBubble = ({
         {isEditable ? (
           <textarea
             className="fb-textarea"
-            value={typeof value === "string" ? value : undefined}
-            onChange={onChange}
-            defaultValue={typeof value === "string" ? undefined : text}
+            value={internalValue}
+            onChange={(e) => setInternalValue(e.target.value)}
+            onBlur={handleBlur}
             placeholder={placeholder}
             rows={rows}
             readOnly={readOnly}

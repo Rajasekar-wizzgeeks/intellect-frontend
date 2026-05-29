@@ -362,6 +362,7 @@ const AutoPaginatedSections = ({
   HeaderComponent,
   paddingLeft = 0,
   contentClassName = "content-page",
+  pageClassName = "section-page",
   componentId,
 }) => {
 
@@ -658,7 +659,7 @@ const AutoPaginatedSections = ({
   if (!measured || isMeasuringLocal) {
     return (
       <section
-        className="section-page pdf-section"
+        className={`${pageClassName} pdf-section`}
         style={{
           paddingTop: resolvedPaddingTop,
           paddingBottom: resolvedPaddingBottom,
@@ -687,7 +688,7 @@ const AutoPaginatedSections = ({
       {pages.map((pageBlocks, pageIndex) => (
         <section
           key={`page-${measurementId.current}-${pageIndex}`}
-          className="section-page pdf-section"
+          className={`${pageClassName} pdf-section`}
           style={{
             paddingTop: resolvedPaddingTop,
             paddingBottom: resolvedPaddingBottom,

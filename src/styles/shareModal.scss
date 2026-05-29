@@ -1,0 +1,256 @@
+.share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.share-modal {
+  background: #fff;
+  width: 500px;
+  max-width: 90%;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+
+  &__header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    &:hover {
+      color: #333;
+    }
+  }
+
+  &__body {
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  &__search-container {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  &__search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+  }
+
+  &__search-input {
+    width: 90%;
+    padding: 10px 12px 10px 40px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    font-size: 0.95rem;
+    &:focus {
+      border-color: var(--color-green);
+    }
+  }
+
+  &__access-toggle {
+    display: flex;
+    background: #f5f5f5;
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+
+    &--viewer-only {
+      .share-modal__toggle-btn {
+        cursor: default;
+      }
+
+      .share-modal__toggle-btn.active {
+        width: 100%;
+      }
+    }
+  }
+
+  &__toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+
+    &.active {
+      background: #fff;
+      color: var(--color-green);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  &__user-list {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  &__loading, &__empty {
+    padding: 40px;
+    text-align: center;
+    color: #666;
+  }
+
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__user-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f9f9f9;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: #f0fdfa;
+    }
+
+    &.selected {
+      background: #f0fdfa;
+    }
+  }
+
+  &__user-avatar {
+    width: 36px;
+    height: 36px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    margin-right: 12px;
+  }
+
+  &__user-info {
+    flex: 1;
+  }
+
+  &__user-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.95rem;
+  }
+
+  &__user-email {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  &__checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .selected & {
+      border-color: var(--color-green);
+      background: var(--color-green);
+    }
+  }
+
+  &__checkbox-inner {
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-radius: 2px;
+  }
+
+  &__footer {
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  &__btn-cancel {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+    &:hover {
+      background: #f9f9f9;
+    }
+  }
+
+  &__btn-submit {
+    padding: 10px 20px;
+    border: none;
+    background: var(--color-green);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

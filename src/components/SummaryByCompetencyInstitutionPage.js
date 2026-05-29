@@ -30,6 +30,7 @@ const SummaryByCompetencyInstitutionPage = ({
       pageHeight={1123}
       pagePadding={40}
       contentClassName="sbi-page"
+      pageClassName="dav360-page"
       componentId="summary-by-competency-institution"
     />
   );

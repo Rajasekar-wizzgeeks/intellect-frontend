@@ -3,8 +3,42 @@ import AutoPaginatedSections from "./AutoPaginatedSections";
 import DavCommonHeader from "./DavCommonHeader";
 import "../styles/headlinesPage.scss";
 
-export default function Headlines() {
+export default function Headlines({ headlines, highestRows, lowestRows, notes }) {
   const blocks = useMemo(() => {
+    let safeHighestRows = Array.isArray(highestRows) ? highestRows : [];
+    let safeLowestRows = Array.isArray(lowestRows) ? lowestRows : [];
+    const safeNotes = Array.isArray(notes) ? notes : [];
+
+    const headlinesData = headlines?.headlines || headlines;
+    if (headlinesData && (headlinesData.hightest_team_avg || headlinesData.lowest_team_avg || headlinesData.hightest_manager_avg || headlinesData.lowest_manager_avg)) {
+      const formatItem = ([text, scores], isTeam) => {
+        const avg = isTeam ? scores?.Subordinates : scores?.Manager;
+        return `${text} [Avg : ${avg !== undefined && avg !== null ? avg : 0}]`;
+      };
+
+      safeHighestRows = [
+        {
+          label: "Team/Staff Perception",
+          items: (headlinesData.hightest_team_avg || []).map((item) => formatItem(item, true)),
+        },
+        {
+          label: "Management Perception",
+          items: (headlinesData.hightest_manager_avg || []).map((item) => formatItem(item, false)),
+        },
+      ];
+
+      safeLowestRows = [
+        {
+          label: "Team/Staff Perception",
+          items: (headlinesData.lowest_team_avg || []).map((item) => formatItem(item, true)),
+        },
+        {
+          label: "Management Perception",
+          items: (headlinesData.lowest_manager_avg || []).map((item) => formatItem(item, false)),
+        },
+      ];
+    }
+
     return [
       <div key="headlines-header">
         <DavCommonHeader title="Headlines" />
@@ -23,25 +57,18 @@ export default function Headlines() {
             <td className="headlines-empty-cell" />
             <td className="headlines-header-cell">Highest Institutional Averages</td>
           </tr>
-          <tr>
-            <td className="headlines-label-cell">Team/Staff Perception</td>
-            <td className="headlines-data-cell">
-              <ul className="headlines-list">
-                <li>Visits classrooms to observe &amp; monitor the quality of curriculum, assessments &amp; instruction [Avg : 4.47]</li>
-                <li>Works with teachers to set high academic standards [Avg : 4.44]</li>
-                <li>Provides support, direction &amp; guidance for effective performance of team members [Avg : 4.44]</li>
-              </ul>
-            </td>
-          </tr>
-          <tr>
-            <td className="headlines-label-cell">Management Perception</td>
-            <td className="headlines-data-cell">
-              <ul className="headlines-list">
-                <li>Manages School finances appropriately [Avg : 4.6]</li>
-                <li>Does not misuse power and authority [Avg : 4.1]</li>
-              </ul>
-            </td>
-          </tr>
+          {safeHighestRows.map((row, idx) => (
+            <tr key={`high-${idx}`}>
+              <td className="headlines-label-cell">{row.group || row.label}</td>
+              <td className="headlines-data-cell">
+                <ul className="headlines-list">
+                  {(row.items || []).map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>,
       <table key="table-peach" className="headlines-table headlines-table--peach">
@@ -54,25 +81,18 @@ export default function Headlines() {
             <td className="headlines-empty-cell" />
             <td className="headlines-header-cell">Lowest Institutional Averages</td>
           </tr>
-          <tr>
-            <td className="headlines-label-cell">Team/Staff Perception</td>
-            <td className="headlines-data-cell">
-              <ul className="headlines-list">
-                <li>Values diverse perspectives [Avg : 4.16]</li>
-                <li>Makes the team members feel empowered to take decisions [Avg : 4.19]</li>
-                <li>Has created a work culture that rewards merit [Avg : 4.2]</li>
-              </ul>
-            </td>
-          </tr>
-          <tr>
-            <td className="headlines-label-cell">Management Perception</td>
-            <td className="headlines-data-cell">
-              <ul className="headlines-list">
-                <li>Develops future leaders [Avg : 3.2]</li>
-                <li>Handles ambiguity [Avg : 3.4]</li>
-              </ul>
-            </td>
-          </tr>
+          {safeLowestRows.map((row, idx) => (
+            <tr key={`low-${idx}`}>
+              <td className="headlines-label-cell">{row.group || row.label}</td>
+              <td className="headlines-data-cell">
+                <ul className="headlines-list">
+                  {(row.items || []).map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>,
       <hr key="divider" className="headlines-divider" />,
@@ -82,16 +102,19 @@ export default function Headlines() {
           <span>Principals who have rated themselves 5 in most questions :</span>
         </div>
         <ul className="headlines-principals-list">
-          <li>
-            <strong>Smt. Hemamala Balasubramanian and Thiru. Veeramurugan G</strong> (Rating 5 for 21 out of 24 questions),
-          </li>
-          <li>
-            <strong>Smt. Bhuvaneshwari G and Thiru. Ramana Velavan Venkatachalam</strong> (Rating 5 for 20 out of 24 questions)
-          </li>
+          {safeNotes.map((note, idx) => (
+            <li key={idx}>
+              {typeof note === "string" ? (
+                note
+              ) : (
+                <strong>{note.text}</strong>
+              )}
+            </li>
+          ))}
         </ul>
       </div>,
     ];
-  }, []);
+  }, [headlines, highestRows, lowestRows, notes]);
 
   return (
     <AutoPaginatedSections
@@ -100,6 +123,7 @@ export default function Headlines() {
       pageHeight={1123}
       pagePadding={40}
       contentClassName="headlines"
+      pageClassName="dav360-page"
       componentId="headlines"
     />
   );

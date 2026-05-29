@@ -13,6 +13,7 @@ const BehaviouralIndicators = ({
   pagePadding = 10,
   note = "For categories with more than one respondent, scores represent the mean of all individual ratings.",
   items = [],
+  onDataChange,
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const componentId = useMemo(
@@ -77,6 +78,11 @@ const BehaviouralIndicators = ({
                 ...item.others,
               ]}
               compact={true}
+              onDataChange={(newRows) => {
+                if (onDataChange) {
+                  onDataChange(idx, newRows);
+                }
+              }}
             />
           </div>
         </div>

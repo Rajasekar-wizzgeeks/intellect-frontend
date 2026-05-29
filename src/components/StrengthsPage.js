@@ -173,6 +173,7 @@ const StrengthsPage = ({
   improvementsGroupItems = [],
   improvementsManagerItems = [],
   averageCompentency = {},
+  onDataChange,
 }) => {
   const [managerChunks, setManagerChunks] = useState(null);
   const [improvementsManagerChunks, setImprovementsManagerChunks] = useState(null);
@@ -193,11 +194,38 @@ const StrengthsPage = ({
   const updateList = useCallback((section, column, next) => {
     isDirtyRef.current = true;
     const safeNext = Array.isArray(next) ? next : [];
-    if (section === "strengths" && column === "group") setStrengthsGroupItemsDraft(safeNext);
-    else if (section === "strengths" && column === "manager") setStrengthsManagerItemsDraft(safeNext);
-    else if (section === "improvements" && column === "group") setImprovementsGroupItemsDraft(safeNext);
-    else setImprovementsManagerItemsDraft(safeNext);
-  }, []);
+    
+    let updatedData = {
+      strengthsGroupItems: strengthsGroupItemsDraft,
+      strengthsManagerItems: strengthsManagerItemsDraft,
+      improvementsGroupItems: improvementsGroupItemsDraft,
+      improvementsManagerItems: improvementsManagerItemsDraft,
+    };
+
+    if (section === "strengths" && column === "group") {
+      setStrengthsGroupItemsDraft(safeNext);
+      updatedData.strengthsGroupItems = safeNext;
+    } else if (section === "strengths" && column === "manager") {
+      setStrengthsManagerItemsDraft(safeNext);
+      updatedData.strengthsManagerItems = safeNext;
+    } else if (section === "improvements" && column === "group") {
+      setImprovementsGroupItemsDraft(safeNext);
+      updatedData.improvementsGroupItems = safeNext;
+    } else {
+      setImprovementsManagerItemsDraft(safeNext);
+      updatedData.improvementsManagerItems = safeNext;
+    }
+
+    if (onDataChange) {
+      onDataChange(updatedData);
+    }
+  }, [
+    onDataChange,
+    strengthsGroupItemsDraft,
+    strengthsManagerItemsDraft,
+    improvementsGroupItemsDraft,
+    improvementsManagerItemsDraft,
+  ]);
 
   const resolveList = useCallback((section, column) => {
     if (section === "strengths" && column === "group") return strengthsGroupItemsDraft;

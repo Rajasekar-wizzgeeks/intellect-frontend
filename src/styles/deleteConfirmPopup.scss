@@ -1,0 +1,165 @@
+.delete-confirm-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+  animation: deleteConfirmFadeIn 0.2s ease-out;
+}
+
+.delete-confirm-popup {
+  background: #fff;
+  width: 420px;
+  max-width: 90%;
+  border-radius: 16px;
+  padding: 32px 24px 24px;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: deleteConfirmScaleIn 0.2s ease-out;
+
+  &__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: #f59e0b;
+  }
+
+  &__title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 12px;
+    text-align: center;
+  }
+
+  &__message {
+    font-size: 0.95rem;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0 0 16px;
+    text-align: center;
+
+    strong {
+      color: #1e293b;
+      font-weight: 600;
+    }
+  }
+
+  &__error {
+    font-size: 0.875rem;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 0 16px;
+    text-align: center;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  &__btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    &--cancel {
+      background: #fff;
+      color: #374151;
+      border: 1px solid #d1d5db;
+
+      &:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #9ca3af;
+      }
+    }
+
+    &--delete {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+
+      &:hover:not(:disabled) {
+        background: #dc2626;
+      }
+    }
+  }
+
+  .animate-spin {
+    animation: deleteConfirmSpin 1s linear infinite;
+  }
+}
+
+@keyframes deleteConfirmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deleteConfirmScaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes deleteConfirmSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

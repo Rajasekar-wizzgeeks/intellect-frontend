@@ -12,6 +12,7 @@ const CoachingActionPlan = ({
   pagePadding = 10,
   titleIndex = "5.",
   titleText = "Leadership Potential Coaching Action Plan",
+  profile = {},
   labels = {
     date: "Date",
     associateName: "Associate Name",
@@ -43,40 +44,49 @@ const CoachingActionPlan = ({
         <div className="cap-row cap-row--tight">
           <div className="cap-label cap-label--green">{labels.date}</div>
           <div className="cap-cell">
-            <input className="cap-input" type="text" defaultValue="" />
+            <input className="cap-input" type="text" defaultValue={profile.date ?? ""} />
           </div>
         </div>
 
         <FormTable
-          header={labels.associateName}
-          rows={[labels.associateId, labels.role, labels.lob, labels.email]}
+          header={profile.associateName || labels.associateName}
+          rows={[
+            { label: labels.associateId,  value: profile.associateId  ?? "" },
+            { label: labels.role,         value: profile.role         ?? "" },
+            { label: labels.lob,          value: profile.lob          ?? "" },
+            { label: labels.email,        value: profile.email        ?? "" },
+          ]}
           labelWidth={170}
         />
 
         <FormTable
           header={labels.coachName}
-          rows={[labels.associateId, labels.role, labels.lob, labels.email]}
+          rows={[
+            { label: labels.associateId,  value: "" },
+            { label: labels.role,         value: "" },
+            { label: labels.lob,          value: "" },
+            { label: labels.email,        value: "" },
+          ]}
           labelWidth={170}
         />
 
         {/* Coaching Period */}
         <FormTable
           header={labels.coachingPeriod}
-          rows={[labels.from, labels.to]}
+          rows={[
+            { label: labels.from, value: "" },
+            { label: labels.to,   value: "" },
+          ]}
           labelWidth={170}
         />
         <FormTable
           header={labels.coachingPeriod}
-          rows={[labels.from, labels.to]}
+          rows={[
+            { label: labels.from, value: "" },
+            { label: labels.to,   value: "" },
+          ]}
           labelWidth={170}
         />
-
-        {/* <div className="cap-block">
-          <div className="cap-block__header cap-label--green">
-            {labels.reportFeedback}
-          </div>
-          <div className="cap-textarea" />
-        </div> */}
       </div>
     );
 
@@ -94,7 +104,7 @@ const CoachingActionPlan = ({
     );
 
     return out;
-  }, [titleIndex, titleText, labels]);
+  }, [titleIndex, titleText, labels, profile]);
 
   return (
     <AutoPaginatedSections

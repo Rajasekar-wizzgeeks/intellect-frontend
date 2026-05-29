@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState,useEffect } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
 import "../styles/mainPage.scss";
@@ -22,8 +22,29 @@ const ChessIcon = ({ size = 120, color = "#0e4a2e" }) => (
   </svg>
 );
 
-const ScoreChip = ({ score = 2.5, color = "#c0943a", scoreShip = false }) => (
-  <div className="hl-chip">{<span>{score}</span>}</div>
+const ScoreChip = ({ score = 2.5, color = "#c0943a", scoreShip = false, onChange, onBlur }) => (
+  <div className="hl-chip">
+    {onChange ? (
+      <input
+        type="text"
+        className="hl-chip-input"
+        value={score}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        style={{
+          width: "40px",
+          background: "transparent",
+          border: "none",
+          color: "inherit",
+          textAlign: "center",
+          fontWeight: "bold",
+          fontSize: "inherit",
+        }}
+      />
+    ) : (
+      <span>{score}</span>
+    )}
+  </div>
 );
 
 const LeftIcon = ({ leftIcon, arcColor }) => {
@@ -32,6 +53,104 @@ const LeftIcon = ({ leftIcon, arcColor }) => {
     return <img src={leftIcon} alt="left" className="hl-left-img" />;
   }
   return leftIcon;
+};
+
+const HighlightRow = ({ 
+  item, 
+  index, 
+  points, 
+  rowTopAdjust, 
+  chipColor, 
+  scoreShip, 
+  onItemChange 
+}) => {
+  const [localTitle, setLocalTitle] = useState(item.title ?? "");
+  const [localDesc, setLocalDesc] = useState(item.desc ?? "");
+  const [localScore, setLocalScore] = useState(item.score ?? "");
+
+  useEffect(() => {
+    setLocalTitle(item.title ?? "");
+    setLocalDesc(item.desc ?? "");
+    setLocalScore(item.score ?? "");
+  }, [item]);
+
+  const handleBlur = () => {
+    if (
+      localTitle !== item.title ||
+      localDesc !== item.desc ||
+      localScore !== item.score
+    ) {
+      onItemChange(index, {
+        ...item,
+        title: localTitle,
+        desc: localDesc,
+        score: localScore,
+      });
+    }
+  };
+
+  if (!points[index]) return null;
+
+  return (
+    <div
+      className="hl-row"
+      style={{
+        position: "absolute",
+        top: points[index].y - rowTopAdjust,
+        width: "100%",
+      }}
+    >
+      <div
+        className="hl-row-line"
+        style={{
+          width: 200 - points[index].x,
+          left: -(200 - points[index].x),
+        }}
+      />
+      <ScoreChip
+        score={localScore}
+        color={chipColor}
+        scoreShip={scoreShip}
+        onChange={(val) => setLocalScore(val)}
+        onBlur={handleBlur}
+      />
+      <div className="hl-row-text">
+        <div className="hl-row-title">
+          <input
+            className="hl-row-title-input"
+            value={localTitle}
+            onChange={(e) => setLocalTitle(e.target.value)}
+            onBlur={handleBlur}
+            style={{
+              width: "100%",
+              border: "none",
+              background: "transparent",
+              font: "inherit",
+              color: "inherit",
+              fontWeight: "bold",
+            }}
+          />
+        </div>
+        <div className="hl-row-desc">
+          <textarea
+            className="hl-row-desc-input"
+            value={localDesc}
+            onChange={(e) => setLocalDesc(e.target.value)}
+            onBlur={handleBlur}
+            rows={2}
+            style={{
+              width: "100%",
+              border: "none",
+              background: "transparent",
+              font: "inherit",
+              color: "inherit",
+              resize: "none",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const Highlights = ({
@@ -50,8 +169,23 @@ const Highlights = ({
   leftIcon = null,
   scoreShip = false,
   items = [],
+  onDataChange,
 }) => {
   const [points, setPoints] = useState([]);
+  const [localItems, setLocalItems] = useState(items);
+
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
+
+  const handleItemUpdate = useCallback((idx, nextItem) => {
+    const nextItems = [...localItems];
+    nextItems[idx] = nextItem;
+    setLocalItems(nextItems);
+    if (onDataChange) {
+      onDataChange(nextItems);
+    }
+  }, [localItems, onDataChange]);
 
   const stripLeadingSerial = (text) => {
     const s = String(text ?? "").trim();
@@ -83,18 +217,18 @@ const Highlights = ({
     const maxArcHeight = 680; 
 
     let rowSpacing = baseRowSpacing;
-    if (items.length > 1) {
-      const idealHeight = topOffset * 2 + (items.length - 1) * baseRowSpacing + 160;
+    if (localItems.length > 1) {
+      const idealHeight = topOffset * 2 + (localItems.length - 1) * baseRowSpacing + 160;
       if (idealHeight > maxArcHeight) {
         const availableForRows = maxArcHeight - topOffset * 2 - 160;
         rowSpacing = Math.max(
           minRowSpacing,
-          availableForRows / (items.length - 1)
+          availableForRows / (localItems.length - 1)
         );
       }
     }
 
-    const arcHeight = topOffset * 2 + (items.length - 1) * rowSpacing + 160;
+    const arcHeight = topOffset * 2 + (localItems.length - 1) * rowSpacing + 160;
     const paddingTop = topOffset;
     const paddingBottom = topOffset;
     const rowTopAdjust = 39;
@@ -135,7 +269,7 @@ const Highlights = ({
       >
         <div className="hl-left" style={{ minHeight: arcHeight }}>
           <ArcConnector
-            items={items}
+            items={localItems}
             arcColor={arcColor}
             arcHeight={arcHeight}
             paddingTop={paddingTop}
@@ -149,34 +283,18 @@ const Highlights = ({
           )}
         </div>
         <div className="hl-right" style={{ position: "relative", width: "100%" }}>
-          {points.length === items.length &&
-            items.map((it, i) => (
-              <div
+          {points.length === localItems.length &&
+            localItems.map((it, i) => (
+              <HighlightRow
                 key={`it-${i}`}
-                className="hl-row"
-                style={{
-                  position: "absolute",
-                  top: points[i].y - rowTopAdjust,
-                  width: "100%",
-                }}
-              >
-                <div
-                  className="hl-row-line"
-                  style={{
-                    width: 200 - points[i].x,
-                    left: -(200 - points[i].x),
-                  }}
-                />
-                <ScoreChip
-                  score={it.score}
-                  color={chipColor}
-                  scoreShip={scoreShip}
-                />
-                <div className="hl-row-text">
-                  <div className="hl-row-title">{stripLeadingSerial(it.title)}</div>
-                  <div className="hl-row-desc">{stripLeadingSerial(it.desc)}</div>
-                </div>
-              </div>
+                item={it}
+                index={i}
+                points={points}
+                rowTopAdjust={rowTopAdjust}
+                chipColor={chipColor}
+                scoreShip={scoreShip}
+                onItemChange={handleItemUpdate}
+              />
             ))}
         </div>
       </div>
@@ -189,13 +307,14 @@ const Highlights = ({
     subIndex,
     subText,
     note,
-    items,
+    localItems,
     arcColor,
     chipColor,
     dotsColor,
     leftIcon,
     points,
     handlePointsLine,
+    handleItemUpdate,
   ]);
 
   return (
