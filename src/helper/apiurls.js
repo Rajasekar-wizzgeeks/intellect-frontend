@@ -24,3 +24,7 @@ export const giveAccessUrl = `${BASEURL}/api/user/feedback-draft/giveAccess`;
 export const deleteFeedbackDraftUrl = `${BASEURL}/api/user/feedback-draft/delete`;
 
 export const logoutUrl = `${BASEURL}/api/user/logout`;
+
+export const createUser = `${BASEURL}/api/user/create`
+
+export const getUsers =`${BASEURL}/api/user/all`

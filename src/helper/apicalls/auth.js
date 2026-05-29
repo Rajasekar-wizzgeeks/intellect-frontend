@@ -127,3 +127,22 @@ export const loginUser = async (email, password) => {
     throw error;
   }
 };
+
+export const createUserApi = async ({ email, password, role }) => {
+  const { parseApiErrorBody } = await import("../getApiErrorMessage");
+  const { apiFetch } = await import("../apiFetch");
+  const { createUser } = await import("../apiurls");
+
+  const response = await apiFetch(createUser, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, role }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(parseApiErrorBody(errorData) || "Failed to create user");
+  }
+
+  return await response.json();
+};

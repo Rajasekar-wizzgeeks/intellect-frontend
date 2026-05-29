@@ -10,6 +10,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Feedback360Report from "./pages/feedback360Report";
 import Dav360SummaryReport from "./pages/dav360SummaryReport";
+import UsersPage from "./pages/UsersPage";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path="user/feedback" element={<Feedback360Report />} />
           <Route path="user/dav360" element={<Dav360SummaryReport />} />
           <Route path="user/lbscore360" element={<MainPage />} />
+          <Route path="admin/users" element={<UsersPage />} />
         </Route>
         {/* <Route path="/" element={<Feedback360Report />} /> */}
       </Routes>

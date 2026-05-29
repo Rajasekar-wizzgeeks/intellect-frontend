@@ -127,6 +127,13 @@ const Navbar = () => {
                 <span className="rh-nav__link-text">Drafts</span>
               </NavLink>
 
+              {storedUser?.role === "admin" && (
+                <NavLink to="/admin/users" className={navLinkClassName}>
+                  <User className="rh-nav__link-icon" />
+                  <span className="rh-nav__link-text">Users</span>
+                </NavLink>
+              )}
+
               {/* <NavLink
                 to="/user/reports"
                 className={({ isActive }) =>
