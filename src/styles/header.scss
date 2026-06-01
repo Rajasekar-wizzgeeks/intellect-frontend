@@ -6,16 +6,16 @@
 
   &__row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    padding: 20px 32px;
+    padding: 10px 32px;
   }
 
   &__title {
     font-weight: 700;
     letter-spacing: 1.5px;
     color: var(--color-copper);
-    font-size: clamp(11px, 1.1vw, 14px);
+    font-size: clamp(15px, 1.1vw, 14px);
     text-transform: uppercase;
   }
 
@@ -26,12 +26,21 @@
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
   }
 
+  &__divider {
+    border: none;
+    border-top: 1px solid #c8c8c8;
+    margin: 0 32px;
+  }
+
   @media (max-width: 768px) {
     &__row {
       padding: 14px 16px;
     }
     &__logo {
       height: 30px;
+    }
+    &__divider {
+      margin: 0 16px;
     }
   }
 }
