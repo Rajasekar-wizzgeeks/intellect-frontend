@@ -436,9 +436,9 @@ export const excelSheetDav360Summary = async (fileOrFiles) => {
   }
 };
 
-export const getFeedbackDrafts = async () => {
+export const getFeedbackDrafts = async (page = 1) => {
   try {
-    const response = await apiFetch(getFeedbackDraftUrl, {
+    const response = await apiFetch(`${getFeedbackDraftUrl}?page=${page}`, {
       method: "GET",
     });
 
