@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { loginUser, storeLoginSession } from "../helper/apicalls/auth";
-import intellectLogo from "../assets/png/intellectBrownLogo.png";
+import intellectLogo from "../assets/png/kubos_logo.jpg";
 import "../styles/loginPage.scss";
 
 const LoginPage = () => {
