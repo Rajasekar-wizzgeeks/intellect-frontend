@@ -799,7 +799,6 @@ const parseQualitativeComment = (c)=> {
           );
           if (response && response.feedback_data && response.feedback_data.length > 0) {
             if (isLbScore360Route && response.feedback_data.length > 1) {
-              // Multi-recipient draft: restore list phase
               setRecipients(response.feedback_data);
               setPhase("list");
             } else {
@@ -1173,7 +1172,14 @@ const parseQualitativeComment = (c)=> {
       />
       <div className="section-page-container">
         <section className="section-page pdf-section">
-          <InitialPage initialName={reportData?.name || ""} />
+          <InitialPage initialName={
+            reportData?.introduction?.["Associate Name"] ||
+            reportData?.profile?.["Associate Name"] ||
+            reportData?.introduction?.["associateName"] ||
+            reportData?.profile?.["associateName"] ||
+            reportData?.name ||
+            ""
+          } />
         </section>
         <section className="section-page pdf-section">
           <ContentPage rows={profileRows} />
