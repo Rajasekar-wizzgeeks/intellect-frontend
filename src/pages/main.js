@@ -34,7 +34,7 @@ import MarketingIcon from "../assets/png/marketingIcon.png";
 import ChessIcon from "../assets/png/chessIcon.png";
 import EyeIcon from "../assets/png/eye.png";
 import { useLocation, useOutletContext, useSearchParams } from "react-router-dom";
-import { excelSheetLbScore360, excelSheetLbScore360Multi, saveDraft, getOneFeedbackDraft, updateFeedbackDraft } from "../helper/apicalls/feedback";
+import { excelSheetLbScore360, excelSheetLbScore360Multi, saveDraft, getOneFeedbackDraft, updateFeedbackDraft, multiSaveDraft } from "../helper/apicalls/feedback";
 import { getApiErrorMessage } from "../helper/getApiErrorMessage";
 import { canEditDraft, canShareDraftAccess } from "../helper/draftAccess";
 import { AlertCircle, Check, ChevronLeft, FileSpreadsheet, Upload, User, X } from "lucide-react";
@@ -106,6 +106,26 @@ const parseQualitativeComment = (c)=> {
       setRecipients(collected);
       setCompetencySummary(summary);
       setPhase("list");
+
+      // Automatically save all recipients via multi-save API
+      // Each recipient is its own object with feedback_data, excel_name, report_type
+      try {
+        const multiPayload = collected.map((r) => {
+          const profile = r?.introduction || r?.profile || {};
+          const name = profile["Associate Name"] || profile["associateName"] || r?.name || "";
+          const id = profile["Associate ID"] || profile["associateId"] || profile["employeeId"] || "";
+          const excelName = [name, id].filter(Boolean).join(" - ") || excelFile?.name || "LBSCORE360 Report";
+          return {
+            feedback_data: [r],
+            excel_name: excelName,
+            report_type: "lbscore360",
+          };
+        });
+        await multiSaveDraft(multiPayload);
+      } catch (saveErr) {
+        // Non-blocking — log but don't interrupt the user flow
+        console.error("Auto multi-save failed:", saveErr);
+      }
     } catch (err) {
       setError(err.message || "Upload failed. Please try again.");
       console.error("LbScore360 upload failed", err);
@@ -589,105 +609,137 @@ const parseQualitativeComment = (c)=> {
       : "View-only access"
     : undefined;
 
+  // Build the save payload for a single recipient's reportData + edits
+  const buildRecipientPayload = (data, edits = {}) => {
+    const {
+      behaviouralEdits: bEdits = {},
+      overviewEdits: oEdits = null,
+      evaluatorEdits: eEdits = null,
+      qualitativeEdits: qEdits = {},
+      highlightsEdits: hEdits = {},
+      blindSpotsEdits: bsEdits = {},
+    } = edits;
+
+    const finalData = {
+      ...data,
+      behavioural_indications: { ...(data?.behavioural_indications || {}) },
+      overview_summary_data: oEdits
+        ? oEdits.map(row => ({ label: row.label, self: Number(row.self), others: Number(row.others) }))
+        : data?.overview_summary_data,
+      evaluator_category_data: eEdits
+        ? eEdits.map(row => ({
+            label: row.label,
+            values: {
+              self: Number(row.values.self),
+              manager: Number(row.values.manager),
+              team: Number(row.values.team),
+              peers: Number(row.values.peers),
+            },
+          }))
+        : data?.evaluator_category_data,
+    };
+
+    if (Object.keys(bEdits).length > 0) {
+      const indicatorsKeys = Object.keys(data?.behavioural_indications || {});
+      Object.entries(bEdits).forEach(([idx, newRows]) => {
+        const key = indicatorsKeys[idx];
+        if (key && finalData.behavioural_indications[key]?.[0]) {
+          const scores = {};
+          newRows.forEach((row) => {
+            const role = row.label === "Team Members" ? "Subordinate" : row.label;
+            scores[role] = Number(row.score);
+          });
+          finalData.behavioural_indications[key][0] = {
+            ...finalData.behavioural_indications[key][0],
+            score: { ...finalData.behavioural_indications[key][0].score, ...scores },
+          };
+        }
+      });
+    }
+
+    if (Object.keys(qEdits).length > 0) {
+      Object.entries(qEdits).forEach(([sectionIdx, updatedQuestions]) => {
+        const sectionKey = Object.keys(data?.feedbacks || {})[sectionIdx];
+        if (sectionKey) {
+          finalData.feedbacks[sectionKey] = updatedQuestions.map((q) => {
+            const rolesData = {};
+            q.comments.forEach((c) => {
+              const parsed = parseQualitativeComment(c);
+              if (!parsed?.role || !parsed.text) return;
+              if (!rolesData[parsed.role]) rolesData[parsed.role] = [];
+              rolesData[parsed.role].push(parsed.text);
+            });
+            return { [q.text]: rolesData };
+          });
+        }
+      });
+    }
+
+    if (Object.keys(hEdits).length > 0) {
+      Object.entries(hEdits).forEach(([idx, items]) => {
+        const type = idx === "0" ? "strengths" : "area_of_improvements";
+        finalData[type] = items.map((it) => ({ question: it.desc, others_avg: Number(it.score) }));
+      });
+    }
+
+    if (Object.keys(bsEdits).length > 0) {
+      Object.entries(bsEdits).forEach(([idx, items]) => {
+        const type = idx === "0" ? "hidden_strengths" : "blind_spots";
+        finalData[type] = items.map((it) => ({
+          question: it.desc,
+          self: Number(it.self),
+          others: Number(it.others),
+          gap: Number(it.score),
+        }));
+      });
+    }
+
+    return finalData;
+  };
+
   const handleSaveData = async () => {
     if (!canSaveDraft) return;
 
-    const finalData = {
-      ...reportData,
-      behavioural_indications: {
-        ...(reportData?.behavioural_indications || {}),
-      },
-      overview_summary_data: overviewSummaryData,
-      evaluator_category_data: evaluatorCategoryBreakdownData,
-    };
+    // For lbscore360 with multiple recipients: save all recipients as array
+    // The currently viewed recipient gets its edits applied; others are saved as-is
+    let feedbackDataArray;
 
-    if (overviewEdits) {
-      finalData.overview_summary_data = overviewEdits.map(row => ({
-        label: row.label,
-        self: Number(row.self),
-        others: Number(row.others),
-      }));
-    }
-
-    if (evaluatorEdits) {
-      finalData.evaluator_category_data = evaluatorEdits.map(row => ({
-        label: row.label,
-        values: {
-          self: Number(row.values.self),
-          manager: Number(row.values.manager),
-          team: Number(row.values.team),
-          peers: Number(row.values.peers),
+    if (isLbScore360Route && recipients.length > 0) {
+      feedbackDataArray = recipients.map((r) => {
+        // Apply edits only to the currently selected recipient
+        if (r === reportData) {
+          return buildRecipientPayload(r, {
+            behaviouralEdits,
+            overviewEdits,
+            evaluatorEdits,
+            qualitativeEdits,
+            highlightsEdits,
+            blindSpotsEdits,
+          });
         }
-      }));
+        return buildRecipientPayload(r);
+      });
+    } else {
+      // Single-recipient flow (non-lbscore360 or single report)
+      feedbackDataArray = [
+        buildRecipientPayload(reportData, {
+          behaviouralEdits,
+          overviewEdits,
+          evaluatorEdits,
+          qualitativeEdits,
+          highlightsEdits,
+          blindSpotsEdits,
+        }),
+      ];
     }
-
-    if (Object.keys(behaviouralEdits).length > 0) {
-        const indicatorsKeys = Object.keys(reportData?.behavioural_indications || {});
-        Object.entries(behaviouralEdits).forEach(([idx, newRows]) => {
-          const key = indicatorsKeys[idx];
-          if (key && finalData.behavioural_indications[key] && finalData.behavioural_indications[key][0]) {
-            const scores = {};
-            newRows.forEach((row) => {
-              const role = row.label === "Team Members" ? "Subordinate" : row.label;
-              scores[role] = Number(row.score);
-            });
-  
-            finalData.behavioural_indications[key][0] = {
-              ...finalData.behavioural_indications[key][0],
-              score: {
-                ...finalData.behavioural_indications[key][0].score,
-                ...scores,
-              },
-            };
-          }
-        });
-      }
-
-      if (Object.keys(qualitativeEdits).length > 0) {
-        Object.entries(qualitativeEdits).forEach(([sectionIdx, updatedQuestions]) => {
-          const sectionKey = Object.keys(reportData.feedbacks)[sectionIdx];
-          if (sectionKey) {
-            finalData.feedbacks[sectionKey] = updatedQuestions.map((q) => {
-              const questionText = q.text;
-              const rolesData = {};
-              q.comments.forEach((c) => {
-                const parsed = parseQualitativeComment(c);
-                if (!parsed?.role || !parsed.text) return;
-                if (!rolesData[parsed.role]) rolesData[parsed.role] = [];
-                rolesData[parsed.role].push(parsed.text);
-              });
-              return { [questionText]: rolesData };
-            });
-          }
-        });
-      }
-
-      if (Object.keys(highlightsEdits).length > 0) {
-        Object.entries(highlightsEdits).forEach(([idx, items]) => {
-          const type = idx === "0" ? "strengths" : "area_of_improvements";
-          finalData[type] = items.map((it) => ({
-            question: it.desc,
-            others_avg: Number(it.score),
-          }));
-        });
-      }
-
-      if (Object.keys(blindSpotsEdits).length > 0) {
-        Object.entries(blindSpotsEdits).forEach(([idx, items]) => {
-          const type = idx === "0" ? "hidden_strengths" : "blind_spots";
-          finalData[type] = items.map((it) => ({
-            question: it.desc,
-            self: Number(it.self),
-            others: Number(it.others),
-            gap: Number(it.score),
-          }));
-        });
-      }
 
     const payload = {
-      feedback_data: [finalData],
+      feedback_data: feedbackDataArray,
       excel_name: (() => {
         if (isLbScore360Route) {
+          if (recipients.length > 1) {
+            return excelFile?.name || "LBSCORE360 Multi-Recipient Report";
+          }
           const profile = reportData?.introduction || reportData?.profile || {};
           const name = profile["Associate Name"] || profile["associateName"] || reportData?.name || "";
           const id = profile["Associate ID"] || profile["associateId"] || profile["employeeId"] || "";
@@ -695,7 +747,7 @@ const parseQualitativeComment = (c)=> {
         }
         return excelFile?.name || reportData?.name || "LBSCORE Report";
       })(),
-      report_type: "lbscore360"
+      report_type: "lbscore360",
     };
 
     if (draftId) {
@@ -745,8 +797,13 @@ const parseQualitativeComment = (c)=> {
           setDraftAccessType(
             response?.access_type ?? response?.accessType ?? null,
           );
-          if (response && response.feedback_data && response.feedback_data[0]) {
-            setReportData(response.feedback_data[0]);
+          if (response && response.feedback_data && response.feedback_data.length > 0) {
+            if (isLbScore360Route && response.feedback_data.length > 1) {
+              setRecipients(response.feedback_data);
+              setPhase("list");
+            } else {
+              setReportData(response.feedback_data[0]);
+            }
           }
         } catch (error) {
           console.error("Failed to load draft:", error);
@@ -1115,7 +1172,14 @@ const parseQualitativeComment = (c)=> {
       />
       <div className="section-page-container">
         <section className="section-page pdf-section">
-          <InitialPage initialName={reportData?.name || ""} />
+          <InitialPage initialName={
+            reportData?.introduction?.["Associate Name"] ||
+            reportData?.profile?.["Associate Name"] ||
+            reportData?.introduction?.["associateName"] ||
+            reportData?.profile?.["associateName"] ||
+            reportData?.name ||
+            ""
+          } />
         </section>
         <section className="section-page pdf-section">
           <ContentPage rows={profileRows} />

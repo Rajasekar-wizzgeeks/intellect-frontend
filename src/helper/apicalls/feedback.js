@@ -1,6 +1,6 @@
 import { apiFetch } from "../apiFetch";
 import { parseApiErrorBody } from "../getApiErrorMessage";
-import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl, deleteFeedbackDraftUrl } from "../apiurls";
+import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl, deleteFeedbackDraftUrl, multisave } from "../apiurls";
 
 const apiRequestError = (errorData, fallback) =>
   new Error(parseApiErrorBody(errorData) || fallback);
@@ -528,6 +528,28 @@ export const giveAccess = async (payload) => {
     return await response.json();
   } catch (error) {
     console.error("Error giving access:", error);
+    throw error;
+  }
+};
+
+export const multiSaveDraft = async (payload) => {
+  try {
+    const response = await apiFetch(multisave, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw apiRequestError(errorData, "Failed to multi-save draft");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error multi-saving draft:", error);
     throw error;
   }
 };
