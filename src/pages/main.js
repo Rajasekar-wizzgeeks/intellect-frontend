@@ -1172,14 +1172,30 @@ const parseQualitativeComment = (c)=> {
       />
       <div className="section-page-container">
         <section className="section-page pdf-section">
-          <InitialPage initialName={
-            reportData?.introduction?.["Associate Name"] ||
-            reportData?.profile?.["Associate Name"] ||
-            reportData?.introduction?.["associateName"] ||
-            reportData?.profile?.["associateName"] ||
-            reportData?.name ||
-            ""
-          } />
+          <InitialPage
+            initialName={
+              reportData?.introduction?.["Associate Name"] ||
+              reportData?.profile?.["Associate Name"] ||
+              reportData?.introduction?.["associateName"] ||
+              reportData?.profile?.["associateName"] ||
+              reportData?.name ||
+              ""
+            }
+            onNameChange={(val) => {
+              setReportData((prev) => {
+                if (!prev) return prev;
+                // Update whichever profile key exists, or introduction by default
+                if (prev.introduction && "Associate Name" in prev.introduction) {
+                  return { ...prev, introduction: { ...prev.introduction, "Associate Name": val } };
+                }
+                if (prev.profile && "Associate Name" in prev.profile) {
+                  return { ...prev, profile: { ...prev.profile, "Associate Name": val } };
+                }
+                // Fallback: create/update introduction
+                return { ...prev, introduction: { ...(prev.introduction || {}), "Associate Name": val } };
+              });
+            }}
+          />
         </section>
         <section className="section-page pdf-section">
           <ContentPage rows={profileRows} />

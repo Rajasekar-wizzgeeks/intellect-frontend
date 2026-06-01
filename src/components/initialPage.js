@@ -3,13 +3,18 @@ import logo from "../assets/png/intellectBrownLogo.png";
 import bgImage from "../assets/jpeg/initialPage.jpeg";
 import "../styles/initialPage.scss";
 
-const InitialPage = ({ initialName = "" }) => {
+const InitialPage = ({ initialName = "", onNameChange }) => {
   const [name, setName] = useState(initialName);
 
   useEffect(() => {
     setName(initialName);
   }, [initialName]);
 
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setName(val);
+    if (onNameChange) onNameChange(val);
+  };
   return (
     <div
       className="initial-cover"
@@ -39,7 +44,7 @@ const InitialPage = ({ initialName = "" }) => {
                 type="text"
                 className="initial-cover__name-field"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleChange}
                 aria-label="Name"
               />
               <span className="initial-cover__name-fallback" aria-hidden="true">
