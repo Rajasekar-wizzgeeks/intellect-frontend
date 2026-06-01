@@ -15,6 +15,7 @@ const Header = ({
           className="report-header__logo"
         />
       </div>
+      <hr className="report-header__divider" />
     </header>
   );
 };
