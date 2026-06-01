@@ -28,3 +28,5 @@ export const logoutUrl = `${BASEURL}/api/user/logout`;
 export const createUser = `${BASEURL}/api/user/create`
 
 export const getUsers =`${BASEURL}/api/user/all`
+
+export const multisave = `${BASEURL}/api/user/feedback-draft/multi-save`
