@@ -110,8 +110,7 @@ const ScoringDefinition = ({
               ratings provided within each respondent category. If a category
               includes multiple respondents, their individual scores are
               averaged to produce a single representative score for that group.
-              This approach ensures that no single individual disproportionately
-              influences the outcome.
+              This approach ensures that no single individual disproportionately influences the outcome, and that all feedback is weighted appropriately in the overall evaluation.
             </div>
           </li>
         </ul>

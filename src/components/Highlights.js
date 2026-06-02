@@ -67,12 +67,23 @@ const HighlightRow = ({
   const [localTitle, setLocalTitle] = useState(item.title ?? "");
   const [localDesc, setLocalDesc] = useState(item.desc ?? "");
   const [localScore, setLocalScore] = useState(item.score ?? "");
+  const descRef = React.useRef(null);
 
   useEffect(() => {
     setLocalTitle(item.title ?? "");
     setLocalDesc(item.desc ?? "");
     setLocalScore(item.score ?? "");
   }, [item]);
+
+  // Auto-resize textarea
+  const autoResize = React.useCallback(() => {
+    const el = descRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => { autoResize(); }, [localDesc, autoResize]);
 
   const handleBlur = () => {
     if (
@@ -133,11 +144,11 @@ const HighlightRow = ({
         </div>
         <div className="hl-row-desc">
           <textarea
+            ref={descRef}
             className="hl-row-desc-input"
             value={localDesc}
-            onChange={(e) => setLocalDesc(e.target.value)}
+            onChange={(e) => { setLocalDesc(e.target.value); autoResize(); }}
             onBlur={handleBlur}
-            rows={2}
             style={{
               width: "100%",
               border: "none",
@@ -145,6 +156,7 @@ const HighlightRow = ({
               font: "inherit",
               color: "inherit",
               resize: "none",
+              overflow: "hidden",
             }}
           />
         </div>

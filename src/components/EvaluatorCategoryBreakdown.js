@@ -56,9 +56,7 @@ const EvaluatorCategoryBreakdown = ({
           className={`ecb-sec ${idx === 0 ? "ecb-sec--first" : ""}`}
         >
           <h3 className="ecb-sec__heading">
-            {idx === 0
-              ? `Overall Rating: ${row.label}`
-              : `Rating: ${row.label}`}
+            { `Overall Rating: ${row.label}`}
           </h3>
           <div className="ecb-grid">
             <HorizontalCompareBar

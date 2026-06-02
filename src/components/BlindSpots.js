@@ -49,9 +49,23 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
     "var(--color-mint)",
     "var(--color-green)",
   ];
+
+  const labelStyle = {
+    position: "absolute",
+    left: "4px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: "14px",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+    zIndex: 1,
+  };
+
   return (
     <div className="bs-bars-row">
-      {/* Left: Others green bar with centered value */}
+      {/* Left bar (self) */}
       <div className="bs-left-others">
         <div className="bs-bar others">
           <div
@@ -60,31 +74,20 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
           />
           {onSelfChange ? (
             <input
-              type="number"
-              className="bs-value-input others"
+              type="text" className="bs-value-input others"
               value={self}
               step="0.1"
               onChange={(e) => onSelfChange(e.target.value)}
               onBlur={onBlur}
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "40px",
-                border: "none",
-                background: "transparent",
-                color: "#fff",
-                textAlign: "center",
-                fontWeight: "bold",
-              }}
+              style={{ ...labelStyle, pointerEvents: "auto", background: "transparent", border: "none", width: "56px" }}
             />
           ) : (
-            <span className="bs-value others">{self}</span>
+            <span style={labelStyle}>{self}</span>
           )}
         </div>
       </div>
       <span className="bs-center-label">Others</span>
+      {/* Right bar (others) */}
       <div className="bs-bar others">
         <div
           className="bs-fill others"
@@ -95,27 +98,15 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
         />
         {onOthersChange ? (
           <input
-            type="number"
-            className="bs-value-input others"
+            type="text" className="bs-value-input others"
             value={others}
             step="0.1"
             onChange={(e) => onOthersChange(e.target.value)}
             onBlur={onBlur}
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "40px",
-              border: "none",
-              background: "transparent",
-              color: "#fff",
-              textAlign: "center",
-              fontWeight: "bold",
-            }}
+            style={{ ...labelStyle, pointerEvents: "auto", background: "transparent", border: "none", width: "56px" }}
           />
         ) : (
-          <span className="bs-value others">{others}</span>
+          <span style={labelStyle}>{others}</span>
         )}
       </div>
     </div>
@@ -134,6 +125,7 @@ const BlindSpotRow = ({
   const [localScore, setLocalScore] = useState(item.score ?? "");
   const [localSelf, setLocalSelf] = useState(item.self ?? 0);
   const [localOthers, setLocalOthers] = useState(item.others ?? 0);
+  const descRef = React.useRef(null);
 
   useEffect(() => {
     setLocalDesc(item.desc ?? "");
@@ -141,6 +133,16 @@ const BlindSpotRow = ({
     setLocalSelf(item.self ?? 0);
     setLocalOthers(item.others ?? 0);
   }, [item]);
+
+  // Auto-resize textarea
+  const autoResize = React.useCallback(() => {
+    const el = descRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => { autoResize(); }, [localDesc, autoResize]);
 
   const handleBlur = () => {
     if (
@@ -186,11 +188,11 @@ const BlindSpotRow = ({
       <div className="bs-row-content">
         <div className="bs-row-text">
           <textarea
+            ref={descRef}
             className="bs-row-text-input"
             value={localDesc}
-            onChange={(e) => setLocalDesc(e.target.value)}
+            onChange={(e) => { setLocalDesc(e.target.value); autoResize(); }}
             onBlur={handleBlur}
-            rows={2}
             style={{
               width: "100%",
               border: "none",
@@ -198,6 +200,7 @@ const BlindSpotRow = ({
               font: "inherit",
               color: "inherit",
               resize: "none",
+              overflow: "hidden",
             }}
           />
         </div>

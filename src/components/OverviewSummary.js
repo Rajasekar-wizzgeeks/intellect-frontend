@@ -78,49 +78,47 @@ const OverviewSummary = ({
     const out = [];
 
     out.push(
-      <div key="title" className="content-page__title os-title">
-        <span className="content-page__title-text os-title__text">
-          Overview/Summary of Scores Across 7 Elements
-        </span>
-      </div>,
-    );
+      <div key="overview-all">
+        <div key="title" className="content-page__title os-title">
+          <span className="content-page__title-text os-title__text">
+            Overview/Summary of Scores Across 7 Elements
+          </span>
+        </div>
 
-    out.push(
-      <div key="note" className="os-note">
-        <em className="os-note__em">
-          <strong> Note:</strong> For categories with more than one respondent,
-          scores represent the mean of all individual ratings.
-        </em>
-      </div>,
-    );
+        <div key="note" className="os-note">
+          <em className="os-note__em">
+            <strong> Note:</strong> For categories with more than one respondent,
+            scores represent the mean of all individual ratings.
+          </em>
+        </div>
 
-    rows.forEach((row, idx) => {
-      out.push(
-        <div key={`row-${idx}`} className="os-row">
-          <div className="os-row__label">{row.label}</div>
-          <HorizontalCompareBar
-            self={row.self}
-            others={row.others}
-            editableValues={true}
-            onValuesChange={(nextValues) => {
-              const nextRows = [...rows];
-              const cur = nextRows[idx];
-              if (cur) {
-                nextRows[idx] = {
-                  ...cur,
-                  self: nextValues?.self ?? cur.self,
-                  others: nextValues?.others ?? cur.others,
-                };
-                setRows(nextRows);
-                if (onDataChange) {
-                  onDataChange(nextRows);
+        {rows.map((row, idx) => (
+          <div key={`row-${idx}`} className="os-row">
+            <div className="os-row__label">{row.label}</div>
+            <HorizontalCompareBar
+              self={row.self}
+              others={row.others}
+              editableValues={true}
+              onValuesChange={(nextValues) => {
+                const nextRows = [...rows];
+                const cur = nextRows[idx];
+                if (cur) {
+                  nextRows[idx] = {
+                    ...cur,
+                    self: nextValues?.self ?? cur.self,
+                    others: nextValues?.others ?? cur.others,
+                  };
+                  setRows(nextRows);
+                  if (onDataChange) {
+                    onDataChange(nextRows);
+                  }
                 }
-              }
-            }}
-          />
-        </div>,
-      );
-    });
+              }}
+            />
+          </div>
+        ))}
+      </div>,
+    );
 
     return out;
   }, [rows]);

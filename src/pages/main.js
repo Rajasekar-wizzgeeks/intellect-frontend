@@ -275,7 +275,7 @@ const parseQualitativeComment = (c)=> {
       { label: "Associate Name", value: get("Associate Name", "associateName", "name") },
       { label: "Associate ID", value: get("Associate ID", "associateId", "employeeId") },
       { label: "Email ID", value: get("Email ID", "Email", "Email id", "email", "emailId") },
-      { label: "Stream", value: get("Stream", "Role", "role", "stream") },
+      { label: "Role", value: get("Role", "role", "Stream", "stream") },
       { label: "LOB", value: get("LOB", "LOB / Unit", "lob") },
       { label: "Report Date", value: get("Report Date", "Date", "date", "ReportDate") },
       { label: "Assessed By", value: get("Assessed By", "assessedBy", "Assessedby") },
@@ -1271,85 +1271,46 @@ const parseQualitativeComment = (c)=> {
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Collaboration",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Builds trust by being dependable and following through on commitments." },
+                { tail: "Brings together diverse perspectives to generate better ideas and solutions." },
+                { tail: "Acknowledges issues early and engages the right expertise to address them." },
+                { tail: "Encourages open, respectful exchange of feedback across teams." },
+                { tail: "Enables collective ownership and shared success across organisational boundaries." },
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Operational Excellence",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Uses data, metrics, and financial insights to guide decisions and improve quality." },
+                { tail: "Identifies inefficiencies, waste, or friction and acts to resolve them." },
+                { tail: "Applies process discipline and lean principles to strengthen execution reliability." },
+                { tail: "Anticipates risks early and puts mitigations in place proactively." },
+                { tail: "Drives continuous improvement through learning, automation, and refinement." },
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Results Orientation",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Sets clear, stretch goals aligned to business priorities and growth opportunities." },
+                { tail: "Focuses effort on high-impact actions and removes distractions." },
+                { tail: "Plans, reviews, and tracks execution rigorously to stay on course." },
+                { tail: "Acts with urgency to overcome obstacles and maintain momentum." },
+                { tail: "Takes full ownership for outcomes and holds self and others accountable." },
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Expertise & Communication",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Applies structured and systems thinking to address complex challenges." },
+                { tail: "Connects insights across domains to see the bigger picture." },
+                { tail: "Communicates ideas clearly and persuasively to varied audiences." },
+                { tail: "Builds credibility through depth of expertise and sound reasoning." },
+                { tail: "Continuously learns, adapts, and shares knowledge to stay relevant." },
               ],
             },
+            
           ]}
         />
         <CompetencySummary
@@ -1453,7 +1414,7 @@ const parseQualitativeComment = (c)=> {
             date:          (() => { const d = profileRows?.find(r => r.label === "Report Date")?.value; return (!d || d === "None") ? new Date().toLocaleDateString("en-GB") : d; })(),
             associateName: profileRows?.find(r => r.label === "Associate Name")?.value ?? "",
             associateId:   profileRows?.find(r => r.label === "Associate ID")?.value ?? "",
-            role:          profileRows?.find(r => r.label === "Stream")?.value ?? "",
+            role:          profileRows?.find(r => r.label === "Role")?.value ?? "",
             lob:           profileRows?.find(r => r.label === "LOB")?.value ?? "",
             email:         profileRows?.find(r => r.label === "Email ID")?.value ?? "",
           }}

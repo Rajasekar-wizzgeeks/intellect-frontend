@@ -4,6 +4,12 @@
   gap: 16px;
   counter-reset: page;
 
+  // Nested containers (e.g. inside AutoPaginatedSections) must NOT reset the counter
+  .section-page-container {
+    counter-reset: none;
+    display: contents;
+  }
+
   .section-page {
     width: 100%;
     max-width: 794px;

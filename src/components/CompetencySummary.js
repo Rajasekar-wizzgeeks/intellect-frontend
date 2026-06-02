@@ -252,7 +252,7 @@ const CompetencySummary = ({
   }, [streamQuartiles]); 
 
   const quartileHeaders = [
-    "Minimum Score",
+    "Min Score",
     "First Quartile (25th percentile)",
     "Median (50th percentile)",
     "Third Quartile (75th percentile)",
