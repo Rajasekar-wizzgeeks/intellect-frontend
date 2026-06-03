@@ -676,13 +676,20 @@ const parseQualitativeComment = (c)=> {
         const key = indicatorsKeys[idx];
         if (key && finalData.behavioural_indications[key]?.[0]) {
           const scores = {};
+          const highlights = {};
           newRows.forEach((row) => {
             const role = row.label === "Team Members" ? "Subordinate" : row.label;
             scores[role] = Number(row.score);
+            if (row.highlight !== undefined) {
+              // highlights API key is lowercase (self, manager, peer, subordinate)
+              const hlKey = role.charAt(0).toLowerCase() + role.slice(1);
+              highlights[hlKey] = row.highlight;
+            }
           });
           finalData.behavioural_indications[key][0] = {
             ...finalData.behavioural_indications[key][0],
             score: { ...finalData.behavioural_indications[key][0].score, ...scores },
+            highlights: { ...(finalData.behavioural_indications[key][0].highlights || {}), ...highlights },
           };
         }
       });
