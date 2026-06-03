@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
 import "../styles/contentPage.scss";
@@ -20,7 +20,66 @@ const IndividualDevelopmentPlan = ({
     "Remarks",
   ],
   rows = 5,
+  onDataChange,
+  savedData,
 }) => {
+  const makeEmptyGoals = (n) => Array.from({ length: n }, () => ({
+    slNo: "", goal: "", actionPlan: "", dueDate: "", status: "", remarks: "",
+  }));
+  const makeEmptyAssignments = (n) => Array.from({ length: n }, () => ({
+    slNo: "", project: "", team: "", remarks: "",
+  }));
+
+  const [goals, setGoals] = useState(
+    () => savedData?.goals ?? makeEmptyGoals(rows)
+  );
+  const [assignments, setAssignments] = useState(
+    () => savedData?.assignments ?? makeEmptyAssignments(5)
+  );
+  const [summary, setSummary] = useState(() => savedData?.summary ?? "");
+
+  useEffect(() => {
+    setGoals(savedData?.goals ?? makeEmptyGoals(rows));
+    setAssignments(savedData?.assignments ?? makeEmptyAssignments(5));
+    setSummary(savedData?.summary ?? "");
+  }, [savedData, rows]);
+
+  const notifyChange = useCallback((nextGoals, nextAssignments, nextSummary) => {
+    if (onDataChange) {
+      onDataChange({
+        goals: nextGoals ?? goals,
+        assignments: nextAssignments ?? assignments,
+        summary: nextSummary ?? summary,
+      });
+    }
+  }, [onDataChange, goals, assignments, summary]);
+
+  const handleGoalChange = useCallback((rowIndex, field, value) => {
+    setGoals((prev) => {
+      const next = prev.map((row, i) =>
+        i === rowIndex ? { ...row, [field]: value } : row
+      );
+      notifyChange(next, null, null);
+      return next;
+    });
+  }, [notifyChange]);
+
+  const handleAssignmentChange = useCallback((rowIndex, field, value) => {
+    setAssignments((prev) => {
+      const next = prev.map((row, i) =>
+        i === rowIndex ? { ...row, [field]: value } : row
+      );
+      notifyChange(null, next, null);
+      return next;
+    });
+  }, [notifyChange]);
+
+  const handleSummaryChange = useCallback((e) => {
+    const val = e.target.value;
+    setSummary(val);
+    notifyChange(null, null, val);
+  }, [notifyChange]);
+
   const blocks = useMemo(() => {
     const out = [];
 
@@ -31,8 +90,6 @@ const IndividualDevelopmentPlan = ({
       </h2>
     );
 
-    const bodyRows = Array.from({ length: rows });
-
     out.push(
       <div key="idp" className="idp-grid6">
         <div className="idp-grid6__header">
@@ -42,17 +99,26 @@ const IndividualDevelopmentPlan = ({
             </div>
           ))}
         </div>
-        {bodyRows.map((_, r) => (
+        {goals.map((row, r) => (
           <div key={`r-${r}`} className="idp-grid6__row">
-            {headers.map((_, c) => (
-              <div key={`r${r}c${c}`} className="idp-grid6__td">
-                {c === 0 || c === 3 || c === 4 ? (
-                  <input className="cap-input" type="text" defaultValue="" />
-                ) : (
-                  <textarea className="cap-textarea__input" defaultValue="" />
-                )}
-              </div>
-            ))}
+            <div className="idp-grid6__td">
+              <input className="cap-input" type="text" value={row.slNo} onChange={(e) => handleGoalChange(r, "slNo", e.target.value)} />
+            </div>
+            <div className="idp-grid6__td">
+              <textarea className="cap-textarea__input" value={row.goal} onChange={(e) => handleGoalChange(r, "goal", e.target.value)} />
+            </div>
+            <div className="idp-grid6__td">
+              <textarea className="cap-textarea__input" value={row.actionPlan} onChange={(e) => handleGoalChange(r, "actionPlan", e.target.value)} />
+            </div>
+            <div className="idp-grid6__td">
+              <input className="cap-input" type="text" value={row.dueDate} onChange={(e) => handleGoalChange(r, "dueDate", e.target.value)} />
+            </div>
+            <div className="idp-grid6__td">
+              <input className="cap-input" type="text" value={row.status} onChange={(e) => handleGoalChange(r, "status", e.target.value)} />
+            </div>
+            <div className="idp-grid6__td">
+              <textarea className="cap-textarea__input" value={row.remarks} onChange={(e) => handleGoalChange(r, "remarks", e.target.value)} />
+            </div>
           </div>
         ))}
       </div>
@@ -64,7 +130,6 @@ const IndividualDevelopmentPlan = ({
       "Team",
       "Remarks",
     ];
-    const assignmentsRows = Array.from({ length: 5 });
 
     out.push(
       <div key="assignments-block">
@@ -79,17 +144,20 @@ const IndividualDevelopmentPlan = ({
               </div>
             ))}
           </div>
-          {assignmentsRows.map((_, r) => (
+          {assignments.map((row, r) => (
             <div key={`ar-${r}`} className="assign-grid4__row">
-              {assignmentsHeaders.map((_, c) => (
-                <div key={`ar${r}c${c}`} className="assign-grid4__td">
-                  {c === 0 ? (
-                    <input className="cap-input" type="text" defaultValue="" />
-                  ) : (
-                    <textarea className="cap-textarea__input" defaultValue="" />
-                  )}
-                </div>
-              ))}
+              <div className="assign-grid4__td">
+                <input className="cap-input" type="text" value={row.slNo} onChange={(e) => handleAssignmentChange(r, "slNo", e.target.value)} />
+              </div>
+              <div className="assign-grid4__td">
+                <textarea className="cap-textarea__input" value={row.project} onChange={(e) => handleAssignmentChange(r, "project", e.target.value)} />
+              </div>
+              <div className="assign-grid4__td">
+                <textarea className="cap-textarea__input" value={row.team} onChange={(e) => handleAssignmentChange(r, "team", e.target.value)} />
+              </div>
+              <div className="assign-grid4__td">
+                <textarea className="cap-textarea__input" value={row.remarks} onChange={(e) => handleAssignmentChange(r, "remarks", e.target.value)} />
+              </div>
             </div>
           ))}
         </div>
@@ -101,13 +169,13 @@ const IndividualDevelopmentPlan = ({
       <div key="summary-block" className="summary">
         <div className="section-band">Summary</div>
         <div className="summary__box">
-          <textarea className="cap-textarea__input" defaultValue="" />
+          <textarea className="cap-textarea__input" value={summary} onChange={handleSummaryChange} />
         </div>
       </div>
     );
 
     return out;
-  }, [titleIndex, titleText, headers, rows]);
+  }, [titleIndex, titleText, headers, rows, goals, assignments, summary, handleGoalChange, handleAssignmentChange, handleSummaryChange]);
 
   return (
     <AutoPaginatedSections

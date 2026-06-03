@@ -221,6 +221,7 @@ const CompetencySummary = ({
   cohortInitialSelected = 2,
   streamInitialSelected = 2,
   overallScore = 370,
+  onDataChange,
 }) => {
   const defaultCohortMap = useMemo(
     () => ({
@@ -252,7 +253,7 @@ const CompetencySummary = ({
   }, [streamQuartiles]); 
 
   const quartileHeaders = [
-    "Minimum Score",
+    "Min Score",
     "First Quartile (25th percentile)",
     "Median (50th percentile)",
     "Third Quartile (75th percentile)",
@@ -260,17 +261,25 @@ const CompetencySummary = ({
   ];
 
   const handleCohortChange = (quartile, index, value) => {
-    setCohortMap((prev) => ({
-      ...prev,
-      [quartile]: prev[quartile].map((v, i) => (i === index ? value : v)),
-    }));
+    setCohortMap((prev) => {
+      const next = {
+        ...prev,
+        [quartile]: prev[quartile].map((v, i) => (i === index ? value : v)),
+      };
+      if (onDataChange) onDataChange({ cohortMap: next, streamMap });
+      return next;
+    });
   };
 
   const handleStreamChange = (quartile, index, value) => {
-    setStreamMap((prev) => ({
-      ...prev,
-      [quartile]: prev[quartile].map((v, i) => (i === index ? value : v)),
-    }));
+    setStreamMap((prev) => {
+      const next = {
+        ...prev,
+        [quartile]: prev[quartile].map((v, i) => (i === index ? value : v)),
+      };
+      if (onDataChange) onDataChange({ cohortMap, streamMap: next });
+      return next;
+    });
   };
 
   const blocks = useMemo(() => {

@@ -66,6 +66,13 @@ const MainPage = () => {
   const [qualitativeEdits, setQualitativeEdits] = useState({});
   const [highlightsEdits, setHighlightsEdits] = useState({});
   const [blindSpotsEdits, setBlindSpotsEdits] = useState({});
+  const [profileEdits, setProfileEdits] = useState(null);
+  const [competencyEdits, setCompetencyEdits] = useState(null);
+  const [coachingPlanEdits, setCoachingPlanEdits] = useState(null);
+  const [coachingPlanPage2Edits, setCoachingPlanPage2Edits] = useState(null);
+  const [individualDevPlanEdits, setIndividualDevPlanEdits] = useState(null);
+  const [participantCohortEdits, setParticipantCohortEdits] = useState(null);
+  const [currentRecipientIndex, setCurrentRecipientIndex] = useState(-1);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [draftAccessType, setDraftAccessType] = useState(null);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
@@ -275,7 +282,7 @@ const parseQualitativeComment = (c)=> {
       { label: "Associate Name", value: get("Associate Name", "associateName", "name") },
       { label: "Associate ID", value: get("Associate ID", "associateId", "employeeId") },
       { label: "Email ID", value: get("Email ID", "Email", "Email id", "email", "emailId") },
-      { label: "Stream", value: get("Stream", "Role", "role", "stream") },
+      { label: "Role", value: get("Role", "role", "Stream", "stream") },
       { label: "LOB", value: get("LOB", "LOB / Unit", "lob") },
       { label: "Report Date", value: get("Report Date", "Date", "date", "ReportDate") },
       { label: "Assessed By", value: get("Assessed By", "assessedBy", "Assessedby") },
@@ -293,35 +300,35 @@ const parseQualitativeComment = (c)=> {
       const data = dataArray[0];
       const scores = data.score || {};
       const gaps = data.gap || {};
+      const highlights = data.highlights || {};
       const selfScore = scores.Self ?? 0;
-      const highlight = data.highlight ?? "";
 
       const cleanedIndicator = indicatorText.replace(/^\d+\.\s*/, "");
 
       return {
         indicator: cleanedIndicator,
         self: selfScore,
-        highlight: highlight,
+        highlight: highlights.self ?? "",
         others: [
           {
             label: "Manager",
             score: scores.Manager ?? 0,
             gapFromSelf: gaps.manager_gap ?? 0,
-            highlight: highlight,
+            highlight: highlights.manager ?? "",
             color: "#b8860b",
           },
           {
             label: "Peer",
             score: scores.Peer ?? 0,
             gapFromSelf: gaps.peer_avg ?? 0,
-            highlight: highlight,
+            highlight: highlights.peer ?? "",
             color: "#a9d0b8",
           },
           {
             label: "Team Members",
             score: scores.Subordinate ?? 0,
             gapFromSelf: gaps.subordinate_avg ?? 0,
-            highlight: highlight,
+            highlight: highlights.subordinate ?? "",
             color: "#6b8e23",
           },
         ],
@@ -609,6 +616,26 @@ const parseQualitativeComment = (c)=> {
       : "View-only access"
     : undefined;
 
+  // Convert a quartile map {1: [v0..v4], 2: [...], ...} back to the API's expected shape
+  const buildCompetencyQuartilesFromMap = (map, existingBlock) => {
+    if (!map) return existingBlock;
+    const positionMap = { 1: "1st Quartile", 2: "2nd Quartile", 3: "3rd Quartile", 4: "4th Quartile" };
+    // Find which tab is the active one (has values filled in)
+    const activeTab = Object.keys(map).find((k) => map[k]?.some((v) => String(v).trim() !== "")) || "2";
+    const pos = positionMap[activeTab] || "2nd Quartile";
+    const vals = map[activeTab] || [];
+    return {
+      position: pos,
+      quartiles: {
+        minimum_score:  Number(vals[0]) || 0,
+        first_quartile: Number(vals[1]) || 0,
+        median:         Number(vals[2]) || 0,
+        third_quartile: Number(vals[3]) || 0,
+        maximum_score:  Number(vals[4]) || 0,
+      },
+    };
+  };
+
   // Build the save payload for a single recipient's reportData + edits
   const buildRecipientPayload = (data, edits = {}) => {
     const {
@@ -618,6 +645,12 @@ const parseQualitativeComment = (c)=> {
       qualitativeEdits: qEdits = {},
       highlightsEdits: hEdits = {},
       blindSpotsEdits: bsEdits = {},
+      profileEdits: pEdits = null,
+      competencyEdits: cEdits = null,
+      coachingPlanEdits: cpEdits = null,
+      coachingPlanPage2Edits: cp2Edits = null,
+      individualDevPlanEdits: idpEdits = null,
+      participantCohortEdits: pcEdits = null,
     } = edits;
 
     const finalData = {
@@ -645,13 +678,20 @@ const parseQualitativeComment = (c)=> {
         const key = indicatorsKeys[idx];
         if (key && finalData.behavioural_indications[key]?.[0]) {
           const scores = {};
+          const highlights = {};
           newRows.forEach((row) => {
             const role = row.label === "Team Members" ? "Subordinate" : row.label;
             scores[role] = Number(row.score);
+            if (row.highlight !== undefined) {
+              // highlights API key is lowercase (self, manager, peer, subordinate)
+              const hlKey = role.charAt(0).toLowerCase() + role.slice(1);
+              highlights[hlKey] = row.highlight;
+            }
           });
           finalData.behavioural_indications[key][0] = {
             ...finalData.behavioural_indications[key][0],
             score: { ...finalData.behavioural_indications[key][0].score, ...scores },
+            highlights: { ...(finalData.behavioural_indications[key][0].highlights || {}), ...highlights },
           };
         }
       });
@@ -694,6 +734,109 @@ const parseQualitativeComment = (c)=> {
       });
     }
 
+    // Apply profile (introduction table) edits
+    if (pEdits) {
+      const LABEL_TO_KEYS = {
+        "Associate Name": ["Associate Name", "associateName", "name"],
+        "Associate ID": ["Associate ID", "associateId", "employeeId"],
+        "Email ID": ["Email ID", "Email", "Email id", "email", "emailId"],
+        "Role": ["Role", "role", "Stream", "stream"],
+        "LOB": ["LOB", "LOB / Unit", "lob"],
+        "Report Date": ["Report Date", "Date", "date", "ReportDate"],
+        "Assessed By": ["Assessed By", "assessedBy", "Assessedby"],
+      };
+      const source = data?.introduction || data?.profile || {};
+      const merged = { ...source };
+      pEdits.forEach((row) => {
+        const keys = LABEL_TO_KEYS[row.label] || [row.label];
+        const existingKey = keys.find((k) => k in source) || keys[0];
+        merged[existingKey] = row.value;
+      });
+      if (data?.introduction) {
+        finalData.introduction = merged;
+      } else if (data?.profile) {
+        finalData.profile = merged;
+      } else {
+        finalData.introduction = merged;
+      }
+    }
+
+    // Apply competency summary (quartile) edits
+    if (cEdits) {
+      const cs = data?.competency_summary || {};
+      finalData.competency_summary = {
+        ...cs,
+        quartile_by_cohort: cEdits.cohortMap
+          ? buildCompetencyQuartilesFromMap(cEdits.cohortMap, cs.quartile_by_cohort)
+          : cs.quartile_by_cohort,
+        quartile_by_stream: cEdits.streamMap
+          ? buildCompetencyQuartilesFromMap(cEdits.streamMap, cs.quartile_by_stream)
+          : cs.quartile_by_stream,
+      };
+    }
+
+    // Apply Coaching Action Plan edits
+    if (cpEdits) {
+      finalData.coaching_action_plan = cpEdits;
+    }
+
+    // Apply Coaching Action Plan Page 2 edits
+    if (cp2Edits) {
+      finalData.coaching_action_plan_page2 = cp2Edits;
+    }
+
+    // Apply Individual Development Plan edits
+    if (idpEdits) {
+      finalData.individual_development_plan = idpEdits;
+    }
+
+    // Apply Participant & Cohort Summary edits
+    if (pcEdits) {
+      const raw = data?.participant_and_cohort_summary || {};
+      const rebuilt = { ...raw };
+
+      const mapToApiKeys = (ratings) => {
+        if (!ratings || typeof ratings !== "object") return {};
+        const result = {};
+        Object.entries(ratings).forEach(([competency, row]) => {
+          if (row && typeof row === "object") {
+            result[competency] = {
+              self:        row.self ?? "",
+              manager:     row.manager ?? "",
+              peer:        row.peers ?? "",
+              team_member: row.teamMembers ?? "",
+            };
+          }
+        });
+        return result;
+      };
+
+      const editedSelf   = pcEdits.selfRatings;
+      const editedCohort = pcEdits.cohortRatings;
+
+      if (editedSelf && Object.keys(editedSelf).length > 0) {
+        const selfApi = mapToApiKeys(editedSelf);
+        Object.keys(selfApi).forEach((name) => {
+          rebuilt[name] = {
+            ...(rebuilt[name] || {}),
+            your_rating: selfApi[name],
+          };
+        });
+      }
+
+      if (editedCohort && Object.keys(editedCohort).length > 0) {
+        const cohortApi = mapToApiKeys(editedCohort);
+        Object.keys(cohortApi).forEach((name) => {
+          rebuilt[name] = {
+            ...(rebuilt[name] || {}),
+            cohort_rating: cohortApi[name],
+          };
+        });
+      }
+
+      finalData.participant_and_cohort_summary = rebuilt;
+    }
+
     return finalData;
   };
 
@@ -704,32 +847,33 @@ const parseQualitativeComment = (c)=> {
     // The currently viewed recipient gets its edits applied; others are saved as-is
     let feedbackDataArray;
 
+    const commonEdits = {
+      behaviouralEdits,
+      overviewEdits,
+      evaluatorEdits,
+      qualitativeEdits,
+      highlightsEdits,
+      blindSpotsEdits,
+      profileEdits,
+      competencyEdits,
+      coachingPlanEdits,
+      coachingPlanPage2Edits,
+      individualDevPlanEdits,
+      participantCohortEdits,
+    };
+
     if (isLbScore360Route && recipients.length > 0) {
-      feedbackDataArray = recipients.map((r) => {
-        // Apply edits only to the currently selected recipient
-        if (r === reportData) {
-          return buildRecipientPayload(r, {
-            behaviouralEdits,
-            overviewEdits,
-            evaluatorEdits,
-            qualitativeEdits,
-            highlightsEdits,
-            blindSpotsEdits,
-          });
+      feedbackDataArray = recipients.map((r, i) => {
+        // r is from the recipients array (synced by onNameChange etc.)
+        if (i === currentRecipientIndex) {
+          return buildRecipientPayload(r, commonEdits);
         }
         return buildRecipientPayload(r);
       });
     } else {
       // Single-recipient flow (non-lbscore360 or single report)
       feedbackDataArray = [
-        buildRecipientPayload(reportData, {
-          behaviouralEdits,
-          overviewEdits,
-          evaluatorEdits,
-          qualitativeEdits,
-          highlightsEdits,
-          blindSpotsEdits,
-        }),
+        buildRecipientPayload(reportData, commonEdits),
       ];
     }
 
@@ -737,9 +881,6 @@ const parseQualitativeComment = (c)=> {
       feedback_data: feedbackDataArray,
       excel_name: (() => {
         if (isLbScore360Route) {
-          if (recipients.length > 1) {
-            return excelFile?.name || "LBSCORE360 Multi-Recipient Report";
-          }
           const profile = reportData?.introduction || reportData?.profile || {};
           const name = profile["Associate Name"] || profile["associateName"] || reportData?.name || "";
           const id = profile["Associate ID"] || profile["associateId"] || profile["employeeId"] || "";
@@ -926,7 +1067,14 @@ const parseQualitativeComment = (c)=> {
                 className="lbs-recipient-card"
                 onClick={() => {
                   setReportData(r);
+                  setCurrentRecipientIndex(i);
                   setPhase("report");
+                  setProfileEdits(null);
+                  setCompetencyEdits(null);
+                  setCoachingPlanEdits(null);
+                  setCoachingPlanPage2Edits(null);
+                  setIndividualDevPlanEdits(null);
+                  setParticipantCohortEdits(null);
                 }}
               >
                 <div className="lbs-recipient-card__avatar">
@@ -959,7 +1107,7 @@ const parseQualitativeComment = (c)=> {
         {isLbScore360Route && (
           <button
             className="lbs-back-btn"
-            onClick={() => { setPhase("list"); setReportData(null); }}
+            onClick={() => { setPhase("list"); setReportData(null); setProfileEdits(null); setCompetencyEdits(null); setCoachingPlanEdits(null); setCoachingPlanPage2Edits(null); setIndividualDevPlanEdits(null); setParticipantCohortEdits(null); }}
           >
             <ChevronLeft size={16} /> All Recipients
           </button>
@@ -1184,21 +1332,25 @@ const parseQualitativeComment = (c)=> {
             onNameChange={(val) => {
               setReportData((prev) => {
                 if (!prev) return prev;
-                // Update whichever profile key exists, or introduction by default
+                let updated;
                 if (prev.introduction && "Associate Name" in prev.introduction) {
-                  return { ...prev, introduction: { ...prev.introduction, "Associate Name": val } };
+                  updated = { ...prev, introduction: { ...prev.introduction, "Associate Name": val } };
+                } else if (prev.profile && "Associate Name" in prev.profile) {
+                  updated = { ...prev, profile: { ...prev.profile, "Associate Name": val } };
+                } else {
+                  updated = { ...prev, introduction: { ...(prev.introduction || {}), "Associate Name": val } };
                 }
-                if (prev.profile && "Associate Name" in prev.profile) {
-                  return { ...prev, profile: { ...prev.profile, "Associate Name": val } };
-                }
-                // Fallback: create/update introduction
-                return { ...prev, introduction: { ...(prev.introduction || {}), "Associate Name": val } };
+                // Sync back to recipients array so it stays consistent
+                setRecipients((prevRecipients) =>
+                  prevRecipients.map((r, i) => (i === currentRecipientIndex ? updated : r))
+                );
+                return updated;
               });
             }}
           />
         </section>
         <section className="section-page pdf-section">
-          <ContentPage rows={profileRows} />
+          <ContentPage rows={profileRows} onRowsChange={(updatedRows) => setProfileEdits(updatedRows)} />
         </section>
         <section className="section-page pdf-section">
           <TableContentPage />
@@ -1271,85 +1423,46 @@ const parseQualitativeComment = (c)=> {
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Collaboration",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Builds trust by being dependable and following through on commitments." },
+                { tail: "Brings together diverse perspectives to generate better ideas and solutions." },
+                { tail: "Acknowledges issues early and engages the right expertise to address them." },
+                { tail: "Encourages open, respectful exchange of feedback across teams." },
+                { tail: "Enables collective ownership and shared success across organisational boundaries." },
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Operational Excellence",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Uses data, metrics, and financial insights to guide decisions and improve quality." },
+                { tail: "Identifies inefficiencies, waste, or friction and acts to resolve them." },
+                { tail: "Applies process discipline and lean principles to strengthen execution reliability." },
+                { tail: "Anticipates risks early and puts mitigations in place proactively." },
+                { tail: "Drives continuous improvement through learning, automation, and refinement." },
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Results Orientation",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Sets clear, stretch goals aligned to business priorities and growth opportunities." },
+                { tail: "Focuses effort on high-impact actions and removes distractions." },
+                { tail: "Plans, reviews, and tracks execution rigorously to stay on course." },
+                { tail: "Acts with urgency to overcome obstacles and maintain momentum." },
+                { tail: "Takes full ownership for outcomes and holds self and others accountable." },
               ],
             },
             {
-              chip: "Sales & Customer Centricity",
+              chip: "Expertise & Communication",
               items: [
-                {
-                  tail: "Seeks deep customer and market understanding through data, observation, and dialogue",
-                },
-                {
-                  tail: "Anticipates underlying needs and emerging opportunities beyond stated requirements",
-                },
-                {
-                  tail: "Designs solutions that deliver meaningful value and strengthen long-term partnerships",
-                },
-                {
-                  tail: "Communicates a clear and consistent customer experience across functions and touchpoints",
-                },
-                {
-                  tail: "Positions offerings with a focus on outcomes and shared success",
-                },
+                { tail: "Applies structured and systems thinking to address complex challenges." },
+                { tail: "Connects insights across domains to see the bigger picture." },
+                { tail: "Communicates ideas clearly and persuasively to varied audiences." },
+                { tail: "Builds credibility through depth of expertise and sound reasoning." },
+                { tail: "Continuously learns, adapts, and shares knowledge to stay relevant." },
               ],
             },
+            
           ]}
         />
         <CompetencySummary
@@ -1358,6 +1471,7 @@ const parseQualitativeComment = (c)=> {
           streamQuartiles={competencySummaryProps.streamQuartiles}
           cohortInitialSelected={competencySummaryProps.cohortInitialSelected}
           streamInitialSelected={competencySummaryProps.streamInitialSelected}
+          onDataChange={(edits) => setCompetencyEdits(edits)}
         />
         <OverviewSummary
           items={overviewEdits || overviewSummaryData}
@@ -1386,6 +1500,7 @@ const parseQualitativeComment = (c)=> {
           competencies={participantCohortProps.competencies ?? reportData?.participant_cohort_summary?.competencies}
           selfRatings={participantCohortProps.selfRatings ?? reportData?.participant_cohort_summary?.self_ratings}
           cohortRatings={participantCohortProps.cohortRatings ?? reportData?.participant_cohort_summary?.cohort_ratings}
+          onDataChange={(data) => setParticipantCohortEdits(data)}
         />
         <QualitativeFeedbackIntro />
         {qualitativeSections.map((sec, i) => (
@@ -1449,17 +1564,28 @@ const parseQualitativeComment = (c)=> {
           );
         })}
         <CoachingActionPlan
+          key={currentRecipientIndex}
           profile={{
             date:          (() => { const d = profileRows?.find(r => r.label === "Report Date")?.value; return (!d || d === "None") ? new Date().toLocaleDateString("en-GB") : d; })(),
             associateName: profileRows?.find(r => r.label === "Associate Name")?.value ?? "",
             associateId:   profileRows?.find(r => r.label === "Associate ID")?.value ?? "",
-            role:          profileRows?.find(r => r.label === "Stream")?.value ?? "",
+            role:          profileRows?.find(r => r.label === "Role")?.value ?? "",
             lob:           profileRows?.find(r => r.label === "LOB")?.value ?? "",
             email:         profileRows?.find(r => r.label === "Email ID")?.value ?? "",
           }}
+          savedData={reportData?.coaching_action_plan}
+          onDataChange={(data) => setCoachingPlanEdits(data)}
         />
-        <CoachingActionPlanPage2 />
-        <IndividualDevelopmentPlan />
+        <CoachingActionPlanPage2
+          key={currentRecipientIndex}
+          savedData={reportData?.coaching_action_plan_page2}
+          onDataChange={(data) => setCoachingPlanPage2Edits(data)}
+        />
+        <IndividualDevelopmentPlan
+          key={currentRecipientIndex}
+          savedData={reportData?.individual_development_plan}
+          onDataChange={(data) => setIndividualDevPlanEdits(data)}
+        />
       </div>
     </div>
   );

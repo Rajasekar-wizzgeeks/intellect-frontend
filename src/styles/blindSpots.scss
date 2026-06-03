@@ -30,12 +30,12 @@
 .bs-left-icon-card {
   width: 140px;
   height: 140px;
-  background: #f5f1ea;
+  // background: #f5f1ea;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04) inset;
+  // box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04) inset;
 }
 
 /* ensure img sizing when provided as string */
@@ -138,7 +138,7 @@
   height: 20px;
   background: var(--bar-bg);
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bs-bar.self {
@@ -150,7 +150,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: var(--bar-self);
+  border-radius: 4px;
 }
 
 .bs-badge.self {
@@ -163,6 +163,7 @@
 
 .bs-bar.others {
   background: var(--bar-bg);
+  overflow: visible;
 }
 
 .bs-fill.others {
@@ -170,18 +171,14 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: var(--bar-self);
+  border-radius: 4px;
 }
 
 .bs-value.others {
-  position: absolute;
-  left: 50%;
-  right: auto;
-  top: 50%;
-  transform: translate(-50%, -50%);
   font-weight: 700;
-  color: #2d5f3f;
+  color: #fff;
   font-size: var(--fs-sm);
+  white-space: nowrap;
 }
 
 .bs-badge {
@@ -209,6 +206,7 @@
 
 .bs-left-others .bs-bar.others {
   height: 20px;
+  overflow: visible;
 }
 
 .bs-right-self {
@@ -240,17 +238,32 @@
 /* Center the number inside the green bar */
 .bs-bar.others {
   position: relative;
+  overflow: visible;
 }
 
 .bs-bar.others .bs-value.others {
-  position: absolute;
-  left: 50%;
-  right: auto;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  font-weight: 700;
+  color: #fff;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
 }
 
 /* Title color class extracted from inline */
 .bs-title {
   color: var(--color-green);
+}
+
+.bs-left-others {
+  overflow: visible;
+}
+
+/* Hide number input spinner so value text isn't clipped */
+.bs-value-input {
+  -moz-appearance: textfield;
+  overflow: visible;
+}
+.bs-value-input::-webkit-outer-spin-button,
+.bs-value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

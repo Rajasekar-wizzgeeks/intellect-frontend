@@ -41,6 +41,8 @@ const EvaluatorRatingsTable = ({
   const [tableRows, setTableRows] = useState(initialRows);
   const [editValue, setEditValue] = useState("");
   const [currentEdit, setCurrentEdit] = useState({ rowIndex: null });
+  const [highlightEditValue, setHighlightEditValue] = useState("");
+  const [currentHighlightEdit, setCurrentHighlightEdit] = useState({ rowIndex: null });
 
   useEffect(() => {
     setTableRows(initialRows);
@@ -97,6 +99,48 @@ const EvaluatorRatingsTable = ({
     if (e.key === "Enter") {
       e.preventDefault();
       commitScoreEdit();
+    }
+  };
+
+  const handleHighlightClick = (rowIndex, value) => {
+    setCurrentHighlightEdit({ rowIndex });
+    setHighlightEditValue(String(value ?? ""));
+  };
+
+  const handleHighlightChange = (e) => {
+    setHighlightEditValue(e.target.value);
+  };
+
+  const commitHighlightEdit = () => {
+    if (currentHighlightEdit.rowIndex === null) {
+      setCurrentHighlightEdit({ rowIndex: null });
+      return;
+    }
+
+    const next = [...tableRows];
+    const row = next[currentHighlightEdit.rowIndex];
+    if (row) {
+      next[currentHighlightEdit.rowIndex] = {
+        ...row,
+        highlight: highlightEditValue,
+      };
+      setTableRows(next);
+      if (onDataChange) {
+        onDataChange(next);
+      }
+    }
+
+    setCurrentHighlightEdit({ rowIndex: null });
+  };
+
+  const handleHighlightBlur = () => {
+    commitHighlightEdit();
+  };
+
+  const handleHighlightKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitHighlightEdit();
     }
   };
 
@@ -160,7 +204,26 @@ const EvaluatorRatingsTable = ({
                 )}
               </td>
               <td className="et-gap">{parseFloat(Math.abs(tableRows[0].score - r.score).toFixed(2))}</td>
-              <td className="et-highlight">{r.highlight}</td>
+              <td
+                className={`et-highlight ${
+                  currentHighlightEdit.rowIndex === idx ? "editing" : ""
+                }`}
+                onClick={() => handleHighlightClick(idx, r.highlight)}
+              >
+                {currentHighlightEdit.rowIndex === idx ? (
+                  <input
+                    type="text"
+                    value={highlightEditValue}
+                    onChange={handleHighlightChange}
+                    onBlur={handleHighlightBlur}
+                    onKeyDown={handleHighlightKeyDown}
+                    autoFocus
+                    className="et-input"
+                  />
+                ) : (
+                  r.highlight
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

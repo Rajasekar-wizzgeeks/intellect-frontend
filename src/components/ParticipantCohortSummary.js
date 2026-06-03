@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
 import ParticipantCohortTable from "./ParticipantCohortTable";
@@ -22,11 +22,13 @@ const ParticipantCohortSummary = ({
   competencies,
   selfRatings,
   cohortRatings,
+  onDataChange,
 }) => {
   const [localSelfRatings, setLocalSelfRatings] = useState(selfRatings || {});
   const [localCohortRatings, setLocalCohortRatings] = useState(
     cohortRatings || {}
   );
+  const hasChangedRef = useRef(false);
 
   useEffect(() => {
     setLocalSelfRatings(selfRatings || {});
@@ -35,6 +37,18 @@ const ParticipantCohortSummary = ({
   useEffect(() => {
     setLocalCohortRatings(cohortRatings || {});
   }, [cohortRatings]);
+
+  // Propagate edits up to parent whenever local state changes after the initial mount
+  useEffect(() => {
+    if (!hasChangedRef.current) {
+      hasChangedRef.current = true;
+      return;
+    }
+    if (onDataChange) {
+      onDataChange({ selfRatings: localSelfRatings, cohortRatings: localCohortRatings });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localSelfRatings, localCohortRatings]);
 
   const blocks = useMemo(() => {
     const out = [];

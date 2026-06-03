@@ -40,6 +40,20 @@ const FeedbackBubble = ({
     setInternalValue(resolvedText);
   }, [resolvedText]);
 
+  const textareaRef = React.useRef(null);
+
+  // Auto-resize textarea to fit content
+  const autoResize = React.useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  React.useEffect(() => {
+    autoResize();
+  }, [internalValue, autoResize]);
+
   const handleBlur = () => {
     if (onBlur) {
       onBlur(internalValue);
@@ -54,12 +68,7 @@ const FeedbackBubble = ({
       style={style}
     >
       <div className="fb-avatar-wrap">
-        {/* <div
-          className="fb-avatar"
-          style={{ "--fb-avatar-bg": avatarBg, "--fb-border": borderColor }}
-        > */}
         {icon}
-        {/* </div> */}
       </div>
       <div
         className="fb-bubble"
@@ -71,12 +80,12 @@ const FeedbackBubble = ({
       >
         {isEditable ? (
           <textarea
+            ref={textareaRef}
             className="fb-textarea"
             value={internalValue}
-            onChange={(e) => setInternalValue(e.target.value)}
+            onChange={(e) => { setInternalValue(e.target.value); autoResize(); }}
             onBlur={handleBlur}
             placeholder={placeholder}
-            rows={rows}
             readOnly={readOnly}
           />
         ) : (
