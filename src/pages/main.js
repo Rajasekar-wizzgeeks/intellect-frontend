@@ -71,6 +71,7 @@ const MainPage = () => {
   const [coachingPlanEdits, setCoachingPlanEdits] = useState(null);
   const [coachingPlanPage2Edits, setCoachingPlanPage2Edits] = useState(null);
   const [individualDevPlanEdits, setIndividualDevPlanEdits] = useState(null);
+  const [participantCohortEdits, setParticipantCohortEdits] = useState(null);
   const [currentRecipientIndex, setCurrentRecipientIndex] = useState(-1);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [draftAccessType, setDraftAccessType] = useState(null);
@@ -649,6 +650,7 @@ const parseQualitativeComment = (c)=> {
       coachingPlanEdits: cpEdits = null,
       coachingPlanPage2Edits: cp2Edits = null,
       individualDevPlanEdits: idpEdits = null,
+      participantCohortEdits: pcEdits = null,
     } = edits;
 
     const finalData = {
@@ -788,6 +790,53 @@ const parseQualitativeComment = (c)=> {
       finalData.individual_development_plan = idpEdits;
     }
 
+    // Apply Participant & Cohort Summary edits
+    if (pcEdits) {
+      const raw = data?.participant_and_cohort_summary || {};
+      const rebuilt = { ...raw };
+
+      const mapToApiKeys = (ratings) => {
+        if (!ratings || typeof ratings !== "object") return {};
+        const result = {};
+        Object.entries(ratings).forEach(([competency, row]) => {
+          if (row && typeof row === "object") {
+            result[competency] = {
+              self:        row.self ?? "",
+              manager:     row.manager ?? "",
+              peer:        row.peers ?? "",
+              team_member: row.teamMembers ?? "",
+            };
+          }
+        });
+        return result;
+      };
+
+      const editedSelf   = pcEdits.selfRatings;
+      const editedCohort = pcEdits.cohortRatings;
+
+      if (editedSelf && Object.keys(editedSelf).length > 0) {
+        const selfApi = mapToApiKeys(editedSelf);
+        Object.keys(selfApi).forEach((name) => {
+          rebuilt[name] = {
+            ...(rebuilt[name] || {}),
+            your_rating: selfApi[name],
+          };
+        });
+      }
+
+      if (editedCohort && Object.keys(editedCohort).length > 0) {
+        const cohortApi = mapToApiKeys(editedCohort);
+        Object.keys(cohortApi).forEach((name) => {
+          rebuilt[name] = {
+            ...(rebuilt[name] || {}),
+            cohort_rating: cohortApi[name],
+          };
+        });
+      }
+
+      finalData.participant_and_cohort_summary = rebuilt;
+    }
+
     return finalData;
   };
 
@@ -810,6 +859,7 @@ const parseQualitativeComment = (c)=> {
       coachingPlanEdits,
       coachingPlanPage2Edits,
       individualDevPlanEdits,
+      participantCohortEdits,
     };
 
     if (isLbScore360Route && recipients.length > 0) {
@@ -1024,6 +1074,7 @@ const parseQualitativeComment = (c)=> {
                   setCoachingPlanEdits(null);
                   setCoachingPlanPage2Edits(null);
                   setIndividualDevPlanEdits(null);
+                  setParticipantCohortEdits(null);
                 }}
               >
                 <div className="lbs-recipient-card__avatar">
@@ -1056,7 +1107,7 @@ const parseQualitativeComment = (c)=> {
         {isLbScore360Route && (
           <button
             className="lbs-back-btn"
-            onClick={() => { setPhase("list"); setReportData(null); setProfileEdits(null); setCompetencyEdits(null); setCoachingPlanEdits(null); setCoachingPlanPage2Edits(null); setIndividualDevPlanEdits(null); }}
+            onClick={() => { setPhase("list"); setReportData(null); setProfileEdits(null); setCompetencyEdits(null); setCoachingPlanEdits(null); setCoachingPlanPage2Edits(null); setIndividualDevPlanEdits(null); setParticipantCohortEdits(null); }}
           >
             <ChevronLeft size={16} /> All Recipients
           </button>
@@ -1449,6 +1500,7 @@ const parseQualitativeComment = (c)=> {
           competencies={participantCohortProps.competencies ?? reportData?.participant_cohort_summary?.competencies}
           selfRatings={participantCohortProps.selfRatings ?? reportData?.participant_cohort_summary?.self_ratings}
           cohortRatings={participantCohortProps.cohortRatings ?? reportData?.participant_cohort_summary?.cohort_ratings}
+          onDataChange={(data) => setParticipantCohortEdits(data)}
         />
         <QualitativeFeedbackIntro />
         {qualitativeSections.map((sec, i) => (
