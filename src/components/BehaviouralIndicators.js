@@ -72,7 +72,7 @@ const BehaviouralIndicators = ({
                   label: "Self",
                   score: item.self,
                   gapFromSelf: 0,
-                  highlight: "",
+                  highlight: item.highlight ?? "",
                   color: "#b3792e",
                 },
                 ...item.others,

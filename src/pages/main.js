@@ -293,35 +293,35 @@ const parseQualitativeComment = (c)=> {
       const data = dataArray[0];
       const scores = data.score || {};
       const gaps = data.gap || {};
+      const highlights = data.highlights || {};
       const selfScore = scores.Self ?? 0;
-      const highlight = data.highlight ?? "";
 
       const cleanedIndicator = indicatorText.replace(/^\d+\.\s*/, "");
 
       return {
         indicator: cleanedIndicator,
         self: selfScore,
-        highlight: highlight,
+        highlight: highlights.self ?? "",
         others: [
           {
             label: "Manager",
             score: scores.Manager ?? 0,
             gapFromSelf: gaps.manager_gap ?? 0,
-            highlight: highlight,
+            highlight: highlights.manager ?? "",
             color: "#b8860b",
           },
           {
             label: "Peer",
             score: scores.Peer ?? 0,
             gapFromSelf: gaps.peer_avg ?? 0,
-            highlight: highlight,
+            highlight: highlights.peer ?? "",
             color: "#a9d0b8",
           },
           {
             label: "Team Members",
             score: scores.Subordinate ?? 0,
             gapFromSelf: gaps.subordinate_avg ?? 0,
-            highlight: highlight,
+            highlight: highlights.subordinate ?? "",
             color: "#6b8e23",
           },
         ],
