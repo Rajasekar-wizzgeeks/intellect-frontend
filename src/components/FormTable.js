@@ -2,7 +2,7 @@ import React from "react";
 import "../styles/coachingActionPlan.scss";
 
 
-const FormTable = ({ header, rows = [], labelWidth = 170 }) => {
+const FormTable = ({ header, rows = [], labelWidth = 170, onChange }) => {
   return (
     <div className="cap-block">
       {header ? (
@@ -23,7 +23,11 @@ const FormTable = ({ header, rows = [], labelWidth = 170 }) => {
             >
               <div className="cap-td cap-td--label">{label}</div>
               <div className="cap-td">
-                <input className="cap-input" type="text" defaultValue={value} />
+                {onChange ? (
+                  <input className="cap-input" type="text" value={value} onChange={(e) => onChange(i, e.target.value)} />
+                ) : (
+                  <input className="cap-input" type="text" defaultValue={value} />
+                )}
               </div>
             </div>
           );

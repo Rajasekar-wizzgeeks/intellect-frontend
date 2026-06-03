@@ -3,12 +3,17 @@ import Header from "./header";
 import ReportInfoTable from "./reportInfoTable";
 import "../styles/contentPage.scss";
 
-const ContentPage = ({ titleIndex = 1, title = "Introduction", rows: rowsProp }) => {
+const ContentPage = ({ titleIndex = 1, title = "Introduction", rows: rowsProp, onRowsChange }) => {
   const [rows, setRows] = useState(rowsProp ?? []);
 
   useEffect(() => {
     setRows(rowsProp ?? []);
   }, [rowsProp]);
+
+  const handleRowsChange = (nextRows) => {
+    setRows(nextRows);
+    if (onRowsChange) onRowsChange(nextRows);
+  };
 
   return (
     <div className="content-page">
@@ -23,7 +28,7 @@ const ContentPage = ({ titleIndex = 1, title = "Introduction", rows: rowsProp })
         <ReportInfoTable
           rows={rows}
           editable={true}
-          onRowsChange={setRows}
+          onRowsChange={handleRowsChange}
         />
       </div>
     </div>
