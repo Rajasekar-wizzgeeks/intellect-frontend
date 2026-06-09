@@ -221,6 +221,7 @@ const CompetencySummary = ({
   cohortInitialSelected = 2,
   streamInitialSelected = 2,
   overallScore = 370,
+  stream = "",
   onDataChange,
 }) => {
   const defaultCohortMap = useMemo(
@@ -312,7 +313,7 @@ const CompetencySummary = ({
         <ul className="cs-overall__bullets">
           <li>
             The overall score is calculated on a total score of 500 using
-            weightages applicable for <strong>DELIVERY</strong>
+            weightages applicable for <strong>{stream ? stream.toUpperCase() : "YOUR"}</strong>
             &nbsp;Stream.
           </li>
           <li>
