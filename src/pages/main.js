@@ -31,7 +31,7 @@ import IndividualDevelopmentPlan from "../components/IndividualDevelopmentPlan";
 import BlindSpots from "../components/BlindSpots";
 import ChessKingIcon from "../assets/png/chessKingIcon.png";
 import MarketingIcon from "../assets/png/marketingIcon.png";
-import ChessIcon from "../assets/png/chessIcon.png";
+import ChessIcon from "../assets/png/chessIconNew.png";
 import EyeIcon from "../assets/png/eye.png";
 import { useLocation, useOutletContext, useSearchParams } from "react-router-dom";
 import { excelSheetLbScore360, excelSheetLbScore360Multi, saveDraft, getOneFeedbackDraft, updateFeedbackDraft, multiSaveDraft } from "../helper/apicalls/feedback";
@@ -295,44 +295,48 @@ const parseQualitativeComment = (c)=> {
     if (!reportData?.behavioural_indications) return [];
 
     const rawData = reportData.behavioural_indications;
-    
-    return Object.entries(rawData).map(([indicatorText, dataArray]) => {
-      const data = dataArray[0];
-      const scores = data.score || {};
-      const gaps = data.gap || {};
-      const highlights = data.highlights || {};
-      const selfScore = scores.Self ?? 0;
 
-      const cleanedIndicator = indicatorText.replace(/^\d+\.\s*/, "");
+    return Object.entries(rawData).map(([competency, indicatorsObj]) => {
+      const items = Object.entries(indicatorsObj).map(([indicatorText, dataArray]) => {
+        const data = dataArray[0];
+        const scores = data.score || {};
+        const gaps = data.gap || {};
+        const highlights = data.highlights || {};
+        const selfScore = scores.Self ?? 0;
 
-      return {
-        indicator: cleanedIndicator,
-        self: selfScore,
-        highlight: highlights.self ?? "",
-        others: [
-          {
-            label: "Manager",
-            score: scores.Manager ?? 0,
-            gapFromSelf: gaps.manager_gap ?? 0,
-            highlight: highlights.manager ?? "",
-            color: "#b8860b",
-          },
-          {
-            label: "Peer",
-            score: scores.Peer ?? 0,
-            gapFromSelf: gaps.peer_avg ?? 0,
-            highlight: highlights.peer ?? "",
-            color: "#a9d0b8",
-          },
-          {
-            label: "Team Members",
-            score: scores.Subordinate ?? 0,
-            gapFromSelf: gaps.subordinate_avg ?? 0,
-            highlight: highlights.subordinate ?? "",
-            color: "#6b8e23",
-          },
-        ],
-      };
+        const cleanedIndicator = indicatorText.replace(/^\d+\.\s*/, "");
+
+        return {
+          indicator: cleanedIndicator,
+          self: selfScore,
+          highlight: highlights.self ?? "",
+          others: [
+            {
+              label: "Manager",
+              score: scores.Manager ?? 0,
+              gapFromSelf: gaps.manager_gap ?? 0,
+              highlight: highlights.manager ?? "",
+              color: "#b8860b",
+            },
+            {
+              label: "Peer",
+              score: scores.Peer ?? 0,
+              gapFromSelf: gaps.peer_avg ?? 0,
+              highlight: highlights.peer ?? "",
+              color: "#a9d0b8",
+            },
+            {
+              label: "Team Members",
+              score: scores.Subordinate ?? 0,
+              gapFromSelf: gaps.subordinate_avg ?? 0,
+              highlight: highlights.subordinate ?? "",
+              color: "#6b8e23",
+            },
+          ],
+        };
+      });
+
+      return { competency, items };
     });
   }, [reportData]);
 
@@ -554,6 +558,7 @@ const parseQualitativeComment = (c)=> {
 
     return {
       overallScore,
+      role:                   cs.role ?? "",
       cohortQuartiles:        buildQuartileMap(cohortBlock),
       streamQuartiles:        buildQuartileMap(streamBlock),
       cohortInitialSelected:  positionToTab(cohortBlock?.position),
@@ -1471,6 +1476,7 @@ const parseQualitativeComment = (c)=> {
           streamQuartiles={competencySummaryProps.streamQuartiles}
           cohortInitialSelected={competencySummaryProps.cohortInitialSelected}
           streamInitialSelected={competencySummaryProps.streamInitialSelected}
+          stream={competencySummaryProps.role || profileRows?.find(r => r.label === "Role")?.value || ""}
           onDataChange={(edits) => setCompetencyEdits(edits)}
         />
         <OverviewSummary
@@ -1488,7 +1494,7 @@ const parseQualitativeComment = (c)=> {
           onDataChange={(nextRows) => setEvaluatorEdits(nextRows)}
         />
         <BehaviouralIndicators
-          items={behaviouralIndicatorsData}
+          groups={behaviouralIndicatorsData}
           onDataChange={(idx, newRows) => {
             setBehaviouralEdits((prev) => ({
               ...prev,

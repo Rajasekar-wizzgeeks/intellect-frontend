@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 import Header from "./header";
 import EvaluatorRatingsTable from "./EvaluatorRatingsTable";
@@ -12,7 +12,7 @@ const BehaviouralIndicators = ({
   pageHeight = 952,
   pagePadding = 10,
   note = "For categories with more than one respondent, scores represent the mean of all individual ratings.",
-  items = [],
+  groups = [],
   onDataChange,
 }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -29,12 +29,43 @@ const BehaviouralIndicators = ({
     return () => clearTimeout(timer);
   }, []);
 
+  const renderIndicator = (item, groupIdx, itemIdx, capturedIdx) => (
+    <div key={`ind-${groupIdx}-${itemIdx}`} className="bi-indicator">
+      <div className="bi-indicator__header">
+        <span className="bi-indicator__label">
+          {String.fromCharCode(96 + itemIdx + 1)}.
+        </span>
+        <span className="bi-indicator__text">{item.indicator}</span>
+      </div>
+      <div className="bi-table-wrap">
+        <EvaluatorRatingsTable
+          title={`Indicator ${itemIdx + 1}`}
+          rows={[
+            {
+              label: "Self",
+              score: item.self,
+              gapFromSelf: 0,
+              highlight: item.highlight ?? "",
+              color: "#b3792e",
+            },
+            ...item.others,
+          ]}
+          compact={true}
+          onDataChange={(newRows) => {
+            if (onDataChange) {
+              onDataChange(capturedIdx, newRows);
+            }
+          }}
+        />
+      </div>
+    </div>
+  );
+
   const blocks = useMemo(() => {
     if (!isMounted) return [];
 
     const out = [];
 
-    // Title block
     out.push(
       <div key="title" className="bi-title-wrap">
         <h2 className="content-page__title bi-title">
@@ -57,40 +88,47 @@ const BehaviouralIndicators = ({
       </div>
     );
 
-    items.forEach((item, idx) => {
-      out.push(
-        <div key={`ind-${idx}`} className="bi-indicator">
-          <div className="bi-indicator__header">
-            <span className="bi-indicator__label">{idx + 1}.</span>
-            <span className="bi-indicator__text">{item.indicator}</span>
-          </div>
-          <div className="bi-table-wrap">
-            <EvaluatorRatingsTable
-              title={`Indicator ${idx + 1}`}
-              rows={[
-                {
-                  label: "Self",
-                  score: item.self,
-                  gapFromSelf: 0,
-                  highlight: item.highlight ?? "",
-                  color: "#b3792e",
-                },
-                ...item.others,
-              ]}
-              compact={true}
-              onDataChange={(newRows) => {
-                if (onDataChange) {
-                  onDataChange(idx, newRows);
-                }
-              }}
-            />
-          </div>
+    let globalIdx = 0;
+
+    groups.forEach(({ competency, items }, groupIdx) => {
+      const subIndex = `2.5.${groupIdx + 1}.`;
+
+      const headerNode = (
+        <div className="bi-competency-header">
+          <h3 className="bi-competency-header__title">
+            <span className="bi-competency-header__index">{subIndex}</span>
+            {competency}
+          </h3>
         </div>
       );
+
+      items.forEach((item, itemIdx) => {
+        const capturedIdx = globalIdx;
+        globalIdx += 1;
+
+        if (itemIdx === 0) {
+          out.push(
+            <div key={`group-${groupIdx}`} className="bi-group-anchor">
+              {headerNode}
+              {renderIndicator(item, groupIdx, itemIdx, capturedIdx)}
+            </div>
+          );
+        } else {
+          out.push(renderIndicator(item, groupIdx, itemIdx, capturedIdx));
+        }
+      });
+
+      if (items.length === 0) {
+        out.push(
+          <div key={`group-${groupIdx}`} className="bi-group-anchor">
+            {headerNode}
+          </div>
+        );
+      }
     });
 
     return out;
-  }, [items, note, isMounted]);
+  }, [groups, note, isMounted, onDataChange]);
 
   if (!isMounted) {
     return (
@@ -112,6 +150,7 @@ const BehaviouralIndicators = ({
       pageWidth={pageWidth}
       pageHeight={pageHeight}
       pagePadding={pagePadding}
+      pagePaddingBottom={60}
       HeaderComponent={Header}
       contentClassName="content-page"
       componentId={componentId}
