@@ -128,7 +128,7 @@ export const loginUser = async (email, password) => {
   }
 };
 
-export const createUserApi = async ({ email, password, role }) => {
+export const createUserApi = async ({ email, password, role, created_by }) => {
   const { parseApiErrorBody } = await import("../getApiErrorMessage");
   const { apiFetch } = await import("../apiFetch");
   const { createUser } = await import("../apiurls");
@@ -136,7 +136,7 @@ export const createUserApi = async ({ email, password, role }) => {
   const response = await apiFetch(createUser, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, role }),
+    body: JSON.stringify({ email, password, role, created_by }),
   });
 
   if (!response.ok) {

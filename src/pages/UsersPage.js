@@ -4,9 +4,10 @@ import { UserPlus, Check, AlertCircle, RefreshCw, Users } from "lucide-react";
 import { createUserApi } from "../helper/apicalls/auth";
 import { getAllUsers } from "../helper/apicalls/feedback";
 import { getApiErrorMessage } from "../helper/getApiErrorMessage";
+import { getStoredUser } from "../helper/getStoredUser";
 import "../styles/usersPage.scss";
 
-const ROLES = ["admin", "user", "viewer"];
+const ROLES = ["admin", "user"];
 
 const UsersPage = () => {
   const { setHeaderName } = useOutletContext();
@@ -54,7 +55,8 @@ const UsersPage = () => {
     try {
       setFormLoading(true);
       setFormStatus(null);
-      await createUserApi(form);
+      const storedUser = getStoredUser();
+      await createUserApi({ ...form, created_by: storedUser?._id ?? storedUser?.id ?? storedUser?.user_id });
       setFormStatus({ type: "success", message: "User created successfully!" });
       setForm({ email: "", password: "", role: "user" });
       fetchUsers(); // refresh table
