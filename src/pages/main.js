@@ -60,6 +60,7 @@ const MainPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [excelFile, setExcelFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [scoringMethod, setScoringMethod] = useState("combined");
   const [behaviouralEdits, setBehaviouralEdits] = useState({});
   const [overviewEdits, setOverviewEdits] = useState(null);
   const [evaluatorEdits, setEvaluatorEdits] = useState(null);
@@ -77,7 +78,7 @@ const MainPage = () => {
   const [draftAccessType, setDraftAccessType] = useState(null);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
   const fileInputRef = useRef(null);
-
+  const draftFetched = useRef(false);
 
   const QUALITATIVE_ROLES = ["Manager", "Peer", "Subordinate", "Self"];
 
@@ -103,10 +104,11 @@ const parseQualitativeComment = (c)=> {
     setCompetencySummary(null);
     setStreamProgress(0);
     try {
+      const isAvgOfAvg = scoringMethod === "category";
       const { recipients: collected, competencySummary: summary } =
         await excelSheetLbScore360Multi(excelFile, () => {
           setStreamProgress((n) => n + 1);
-        });
+        }, isAvgOfAvg);
       if (!collected || collected.length === 0) {
         throw new Error("No recipient data received from the server.");
       }
@@ -904,6 +906,17 @@ const parseQualitativeComment = (c)=> {
       setLoading(true);
       if (draftId) {
         await updateFeedbackDraft(payload);
+        // Re-fetch fresh data from backend after save
+        const freshResponse = await getOneFeedbackDraft(draftId);
+        if (freshResponse && freshResponse.feedback_data && freshResponse.feedback_data.length > 0) {
+          if (isLbScore360Route && freshResponse.feedback_data.length > 1) {
+            setRecipients(freshResponse.feedback_data);
+            const current = freshResponse.feedback_data[currentRecipientIndex >= 0 ? currentRecipientIndex : 0];
+            if (current) setReportData(current);
+          } else {
+            setReportData(freshResponse.feedback_data[0]);
+          }
+        }
         setStatusModal({
           isOpen: true,
           type: "success",
@@ -935,7 +948,8 @@ const parseQualitativeComment = (c)=> {
   useEffect(() => {
     setHeaderName("Report");
 
-    if (draftId) {
+    if (draftId && !draftFetched.current) {
+      draftFetched.current = true;
       const fetchDraft = async () => {
         try {
           setLoading(true);
@@ -976,6 +990,24 @@ const parseQualitativeComment = (c)=> {
           <div className="lbs-upload-card__header">
             <FileSpreadsheet size={22} />
             <span>Upload LBScore 360° Excel</span>
+          </div>
+
+          {/* Scoring Method Select */}
+          <div className="lbs-scoring-select">
+            <label className="lbs-scoring-select__label" htmlFor="scoring-method">Scoring Method</label>
+            <select
+              id="scoring-method"
+              className="lbs-scoring-select__dropdown"
+              value={scoringMethod}
+              onChange={(e) => setScoringMethod(e.target.value)}
+            >
+              <option value="combined">
+                Combined Average (Equal Weight per Respondent)
+              </option>
+              <option value="category">
+                Category Average (Equal Weight per Rater Group)
+              </option>
+            </select>
           </div>
 
           {/* Dropzone */}

@@ -164,6 +164,44 @@
   padding: 10px 14px;
 }
 
+/* ── Scoring Method Select ── */
+.lbs-scoring-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lbs-scoring-select__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  opacity: 0.7;
+}
+
+.lbs-scoring-select__dropdown {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  appearance: auto;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-green);
+    box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
+  }
+
+  &:hover {
+    border-color: #9ca3af;
+  }
+}
+
 /* ── Upload button ── */
 .lbs-upload-btn {
   width: 100%;

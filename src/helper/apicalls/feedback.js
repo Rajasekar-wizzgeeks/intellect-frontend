@@ -273,9 +273,12 @@ export const updateFeedbackDraft = async (payload) => {
 };
 
 
-export const excelSheetLbScore360Multi = async (file, onRecipient) => {
+export const excelSheetLbScore360Multi = async (file, onRecipient, isAvgOfAvg) => {
   const formData = new FormData();
   formData.append("files", file);
+  if (isAvgOfAvg !== undefined) {
+    formData.append("is_avg_of_avg", isAvgOfAvg ? "True" : "False");
+  }
 
   const res = await apiFetch(`${lbscore360ExcelUrl}/base`, {
     method: "POST",
