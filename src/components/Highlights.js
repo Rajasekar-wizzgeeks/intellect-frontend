@@ -22,7 +22,7 @@ const ChessIcon = ({ size = 120, color = "#0e4a2e" }) => (
   </svg>
 );
 
-const ScoreChip = ({ score = 2.5, color = "#c0943a", scoreShip = false, onChange, onBlur }) => (
+const ScoreChip = ({ score = 2.5, color = "#c0943a", scoreShip = false, onChange, onBlur, onKeyDown }) => (
   <div className="hl-chip">
     {onChange ? (
       <input
@@ -31,6 +31,7 @@ const ScoreChip = ({ score = 2.5, color = "#c0943a", scoreShip = false, onChange
         value={score}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         style={{
           width: "40px",
           background: "transparent",
@@ -100,6 +101,13 @@ const HighlightRow = ({
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      e.target.blur();
+    }
+  };
+
   if (!points[index]) return null;
 
   return (
@@ -124,10 +132,11 @@ const HighlightRow = ({
         scoreShip={scoreShip}
         onChange={(val) => setLocalScore(val)}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
       />
       <div className="hl-row-text">
         <div className="hl-row-title">
-          <input
+          {/* <input
             className="hl-row-title-input"
             value={localTitle}
             onChange={(e) => setLocalTitle(e.target.value)}
@@ -140,7 +149,7 @@ const HighlightRow = ({
               color: "inherit",
               fontWeight: "bold",
             }}
-          />
+          /> */}
         </div>
         <div className="hl-row-desc">
           <textarea
@@ -149,6 +158,7 @@ const HighlightRow = ({
             value={localDesc}
             onChange={(e) => { setLocalDesc(e.target.value); autoResize(); }}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             style={{
               width: "100%",
               border: "none",

@@ -60,6 +60,7 @@ const MainPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [excelFile, setExcelFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [scoringMethod, setScoringMethod] = useState("combined");
   const [behaviouralEdits, setBehaviouralEdits] = useState({});
   const [overviewEdits, setOverviewEdits] = useState(null);
   const [evaluatorEdits, setEvaluatorEdits] = useState(null);
@@ -103,10 +104,11 @@ const parseQualitativeComment = (c)=> {
     setCompetencySummary(null);
     setStreamProgress(0);
     try {
+      const isAvgOfAvg = scoringMethod === "category";
       const { recipients: collected, competencySummary: summary } =
         await excelSheetLbScore360Multi(excelFile, () => {
           setStreamProgress((n) => n + 1);
-        });
+        }, isAvgOfAvg);
       if (!collected || collected.length === 0) {
         throw new Error("No recipient data received from the server.");
       }
@@ -976,6 +978,24 @@ const parseQualitativeComment = (c)=> {
           <div className="lbs-upload-card__header">
             <FileSpreadsheet size={22} />
             <span>Upload LBScore 360° Excel</span>
+          </div>
+
+          {/* Scoring Method Select */}
+          <div className="lbs-scoring-select">
+            <label className="lbs-scoring-select__label" htmlFor="scoring-method">Scoring Method</label>
+            <select
+              id="scoring-method"
+              className="lbs-scoring-select__dropdown"
+              value={scoringMethod}
+              onChange={(e) => setScoringMethod(e.target.value)}
+            >
+              <option value="combined">
+                Combined Average (Equal Weight per Respondent)
+              </option>
+              <option value="category">
+                Category Average (Equal Weight per Rater Group)
+              </option>
+            </select>
           </div>
 
           {/* Dropzone */}

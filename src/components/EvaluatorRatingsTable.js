@@ -203,7 +203,7 @@ const EvaluatorRatingsTable = ({
                   r.score
                 )}
               </td>
-              <td className="et-gap">{parseFloat(Math.abs(tableRows[0].score - r.score).toFixed(2))}</td>
+              <td className="et-gap">{r.gapFromSelf !== undefined ? Number(r.gapFromSelf) : parseFloat((tableRows[0].score - r.score).toFixed(2))}</td>
               <td
                 className={`et-highlight ${
                   currentHighlightEdit.rowIndex === idx ? "editing" : ""
