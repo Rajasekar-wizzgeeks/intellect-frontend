@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { downloadPdfSplitByHeader } from "../utils/pdf";
 import Dav360CoverPage from "../components/Dav360CoverPage";
@@ -26,11 +26,13 @@ const Dav360SummaryReport = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [excelFiles, setExcelFiles] = useState([]);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
+  const draftFetched = useRef(false);
 
   useEffect(() => {
     setHeaderName("DAV 360 Report");
 
-    if (draftId) {
+    if (draftId && !draftFetched.current) {
+      draftFetched.current = true;
       const fetchDraft = async () => {
         try {
           setLoading(true);

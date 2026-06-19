@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getFeedbackDrafts, deleteFeedbackDraft } from "../helper/apicalls/feedback";
 import DeleteConfirmPopup from "../components/DeleteConfirmPopup";
 import Pagination from "../components/Pagination";
@@ -16,6 +16,8 @@ const DraftsPage = () => {
   const [draftToDelete, setDraftToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState("");
   const navigate = useNavigate();
+  const fetchedRef = useRef(false);
+  const prevPageRef = useRef(currentPage);
 
   const fetchDrafts = async (page = 1) => {
     try {
@@ -38,8 +40,20 @@ const DraftsPage = () => {
   };
 
   useEffect(() => {
-    fetchDrafts(currentPage);
+    if (prevPageRef.current !== currentPage) {
+      prevPageRef.current = currentPage;
+      fetchDrafts(currentPage);
+    } else if (!fetchedRef.current) {
+      fetchedRef.current = true;
+      fetchDrafts(currentPage);
+    }
   }, [currentPage]);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > pagination.total_pages || page === currentPage) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -100,11 +114,7 @@ const DraftsPage = () => {
     }
   };
 
-  const handlePageChange = (page) => {
-    if (page < 1 || page > pagination.total_pages || page === currentPage) return;
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+
 
   if (loading) {
     return (

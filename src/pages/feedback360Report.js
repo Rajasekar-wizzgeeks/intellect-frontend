@@ -63,6 +63,7 @@ const Feedback360Report = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [draftAccessType, setDraftAccessType] = useState(null);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
+  const draftFetched = useRef(false);
 
   const currentYearLabel = new Date().getFullYear();
   const previousYearLabel = currentYearLabel - 1;
@@ -954,6 +955,11 @@ const Feedback360Report = () => {
       setIsUploading(true); // Using isUploading as a general loading state
       if (draftId) {
         await updateFeedbackDraft(payload);
+        // Re-fetch fresh data from backend after save
+        const freshResponse = await getOneFeedbackDraft(draftId);
+        if (freshResponse && freshResponse.feedback_data && freshResponse.feedback_data[0]) {
+          setFeedbackOverallData(freshResponse.feedback_data[0]);
+        }
         setStatusModal({
           isOpen: true,
           type: "success",
@@ -985,7 +991,8 @@ const Feedback360Report = () => {
   useEffect(() => {
     setHeaderName("Feedback");
 
-    if (draftId) {
+    if (draftId && !draftFetched.current) {
+      draftFetched.current = true;
       const fetchDraft = async () => {
         try {
           setIsUploading(true);

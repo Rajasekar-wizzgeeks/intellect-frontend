@@ -78,7 +78,7 @@ const MainPage = () => {
   const [draftAccessType, setDraftAccessType] = useState(null);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
   const fileInputRef = useRef(null);
-
+  const draftFetched = useRef(false);
 
   const QUALITATIVE_ROLES = ["Manager", "Peer", "Subordinate", "Self"];
 
@@ -906,6 +906,17 @@ const parseQualitativeComment = (c)=> {
       setLoading(true);
       if (draftId) {
         await updateFeedbackDraft(payload);
+        // Re-fetch fresh data from backend after save
+        const freshResponse = await getOneFeedbackDraft(draftId);
+        if (freshResponse && freshResponse.feedback_data && freshResponse.feedback_data.length > 0) {
+          if (isLbScore360Route && freshResponse.feedback_data.length > 1) {
+            setRecipients(freshResponse.feedback_data);
+            const current = freshResponse.feedback_data[currentRecipientIndex >= 0 ? currentRecipientIndex : 0];
+            if (current) setReportData(current);
+          } else {
+            setReportData(freshResponse.feedback_data[0]);
+          }
+        }
         setStatusModal({
           isOpen: true,
           type: "success",
@@ -937,7 +948,8 @@ const parseQualitativeComment = (c)=> {
   useEffect(() => {
     setHeaderName("Report");
 
-    if (draftId) {
+    if (draftId && !draftFetched.current) {
+      draftFetched.current = true;
       const fetchDraft = async () => {
         try {
           setLoading(true);
