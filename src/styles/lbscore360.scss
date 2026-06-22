@@ -82,6 +82,12 @@
   margin: 0;
 }
 
+.lbs-dropzone__file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .lbs-dropzone__file {
   display: flex;
   align-items: center;

@@ -79,6 +79,8 @@ const MainPage = () => {
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
   const fileInputRef = useRef(null);
   const draftFetched = useRef(false);
+  const [pageNumberMap, setPageNumberMap] = useState({});
+  const pageMapTimerRef = useRef(null);
 
   const QUALITATIVE_ROLES = ["Manager", "Peer", "Subordinate", "Self"];
 
@@ -945,6 +947,63 @@ const parseQualitativeComment = (c)=> {
     }
   };
 
+  
+  useEffect(() => {
+    let retryCount = 0;
+    const MAX_RETRIES = 8;
+
+    const computePageNumbers = () => {
+      const wrappers = document.querySelectorAll('[data-toc-id]');
+      const allPdfSections = document.querySelectorAll('.pdf-section');
+      const map = {};
+      wrappers.forEach((wrapper) => {
+        const tocId = wrapper.getAttribute('data-toc-id');
+        const firstSection = wrapper.querySelector('.pdf-section');
+        if (firstSection) {
+          let pageNum = 1;
+          for (const section of allPdfSections) {
+            if (section === firstSection) break;
+            pageNum++;
+          }
+          map[tocId] = pageNum;
+        }
+      });
+      setPageNumberMap((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(map)) return prev;
+        return map;
+      });
+    };
+
+    const scheduleComputation = (delay) => {
+      if (pageMapTimerRef.current) clearTimeout(pageMapTimerRef.current);
+      pageMapTimerRef.current = setTimeout(() => {
+        computePageNumbers();
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          scheduleComputation(1500 + retryCount * 500);
+        }
+      }, delay);
+    };
+
+    scheduleComputation(2500);
+
+    const observer = new MutationObserver(() => {
+      if (pageMapTimerRef.current) clearTimeout(pageMapTimerRef.current);
+      retryCount = 0;
+      scheduleComputation(1500);
+    });
+
+    const container = document.querySelector('.section-page-container');
+    if (container) {
+      observer.observe(container, { childList: true, subtree: true });
+    }
+
+    return () => {
+      if (pageMapTimerRef.current) clearTimeout(pageMapTimerRef.current);
+      observer.disconnect();
+    };
+  }, [reportData, recipients, currentRecipientIndex, phase]);
+
   useEffect(() => {
     setHeaderName("Report");
 
@@ -1356,6 +1415,7 @@ const parseQualitativeComment = (c)=> {
         title={statusModal.title}
       />
       <div className="section-page-container">
+        {/* Cover page — not listed in TOC */}
         <section className="section-page pdf-section">
           <InitialPage
             initialName={
@@ -1386,16 +1446,31 @@ const parseQualitativeComment = (c)=> {
             }}
           />
         </section>
+
+        <div data-toc-id="toc-introduction">
+          <section className="section-page pdf-section">
+            <ContentPage rows={profileRows} onRowsChange={(updatedRows) => setProfileEdits(updatedRows)} />
+          </section>
+        </div>
+
         <section className="section-page pdf-section">
-          <ContentPage rows={profileRows} onRowsChange={(updatedRows) => setProfileEdits(updatedRows)} />
+          <TableContentPage pageNumberMap={pageNumberMap} />
         </section>
-        <section className="section-page pdf-section">
-          <TableContentPage />
-        </section>
-        <AboutAssessmentPages />
-        <AboutSectionPages />
-        <ScoringDefinition />
-        <AboutSectionPages
+
+        <div data-toc-id="toc-about-assessment">
+          <AboutAssessmentPages />
+        </div>
+
+        <div data-toc-id="toc-about-sections">
+          <AboutSectionPages />
+        </div>
+
+        <div data-toc-id="toc-scoring-definition">
+          <ScoringDefinition />
+        </div>
+
+        <div data-toc-id="toc-element-snapshot">
+          <AboutSectionPages
           titleIndex="1.4."
           titleText="LBSCORE Element Snapshot"
           sections={[
@@ -1502,6 +1577,10 @@ const parseQualitativeComment = (c)=> {
             
           ]}
         />
+        </div>
+
+        <div data-toc-id="toc-competency-summary">
+        <div data-toc-id="toc-overall-score">
         <CompetencySummary
           overallScore={competencySummaryProps.overallScore ?? reportData?.overall_score ?? 370}
           cohortQuartiles={competencySummaryProps.cohortQuartiles}
@@ -1511,20 +1590,32 @@ const parseQualitativeComment = (c)=> {
           stream={competencySummaryProps.role || profileRows?.find(r => r.label === "Role")?.value || ""}
           onDataChange={(edits) => setCompetencyEdits(edits)}
         />
+        </div>
+        </div>
+
+        <div data-toc-id="toc-overview-summary">
         <OverviewSummary
           items={overviewEdits || overviewSummaryData}
           onDataChange={(nextRows) => setOverviewEdits(nextRows)}
         />
+        </div>
+
+        <div data-toc-id="toc-spider-chart">
         <SpiderChartSummary
           categories={spiderChartData.categories}
           self={spiderChartData.self}
           manager={spiderChartData.manager}
           others={spiderChartData.others}
         />
+        </div>
+
+        <div data-toc-id="toc-evaluator-breakdown">
         <EvaluatorCategoryBreakdown
           items={evaluatorEdits || evaluatorCategoryBreakdownData}
           onDataChange={(nextRows) => setEvaluatorEdits(nextRows)}
         />
+        </div>
+        <div data-toc-id="toc-behavioural-indicators">
         <BehaviouralIndicators
           groups={behaviouralIndicatorsData}
           onDataChange={(idx, newRows) => {
@@ -1534,31 +1625,53 @@ const parseQualitativeComment = (c)=> {
             }));
           }}
         />
+        </div>
+        <div data-toc-id="toc-participant-cohort">
         <ParticipantCohortSummary
           competencies={participantCohortProps.competencies ?? reportData?.participant_cohort_summary?.competencies}
           selfRatings={participantCohortProps.selfRatings ?? reportData?.participant_cohort_summary?.self_ratings}
           cohortRatings={participantCohortProps.cohortRatings ?? reportData?.participant_cohort_summary?.cohort_ratings}
           onDataChange={(data) => setParticipantCohortEdits(data)}
         />
+        </div>
+        <div data-toc-id="toc-qualitative-intro">
         <QualitativeFeedbackIntro />
-        {qualitativeSections.map((sec, i) => (
-          <QualitativeFeedbackList
-            key={`qsec-${i}`}
-            startPage={31 + i}
-            titleIndex={sec.titleIndex}
-            titleText={sec.titleText}
-            questions={qualitativeEdits[i] || sec.questions}
-            onDataChange={(nextQuestions) => {
-              setQualitativeEdits((prev) => ({
-                ...prev,
-                [i]: nextQuestions,
-              }));
-            }}
-          />
-        ))}
+        </div>
+        {qualitativeSections.map((sec, i) => {
+          const QUAL_TOC_IDS = [
+            'toc-qual-leadership',
+            'toc-qual-bandwidth',
+            'toc-qual-sales',
+            'toc-qual-collaboration',
+            'toc-qual-operational',
+            'toc-qual-results',
+            'toc-qual-expertise',
+          ];
+          const tocId = QUAL_TOC_IDS[i] || '';
+          return (
+            <div key={`q-wrap-${i}`} data-toc-id={tocId}>
+            <QualitativeFeedbackList
+              startPage={31 + i}
+              titleIndex={sec.titleIndex}
+              titleText={sec.titleText}
+              questions={qualitativeEdits[i] || sec.questions}
+              onDataChange={(nextQuestions) => {
+                setQualitativeEdits((prev) => ({
+                  ...prev,
+                  [i]: nextQuestions,
+                }));
+              }}
+            />
+            </div>
+          );
+        })}
+        <div data-toc-id="toc-highlights">
         {highlightsSections.map((sec, i) => {
           const liveItems = highlightsEdits[i] || sec.items;
+          const HL_TOC_IDS = ['toc-strengths', 'toc-areas-improvement'];
+          const tocId = HL_TOC_IDS[i] || '';
           return (
+            <div key={`hl-wrap-${i}`} data-toc-id={tocId}>
             <Highlights
               key={`hl-${i}`}
               {...sec}
@@ -1570,11 +1683,15 @@ const parseQualitativeComment = (c)=> {
                 }));
               }}
             />
+            </div>
           );
         })}
         {blindSpotsSectionsData.map((sec, i) => {
           const liveItems = blindSpotsEdits[i] || sec.items;
+          const BS_TOC_IDS = ['toc-hidden-strengths', 'toc-blind-spots'];
+          const tocId = BS_TOC_IDS[i] || '';
           return (
+            <div key={`bs-wrap-${i}`} data-toc-id={tocId}>
             <BlindSpots
               key={`bs-${i}`}
               startPage={sec.startPage}
@@ -1599,8 +1716,11 @@ const parseQualitativeComment = (c)=> {
                 }));
               }}
             />
+            </div>
           );
         })}
+        </div>
+        <div data-toc-id="toc-coaching-plan">
         <CoachingActionPlan
           key={currentRecipientIndex}
           profile={{
@@ -1619,11 +1739,14 @@ const parseQualitativeComment = (c)=> {
           savedData={reportData?.coaching_action_plan_page2}
           onDataChange={(data) => setCoachingPlanPage2Edits(data)}
         />
+        </div>
+        <div data-toc-id="toc-dev-plan">
         <IndividualDevelopmentPlan
           key={currentRecipientIndex}
           savedData={reportData?.individual_development_plan}
           onDataChange={(data) => setIndividualDevPlanEdits(data)}
         />
+        </div>
       </div>
     </div>
   );
