@@ -140,7 +140,24 @@ const Dav360SummaryReport = () => {
   const lowestRows = summaryData?.lowest || [];
   const notes = reportData?.notes || [];
 
-  const competencyItems = reportData?.competency_items || [];
+  const mapCompetencySummary = (data) => {
+    if (!data) return [];
+    const labelMap = {
+      right_culture: "Creating the Right Culture",
+      leadership_style: "Leadership Personality & Style",
+      leadership_staff_dev: "Leadership for Staff Performance & Development",
+      educational_quality: "Educational Quality & Student Outcomes",
+      engagement_with_management: { label: "Engagement with Management", sub: "(Rated only by the Manager)" },
+    };
+    return Object.entries(labelMap).map(([key, info]) => {
+      const values = data[key];
+      if (!values) return null;
+      const base = typeof info === "string" ? { label: info } : info;
+      return { ...base, min: values.min, avg: values.avg, max: values.max };
+    }).filter(Boolean);
+  };
+
+  const competencyItems = mapCompetencySummary(reportData?.institution_competency_summary);
 
   const teamRows = principalAverages?.team || [];
   const managerRows = principalAverages?.manager || [];
@@ -273,8 +290,8 @@ const Dav360SummaryReport = () => {
       {reportData ? (
         <>
           <Dav360CoverPage />
-          <SurveySummaryRecap />
-          <HeadlinesPage highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
+          <SurveySummaryRecap recap={reportData?.summary_framework_recap} />
+          <HeadlinesPage headlines={reportData?.headlines} highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
           <SummaryByCompetencyInstitutionPage items={competencyItems} />
           <OverallAveragesByPrincipalPage teamRows={teamRows} managerRows={managerRows} />
           <FrequentlyOccuringSuggestions />

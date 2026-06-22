@@ -114,13 +114,28 @@ function RadarSeries({ size = 420, values = [], max = 5, color = "#0e4a2e" }) {
   );
 }
 
+function wrapLabel(text, maxLen = 22) {
+  if (text.length <= maxLen) return [text];
+  const conjMatch = text.match(/^(.*?)\s+(?:and|&)\s+(.+)$/i);
+  if (conjMatch) {
+    const first = conjMatch[1];
+    const second = conjMatch[2];
+    if (first.length <= maxLen) return [first, second];
+  }
+  const spaceIdx = text.lastIndexOf(" ", maxLen);
+  if (spaceIdx > 0) {
+    return [text.slice(0, spaceIdx), text.slice(spaceIdx + 1)];
+  }
+  return [text.slice(0, maxLen), text.slice(maxLen).trim()];
+}
+
 function RadarLabels({ size = 420, labels = [] }) {
   const R = size / 2;
   const angleStep = (2 * Math.PI) / labels.length;
   const labelRadius = R + 26;
 
   return (
-    <g transform={`translate(${R}, ${R})`} fontSize={12} fill="#222">
+    <g transform={`translate(${R}, ${R})`} fontSize={15} fill="#222" fontWeight="bold">
       {labels.map((lab, i) => {
         const a = -Math.PI / 2 + i * angleStep;
         const [x, y] = polarToCartesian(a, labelRadius);
@@ -130,15 +145,22 @@ function RadarLabels({ size = 420, labels = [] }) {
             : Math.cos(a) > 0
             ? "start"
             : "end";
+        const lines = wrapLabel(lab);
+        const lineHeight = 18;
+        const startY = lines.length > 1 ? y - ((lines.length - 1) * lineHeight) / 2 : y;
         return (
           <text
             key={i}
             x={x}
-            y={y}
+            y={startY}
             textAnchor={anchor}
             alignmentBaseline="middle"
           >
-            {lab}
+            {lines.map((line, li) => (
+              <tspan key={li} x={x} dy={li === 0 ? 0 : lineHeight}>
+                {line}
+              </tspan>
+            ))}
           </text>
         );
       })}
@@ -173,8 +195,7 @@ const SpiderChartSummary = ({
   others = [4.2, 4.0, 4.1, 4.0, 3.0, 4.0, 3.8],
 }) => {
   const size = 400;
-  const pad = 30; // extra padding to include labels within the viewBox
-
+  const pad = 30; 
   const blocks = useMemo(() => {
     const out = [];
 
@@ -236,8 +257,8 @@ const SpiderChartSummary = ({
             <RadarSeries size={size} values={manager} color="#0e4a2e" />
             <RadarSeries size={size} values={others} color="#b8860b" />
           </svg>
+          <Legend />
         </div>
-        <Legend />
       </div>
     );
 

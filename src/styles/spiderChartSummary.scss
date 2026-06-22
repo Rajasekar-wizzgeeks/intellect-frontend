@@ -28,10 +28,10 @@
 }
 
 .scs-chartwrap {
-  position: relative;
   margin-top: 12px;
 
   &__center {
+    position: relative;
     display: flex;
     justify-content: center;
   }
@@ -47,34 +47,35 @@
 
 .scs-legend {
   position: absolute;
-  top: 110px;
-  right: 58px;
+  top: 12px;
+  right: 12px;
   background: var(--color-muted);
-  padding: 12px 16px;
-  border-radius: 2px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  z-index: 1;
 
   &__title {
-    font-size: var(--fs-md);
-    margin-bottom: 6px;
-    font-weight: 600;
+    font-size: 11px;
+    margin-bottom: 3px;
+    font-weight: 400;
   }
 
   &__item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 4px;
+    gap: 5px;
+    margin-top: 2px;
   }
 
   &__color {
     display: inline-block;
-    width: 12px;
-    height: 12px;
+    width: 8px;
+    height: 8px;
     background: #999; // overridden inline per item
     border-radius: 2px;
   }
 
   &__label {
-    font-size: var(--fs-md);
+    font-size: 11px;
   }
 }
