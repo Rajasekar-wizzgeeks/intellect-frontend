@@ -13,7 +13,8 @@ import GlobalLoader from "../components/globalLoader";
 import StatusModal from "../components/StatusModal";
 import { excelSheetDav360Summary, getOneFeedbackDraft } from "../helper/apicalls/feedback";
 import { getApiErrorMessage } from "../helper/getApiErrorMessage";
-import { AlertCircle, FileSpreadsheet, Upload, X, Download } from "lucide-react";
+import { AlertCircle, Check, FileSpreadsheet, Upload, X, Download } from "lucide-react";
+import "../styles/lbscore360.scss";
 import "../styles/feedback360Report.scss";
 
 const Dav360SummaryReport = () => {
@@ -23,9 +24,11 @@ const Dav360SummaryReport = () => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [phase, setPhase] = useState("upload");
   const [excelFiles, setExcelFiles] = useState([]);
+  const [dragOver, setDragOver] = useState(false);
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: "success", message: "", title: "" });
+  const fileInputRef = useRef(null);
   const draftFetched = useRef(false);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ const Dav360SummaryReport = () => {
           const response = await getOneFeedbackDraft(draftId);
           if (response && response.feedback_data && response.feedback_data[0]) {
             setReportData(response.feedback_data[0]);
+            setPhase("report");
           }
         } catch (error) {
           console.error("Failed to load draft:", error);
@@ -63,7 +67,7 @@ const Dav360SummaryReport = () => {
       setError(null);
       const data = await excelSheetDav360Summary(excelFiles);
       setReportData(data);
-      setIsUploadModalOpen(false);
+      setPhase("report");
       setExcelFiles([]);
     } catch (err) {
       setError(err.message);
@@ -83,6 +87,29 @@ const Dav360SummaryReport = () => {
 
   const removeFile = (index) => {
     setExcelFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length > 0) {
+      setExcelFiles((prev) => [...prev, ...files]);
+      setError(null);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
   };
 
   const mapSummaryToRows = (data) => {
@@ -140,10 +167,96 @@ const Dav360SummaryReport = () => {
   const lowestRows = summaryData?.lowest || [];
   const notes = reportData?.notes || [];
 
-  const competencyItems = reportData?.competency_items || [];
+  const mapCompetencySummary = (data) => {
+    if (!data) return [];
+    const labelMap = {
+      right_culture: "Creating the Right Culture",
+      leadership_style: "Leadership Personality & Style",
+      leadership_staff_dev: "Leadership for Staff Performance & Development",
+      educational_quality: "Educational Quality & Student Outcomes",
+      engagement_with_management: { label: "Engagement with Management", sub: "(Rated only by the Manager)" },
+    };
+    return Object.entries(labelMap).map(([key, info]) => {
+      const values = data[key];
+      if (!values) return null;
+      const base = typeof info === "string" ? { label: info } : info;
+      return { ...base, min: values.min, avg: values.avg, max: values.max };
+    }).filter(Boolean);
+  };
+
+  const competencyItems = mapCompetencySummary(reportData?.institution_competency_summary);
 
   const teamRows = principalAverages?.team || [];
   const managerRows = principalAverages?.manager || [];
+
+  if (phase === "upload") {
+    return (
+      <div className="lbs-upload-page">
+        <GlobalLoader visible={loading} />
+        <div className="lbs-upload-card">
+          <div className="lbs-upload-card__header">
+            <FileSpreadsheet size={22} />
+            <span>Upload DAV 360° Summary Excel</span>
+          </div>
+
+          {/* Dropzone */}
+          <div
+            className={`lbs-dropzone${dragOver ? " lbs-dropzone--over" : ""}${excelFiles.length > 0 ? " lbs-dropzone--has-file" : ""}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              multiple
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            {excelFiles.length > 0 ? (
+              <div className="lbs-dropzone__file-list">
+                {excelFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="lbs-dropzone__file">
+                    <Check size={16} color="var(--color-green)" />
+                    <span className="lbs-dropzone__filename">{file.name}</span>
+                    <button
+                      className="lbs-dropzone__remove"
+                      onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="lbs-dropzone__empty">
+                <Upload size={36} />
+                <p className="lbs-dropzone__label">Click to upload or drag and drop</p>
+                <p className="lbs-dropzone__hint">Excel files only (.xlsx, .xls)</p>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="lbs-error">
+              <AlertCircle size={14} />
+              {error}
+            </div>
+          )}
+
+          <button
+            className="lbs-upload-btn"
+            onClick={handleExcelUpload}
+            disabled={excelFiles.length === 0 || loading}
+          >
+            {loading ? "Processing..." : "Upload and Generate Report"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="feedbackreport-main-container">
@@ -157,13 +270,6 @@ const Dav360SummaryReport = () => {
       />
       <div className="feedbackreport-toolbar">
         <button
-          onClick={() => setIsUploadModalOpen(true)}
-          className="feedbackreport-btn feedbackreport-btn--upload"
-        >
-          <Upload size={18} />
-          Upload Excel
-        </button>
-        <button
           disabled={!reportData}
           onClick={downloadPdfSplitByHeader}
           className="feedbackreport-btn feedbackreport-btn--download"
@@ -173,108 +279,11 @@ const Dav360SummaryReport = () => {
         </button>
       </div>
 
-      {isUploadModalOpen && (
-        <div className="feedbackreport-modal-overlay">
-          <div className="feedbackreport-modal">
-            <div className="feedbackreport-modal__header">
-              <h3 className="feedbackreport-modal__title">Upload DAV 360 Summary Excel</h3>
-              <button className="feedbackreport-modal__close" onClick={() => setIsUploadModalOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="feedbackreport-modal__body">
-              <div 
-                className={`feedbackreport-dropzone ${excelFiles.length > 0 ? 'feedbackreport-dropzone--has-file' : ''}`}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.add('feedbackreport-dropzone--dragover');
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('feedbackreport-dropzone--dragover');
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('feedbackreport-dropzone--dragover');
-                  const files = Array.from(e.dataTransfer.files);
-                  if (files.length > 0) {
-                    setExcelFiles((prev) => [...prev, ...files]);
-                  }
-                }}
-              >
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  onChange={handleFileChange}
-                  id="excel-upload"
-                  className="feedbackreport-file-input"
-                  multiple
-                />
-                <label htmlFor="excel-upload" className="feedbackreport-dropzone__empty">
-                  <div className="feedbackreport-dropzone__upload-icon">
-                    <FileSpreadsheet size={32} />
-                  </div>
-                  <div className="feedbackreport-dropzone__empty-title">
-                    Choose or drag Excel files
-                  </div>
-                  <div className="feedbackreport-dropzone__empty-subtitle">
-                    Supports .xlsx, .xls files
-                  </div>
-                </label>
-              </div>
-
-              {excelFiles.length > 0 && (
-                <div className="feedbackreport-file-list">
-                  {excelFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="feedbackreport-file-item">
-                      <FileSpreadsheet size={16} className="feedbackreport-file-item__icon" />
-                      <span className="feedbackreport-file-item__name">{file.name}</span>
-                      <button 
-                        className="feedbackreport-file-item__remove" 
-                        onClick={() => removeFile(index)}
-                        title="Remove file"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {error && (
-                <div className="feedbackreport-upload-error">
-                  <AlertCircle size={16} className="feedbackreport-btn__icon" />
-                  <span>{error}</span>
-                </div>
-              )}
-            </div>
-            <div className="feedbackreport-modal__footer">
-              <button
-                className="feedbackreport-btn feedbackreport-btn--secondary"
-                onClick={() => {
-                  setIsUploadModalOpen(false);
-                  setExcelFiles([]);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="feedbackreport-btn feedbackreport-btn--upload"
-                disabled={excelFiles.length === 0 || loading}
-                onClick={handleExcelUpload}
-              >
-                {loading ? "Processing..." : "Upload & Generate"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {reportData ? (
         <>
           <Dav360CoverPage />
-          <SurveySummaryRecap />
-          <HeadlinesPage highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
+          <SurveySummaryRecap recap={reportData?.summary_framework_recap} />
+          <HeadlinesPage headlines={reportData?.headlines} highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
           <SummaryByCompetencyInstitutionPage items={competencyItems} />
           <OverallAveragesByPrincipalPage teamRows={teamRows} managerRows={managerRows} />
           <FrequentlyOccuringSuggestions />
@@ -290,13 +299,6 @@ const Dav360SummaryReport = () => {
           <p className="feedbackreport-empty-state__description">
             Please upload the DAV 360 Summary Excel files to generate the report.
           </p>
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="feedbackreport-btn feedbackreport-btn--upload"
-          >
-            <Upload size={18} />
-            Upload Excel
-          </button>
         </div>
       )}
     </div>
