@@ -38,17 +38,17 @@ const LeftIcon = ({ leftIcon }) => {
   return leftIcon;
 };
 
+const getScoreColor = (score) => {
+  const s = parseFloat(score);
+  if (isNaN(s) || s <= 3.5) return "#AE7F2E";   // amber  – Developmental Opportunity
+  if (s <= 4.0)             return "#B5D3BB";    // light green – Strength
+  return "#21552F";                               // dark green  – Competence
+};
+
 const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur }) => {
   const max = 5;
   const selfPct = Math.max(0, Math.min(100, (self / max) * 100));
   const othersPct = Math.max(0, Math.min(100, (others / max) * 100));
-  const colorPicker = [
-    "var(--color-warm-sand)",
-    "var(--color-copper)",
-    "var(--color-mint)",
-    "var(--color-mint)",
-    "var(--color-green)",
-  ];
 
   const labelStyle = {
     position: "absolute",
@@ -65,12 +65,13 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
 
   return (
     <div className="bs-bars-row">
+      <span className="bs-label-self">Self</span>
       {/* Left bar (self) */}
       <div className="bs-left-others">
         <div className="bs-bar others">
           <div
             className="bs-fill others"
-            style={{ width: `${selfPct}%`, background: colorPicker[Math.max(0, Math.floor(self - 1))] }}
+            style={{ width: `${selfPct}%`, background: getScoreColor(self) }}
           />
           {onSelfChange ? (
             <input
@@ -93,7 +94,7 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
           className="bs-fill others"
           style={{
             width: `${othersPct}%`,
-            background: colorPicker[Math.max(0, Math.floor(others - 1))],
+            background: getScoreColor(others),
           }}
         />
         {onOthersChange ? (
