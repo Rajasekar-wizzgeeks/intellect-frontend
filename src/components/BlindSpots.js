@@ -45,6 +45,12 @@ const getScoreColor = (score) => {
   return "#21552F";                               // dark green  – Competence
 };
 
+const getScoreFontColor = (score) => {
+  const s = parseFloat(score);
+  if (!isNaN(s) && s > 3.5 && s <= 4.0) return "#000"; // light green bg – needs dark text
+  return "#fff";                                         // amber or dark green bg – white text
+};
+
 const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur }) => {
   const max = 5;
   const selfPct = Math.max(0, Math.min(100, (self / max) * 100));
@@ -55,7 +61,6 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
     left: "4px",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#fff",
     fontWeight: "bold",
     fontSize: "14px",
     pointerEvents: "none",
@@ -65,7 +70,7 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
 
   return (
     <div className="bs-bars-row">
-      <span className="bs-label-self">Self</span>
+      <span className="bs-label-self" style={{ color: "#000" }}>Self</span>
       {/* Left bar (self) */}
       <div className="bs-left-others">
         <div className="bs-bar others">
@@ -80,14 +85,14 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
               step="0.1"
               onChange={(e) => onSelfChange(e.target.value)}
               onBlur={onBlur}
-              style={{ ...labelStyle, pointerEvents: "auto", background: "transparent", border: "none", width: "56px" }}
+              style={{ ...labelStyle, color: getScoreFontColor(self), pointerEvents: "auto", background: "transparent", border: "none", width: "56px" }}
             />
           ) : (
-            <span style={labelStyle}>{self}</span>
+            <span style={{ ...labelStyle, color: getScoreFontColor(self) }}>{self}</span>
           )}
         </div>
       </div>
-      <span className="bs-center-label">Others</span>
+      <span className="bs-center-label" style={{ color: "#000" }}>Others</span>
       {/* Right bar (others) */}
       <div className="bs-bar others">
         <div
@@ -104,10 +109,10 @@ const RatingBars = ({ self = 4, others = 2, onSelfChange, onOthersChange, onBlur
             step="0.1"
             onChange={(e) => onOthersChange(e.target.value)}
             onBlur={onBlur}
-            style={{ ...labelStyle, pointerEvents: "auto", background: "transparent", border: "none", width: "56px" }}
+            style={{ ...labelStyle, color: getScoreFontColor(others), pointerEvents: "auto", background: "transparent", border: "none", width: "56px" }}
           />
         ) : (
-          <span style={labelStyle}>{others}</span>
+          <span style={{ ...labelStyle, color: getScoreFontColor(others) }}>{others}</span>
         )}
       </div>
     </div>
