@@ -121,6 +121,29 @@
   }
 }
 
+.lbs-dropzone__add-more {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px dashed var(--color-green);
+  color: var(--color-green);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--color-green);
+    color: #fff;
+    border-style: solid;
+  }
+}
+
 /* ── Progress ── */
 .lbs-progress {
   display: flex;

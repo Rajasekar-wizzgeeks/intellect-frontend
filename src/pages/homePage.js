@@ -80,8 +80,8 @@ const HomePage = () => {
                 />
               </div>
 
-              <div className="home-card__badge home-card__badge--report360">
-                UPDATED
+              <div className="home-card__badge home-card__badge--overall">
+                ACTIVE
               </div>
             </div>
 
@@ -130,8 +130,8 @@ const HomePage = () => {
                 />
               </div>
 
-              <div className="home-card__badge home-card__badge--dav360">
-                NEW
+              <div className="home-card__badge home-card__badge--overall">
+                ACTIVE
               </div>
             </div>
 

@@ -31,6 +31,11 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isHomeActive =
+    location.pathname === "/" ||
+    location.pathname.startsWith("/user/") ||
+    location.pathname.startsWith("/reports/user");
+
   useEffect(() => {
     setStoredUser(getStoredUser());
   }, [location]);
@@ -117,7 +122,10 @@ const Navbar = () => {
             <div className="rh-nav__section">
               {/* <div className="rh-nav__section-title">MAIN MENU</div> */}
 
-              <NavLink to="/" end className={navLinkClassName}>
+              <NavLink
+                to="/"
+                className={`rh-nav__link ${isHomeActive ? "is-active" : ""}`}
+              >
                 <Home className="rh-nav__link-icon" />
                 <span className="rh-nav__link-text">Home</span>
               </NavLink>
