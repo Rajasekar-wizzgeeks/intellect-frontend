@@ -77,11 +77,23 @@ const Dav360SummaryReport = () => {
     }
   };
 
+  const isValidFile = (file) => {
+    const ext = file.name.split('.').pop().toLowerCase();
+    return ["xlsx", "xls", "csv"].includes(ext);
+  };
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      setExcelFiles((prev) => [...prev, ...files]);
+    const validFiles = files.filter(isValidFile);
+    
+    if (validFiles.length < files.length) {
+      setError("Please upload a valid file");
+    } else {
       setError(null);
+    }
+    
+    if (validFiles.length > 0) {
+      setExcelFiles((prev) => [...prev, ...validFiles]);
     }
   };
 
@@ -94,9 +106,16 @@ const Dav360SummaryReport = () => {
     e.stopPropagation();
     setDragOver(false);
     const files = Array.from(e.dataTransfer?.files || []);
-    if (files.length > 0) {
-      setExcelFiles((prev) => [...prev, ...files]);
+    const validFiles = files.filter(isValidFile);
+    
+    if (validFiles.length < files.length) {
+      setError("Please upload a valid file");
+    } else {
       setError(null);
+    }
+    
+    if (validFiles.length > 0) {
+      setExcelFiles((prev) => [...prev, ...validFiles]);
     }
   };
 
@@ -210,13 +229,13 @@ const Dav360SummaryReport = () => {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv"
               multiple
               style={{ display: "none" }}
               onChange={handleFileChange}
             />
             {excelFiles.length > 0 ? (
-              <div className="lbs-dropzone__file-list">
+              <div className="lbs-dropzone__file-list" onClick={(e) => e.stopPropagation()}>
                 {excelFiles.map((file, index) => (
                   <div key={`${file.name}-${index}`} className="lbs-dropzone__file">
                     <Check size={16} color="var(--color-green)" />
@@ -229,12 +248,19 @@ const Dav360SummaryReport = () => {
                     </button>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  className="lbs-dropzone__add-more"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  + Add more files
+                </button>
               </div>
             ) : (
               <div className="lbs-dropzone__empty">
                 <Upload size={36} />
                 <p className="lbs-dropzone__label">Click to upload or drag and drop</p>
-                <p className="lbs-dropzone__hint">Excel files only (.xlsx, .xls)</p>
+                <p className="lbs-dropzone__hint">Excel or CSV files only (.xlsx, .xls, .csv)</p>
               </div>
             )}
           </div>

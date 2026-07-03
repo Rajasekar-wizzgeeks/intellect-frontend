@@ -109,6 +109,10 @@
 }
 
 .feedbackreport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 8px 14px;
   border: none;
   border-radius: 6px;

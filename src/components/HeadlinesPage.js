@@ -102,15 +102,26 @@ export default function Headlines({ headlines, highestRows, lowestRows, notes })
           <span>Principals who have rated themselves 5 in most questions :</span>
         </div>
         <ul className="headlines-principals-list">
-          {safeNotes.map((note, idx) => (
-            <li key={idx}>
-              {typeof note === "string" ? (
-                note
-              ) : (
-                <strong>{note.text}</strong>
-              )}
-            </li>
-          ))}
+          {safeNotes.map((note, idx) => {
+            const noteText = typeof note === "string" ? note : note?.text || "";
+            const match = noteText.match(/^(.*?)\((.*?)\)$/);
+            if (match) {
+              return (
+                <li key={idx}>
+                  <strong>{match[1].trim()}</strong> <span>({match[2].trim()})</span>
+                </li>
+              );
+            }
+            return (
+              <li key={idx}>
+                {typeof note === "string" ? (
+                  note
+                ) : (
+                  <strong>{note.text}</strong>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>,
     ];
