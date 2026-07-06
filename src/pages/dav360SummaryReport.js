@@ -272,13 +272,13 @@ const Dav360SummaryReport = () => {
             </div>
           )}
 
-          <button
-            className="lbs-upload-btn"
-            onClick={handleExcelUpload}
-            disabled={excelFiles.length === 0 || loading}
-          >
-            {loading ? "Processing..." : "Upload and Generate Report"}
-          </button>
+            <button
+              className="lbs-upload-btn"
+              onClick={handleExcelUpload}
+              disabled={excelFiles.length === 0 || loading}
+            >
+              {loading ? "Processing..." : "Upload and Generate Report"}
+            </button>
         </div>
       </div>
     );
@@ -312,7 +312,7 @@ const Dav360SummaryReport = () => {
           <HeadlinesPage headlines={reportData?.headlines} highestRows={highestRows} lowestRows={lowestRows} notes={notes} />
           <SummaryByCompetencyInstitutionPage items={competencyItems} />
           <OverallAveragesByPrincipalPage teamRows={teamRows} managerRows={managerRows} />
-          <FrequentlyOccuringSuggestions />
+          <FrequentlyOccuringSuggestions data={reportData?.frequently_occuring_suggestions} />
           <SectionTitle />
           <LeaderComparisonPage data={reportData?.leadership_profile_data} />
         </>
