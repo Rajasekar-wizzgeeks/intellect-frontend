@@ -16,7 +16,9 @@ const LeaderPart = ({
           <div className="leader-axis leader-axis--up">
             <span className="leader-axis-arrow" />
             <span className="leader-axis-line leader-axis-line--green" />
-            <span className="leader-axis-label">Highest Averages</span>
+            <span className="leader-axis-label">
+              <span className="leader-axis-label-inner">Highest Averages</span>
+            </span>
             <span className="leader-axis-tick" />
           </div>
         </div>
@@ -49,7 +51,9 @@ const LeaderPart = ({
       <div className="leader-axis-col">
         <div className="leader-axis leader-axis--down">
           <span className="leader-axis-tick" />
-          <span className="leader-axis-label">Lowest Averages</span>
+          <span className="leader-axis-label">
+            <span className="leader-axis-label-inner">Lowest Averages</span>
+          </span>
           <span className="leader-axis-line leader-axis-line--red" />
           <span className="leader-axis-arrow" />
         </div>
@@ -132,34 +136,36 @@ export default function LeaderProfiles({ data }) {
       const right = pair[1] || { name: "", responses: 0, highest: [], lowest: [], profile: [], footnote: [] };
 
       allBlocks.push(
-        /* Header Row */
-        <div key={`leaders-header-${pairIdx}`} className="leaders-global-row">
-          <LeaderHeader {...left} />
-          <LeaderHeader {...right} />
-        </div>,
+        <div key={`leader-pair-${pairIdx}`} className="leader-pair-wrapper">
+          {/* Header Row */}
+          <div className="leaders-global-row">
+            <LeaderHeader {...left} />
+            <LeaderHeader {...right} />
+          </div>
 
-        /* GREEN BOX ROW */
-        <div key={`leaders-green-${pairIdx}`} className="leaders-global-row">
-          <LeaderPart type="green" {...left} />
-          <LeaderPart type="green" {...right} />
-        </div>,
+          {/* GREEN BOX ROW */}
+          <div className="leaders-global-row">
+            <LeaderPart type="green" {...left} />
+            <LeaderPart type="green" {...right} />
+          </div>
 
-        /* GLOBAL ARROW DIVIDER */
-        <div key={`leaders-divider-${pairIdx}`} className="leaders-global-divider">
-          <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
-          <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
-        </div>,
+          {/* GLOBAL ARROW DIVIDER */}
+          <div className="leaders-global-divider">
+            <span className="leaders-global-divider-seg leaders-global-divider-seg--left" />
+            <span className="leaders-global-divider-seg leaders-global-divider-seg--right" />
+          </div>
 
-        /* RED BOX ROW */
-        <div key={`leaders-red-${pairIdx}`} className="leaders-global-row">
-          <LeaderPart type="red" {...left} />
-          <LeaderPart type="red" {...right} />
-        </div>,
+          {/* RED BOX ROW */}
+          <div className="leaders-global-row">
+            <LeaderPart type="red" {...left} />
+            <LeaderPart type="red" {...right} />
+          </div>
 
-        /* Footnote Row */
-        <div key={`leaders-footnote-${pairIdx}`} className="leaders-global-row" style={{ marginTop: "16px" }}>
-          <LeaderFootnote {...left} />
-          <LeaderFootnote {...right} />
+          {/* Footnote Row */}
+          <div className="leaders-global-row" style={{ marginTop: "16px" }}>
+            <LeaderFootnote {...left} />
+            <LeaderFootnote {...right} />
+          </div>
         </div>
       );
 
@@ -176,7 +182,7 @@ export default function LeaderProfiles({ data }) {
       blocks={blocks}
       pageWidth={894}
       pageHeight={1123}
-      pagePadding={20}
+      pagePadding={40}
       contentClassName="leaders"
       pageClassName="dav360-page"
       componentId="leaders-comparison"
