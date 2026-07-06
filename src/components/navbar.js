@@ -34,7 +34,11 @@ const Navbar = () => {
   const isHomeActive =
     location.pathname === "/" ||
     location.pathname.startsWith("/user/") ||
-    location.pathname.startsWith("/reports/user");
+    (location.pathname.startsWith("/reports/user") && !location.pathname.startsWith("/reports/user/draft"));
+
+  const isDraftsActive =
+    location.pathname.startsWith("/reports/drafts") ||
+    location.pathname.startsWith("/reports/user/draft");
 
   useEffect(() => {
     setStoredUser(getStoredUser());
@@ -130,7 +134,10 @@ const Navbar = () => {
                 <span className="rh-nav__link-text">Home</span>
               </NavLink>
 
-              <NavLink to="/reports/drafts" className={navLinkClassName}>
+              <NavLink
+                to="/reports/drafts"
+                className={`rh-nav__link ${isDraftsActive ? "is-active" : ""}`}
+              >
                 <FileText className="rh-nav__link-icon" />
                 <span className="rh-nav__link-text">Drafts</span>
               </NavLink>

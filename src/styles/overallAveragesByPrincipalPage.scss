@@ -125,7 +125,7 @@ $header-bg: #eaf1fb;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 10px;
+    // gap: 10px;
     padding: 6px 12px;
     border-bottom: 1px dashed #9bb3d6;
 
@@ -140,6 +140,9 @@ $header-bg: #eaf1fb;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: flex;
+    justify-content: flex-start;
+
   }
 
   &__bar-wrap {
