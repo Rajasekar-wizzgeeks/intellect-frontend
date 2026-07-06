@@ -61,6 +61,9 @@ const CompetencyChart = ({ items, minX = X_MIN, maxX = X_MAX, showTitle = true }
           const rangeLeft = leftStyle(r.min);
           const rangeWidth = `calc((100% - ${PLOT_LEFT}px) * ${(pct(r.max) - pct(r.min)) / 100})`;
 
+          const minAvgClose = (r.avg - r.min) < 0.25;
+          const avgMaxClose = (r.max - r.avg) < 0.25;
+
           return (
             <div key={r.label} className="cc__row" style={{ top, height }}>
               <div className="cc__label">
@@ -78,13 +81,31 @@ const CompetencyChart = ({ items, minX = X_MIN, maxX = X_MAX, showTitle = true }
               <div className="cc__range" style={{ left: rangeLeft, width: rangeWidth }} />
               <div className="cc__dot" style={{ left: leftStyle(r.avg) }} />
 
-              <span className="cc__num" style={{ left: leftStyle(r.min) }}>
+              <span
+                className="cc__num"
+                style={{
+                  left: leftStyle(r.min),
+                  transform: minAvgClose ? "translate(-100%, 25%)" : "translate(-50%, -135%)",
+                }}
+              >
                 {fmt(r.min)}
               </span>
-              <span className="cc__num cc__num--red" style={{ left: leftStyle(r.avg) }}>
+              <span
+                className="cc__num cc__num--red"
+                style={{
+                  left: leftStyle(r.avg),
+                  transform: "translate(-50%, -135%)",
+                }}
+              >
                 {r.avg.toFixed(2)}
               </span>
-              <span className="cc__num" style={{ left: leftStyle(r.max) }}>
+              <span
+                className="cc__num"
+                style={{
+                  left: leftStyle(r.max),
+                  transform: avgMaxClose ? "translate(0%, 25%)" : "translate(-50%, -135%)",
+                }}
+              >
                 {fmt(r.max)}
               </span>
             </div>
@@ -101,7 +122,6 @@ const CompetencyChart = ({ items, minX = X_MIN, maxX = X_MAX, showTitle = true }
       <div className="cc__footer">
         *Excludes Self ratings for calculation of min, max and average
       </div>
-      <span className="cc__page-num">4</span>
     </div>
   );
 };
