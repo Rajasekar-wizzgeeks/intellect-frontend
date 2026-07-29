@@ -17,15 +17,7 @@ const OverviewSummary = ({
   const initialRows = useMemo(() => {
     return items && items.length
       ? items
-      : [
-          { label: "Leadership", self: 2.5, others: 4.0 },
-          { label: "Bandwidth", self: 2.5, others: 4.0 },
-          { label: "Sales and Customer Centricity", self: 2.5, others: 4.0 },
-          { label: "Collaboration", self: 2.5, others: 4.0 },
-          { label: "Operational Excellence", self: 2.5, others: 4.0 },
-          { label: "Result Orientation", self: 2.5, others: 4.0 },
-          { label: "Expertise and Communication", self: 2.5, others: 4.0 },
-        ];
+      : [ ];
   }, [items]);
 
   const [rows, setRows] = useState(initialRows);
@@ -37,6 +29,7 @@ const OverviewSummary = ({
 
   useEffect(() => {
     setRows(initialRows);
+
   }, [initialRows]);
 
   const handleValueClick = (rowIndex, field, value) => {
