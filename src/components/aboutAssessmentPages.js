@@ -6,7 +6,39 @@ import Header from "./header";
 import ReportInfoTable from "./reportInfoTable";
 import AutoPaginatedSections from "./AutoPaginatedSections";
 
+const DEFAULT_ELEMENTS = [
+  {
+    label: "Leadership",
+    desc: "Setting direction, leading with values, building psychological safety, and enabling others to think, decide, and grow",
+  },
+  {
+    label: "Bandwidth",
+    desc: "Staying grounded under pressure, simplifying complexity, thinking across time horizons, and mobilising people and resources beyond formal authority",
+  },
+  {
+    label: "Sales & Customer Centricity",
+    desc: "Deeply understanding customers and markets, translating insights into value, and building long-term, trust-based partnerships",
+  },
+  {
+    label: "Collaboration",
+    desc: "Building dependable relationships, working across boundaries, addressing challenges early, and solving problems collectively",
+  },
+  {
+    label: "Operational Excellence",
+    desc: "Creating reliable processes, using data to guide decisions, spotting risks early, and driving continuous improvement",
+  },
+  {
+    label: "Results Orientation",
+    desc: "Setting clear priorities, maintaining execution discipline, acting with urgency, and following through to deliver outcomes",
+  },
+  {
+    label: "Expertise & Communication",
+    desc: "Applying structured thinking, communicating with clarity and impact",
+  },
+];
+
 const AboutAssessmentPages = ({
+  categories = [],
   startPage = 4,
   pageWidth = 794,
   pageHeight = 842,
@@ -38,39 +70,15 @@ const AboutAssessmentPages = ({
     []
   );
 
-  const ELEMENTS = useMemo(
-    () => [
-      {
-        label: "Leadership",
-        desc: "Setting direction, leading with values, building psychological safety, and enabling others to think, decide, and grow",
-      },
-      {
-        label: "Bandwidth",
-        desc: "Staying grounded under pressure, simplifying complexity, thinking across time horizons, and mobilising people and resources beyond formal authority",
-      },
-      {
-        label: "Sales & Customer Centricity",
-        desc: "Deeply understanding customers and markets, translating insights into value, and building long-term, trust-based partnerships",
-      },
-      {
-        label: "Collaboration",
-        desc: "Building dependable relationships, working across boundaries, addressing challenges early, and solving problems collectively",
-      },
-      {
-        label: "Operational Excellence",
-        desc: "Creating reliable processes, using data to guide decisions, spotting risks early, and driving continuous improvement",
-      },
-      {
-        label: "Results Orientation",
-        desc: "Setting clear priorities, maintaining execution discipline, acting with urgency, and following through to deliver outcomes",
-      },
-      {
-        label: "Expertise & Communication",
-        desc: "Applying structured thinking, communicating with clarity and impact",
-      },
-    ],
-    []
-  );
+  const ELEMENTS = useMemo(() => {
+    if (Array.isArray(categories) && categories.length > 0) {
+      return categories.map((c) => ({
+        label: c.name,
+        desc: c.description,
+      }));
+    }
+    return DEFAULT_ELEMENTS;
+  }, [categories]);
 
   const elementRows = useMemo(
     () => ELEMENTS.map((e) => ({ label: e.label, value: e.desc })),

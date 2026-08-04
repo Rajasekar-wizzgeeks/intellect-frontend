@@ -60,21 +60,37 @@
   justify-content: center;
   pointer-events: auto;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 28px;
+  font-weight: 600;
+  font-size: 26px;
   color: #ffffff;
+  user-select: none;
 }
 
 .cs-gauge-chart__value-input {
-  width: 80px;
+  width: 110px;
+  max-width: 130px;
   text-align: center;
-  font: inherit;
-  padding: 2px 4px;
-  border-radius: 4px;
-  border: 1px solid #ffffff;
-  background: transparent;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.25);
   color: #ffffff;
   outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  /* Hide Chrome, Safari, Edge, Opera spin buttons */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Hide Firefox spin button */
+  -moz-appearance: textfield;
 }
 
 .cs-quartiles {

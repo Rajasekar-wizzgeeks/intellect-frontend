@@ -168,11 +168,12 @@
 .rh-nav__link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 10px 12px;
   border-radius: 14px;
   color: var(--color-green-mid);
   text-decoration: none;
+  border: 1px solid transparent;
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -197,13 +198,15 @@
 }
 
 .rh-nav__link-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .rh-nav__link-text {
-  font-size: var(--fs-md);
+  font-size: 13.5px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .rh-nav__divider {

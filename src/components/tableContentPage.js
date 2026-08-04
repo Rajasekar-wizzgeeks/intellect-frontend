@@ -66,7 +66,37 @@ const defaultToc = [
   },
 ];
 
-const TableContentPage = ({ items = defaultToc, pageNumberMap = {} }) => {
+const TableContentPage = ({ items, categories = [], pageNumberMap = {} }) => {
+  const tocItems = React.useMemo(() => {
+    if (items) return items;
+    if (!Array.isArray(categories) || categories.length === 0) return defaultToc;
+
+    const catLength = categories.length;
+    const qualChildren = categories.map((c) => ({
+      label: c.name,
+      page: c.default_page || 32,
+      tocId: c.toc_id || `toc-qual-${c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    }));
+
+    return [
+      defaultToc[0],
+      {
+        ...defaultToc[1],
+        children: defaultToc[1].children.map((child) =>
+          child.tocId === "toc-overview-summary"
+            ? { ...child, label: `Overview/Summary of Scores Across ${catLength} Elements` }
+            : child
+        ),
+      },
+      {
+        ...defaultToc[2],
+        children: qualChildren,
+      },
+      defaultToc[3],
+      defaultToc[4],
+      ...(defaultToc.slice(5) || []),
+    ];
+  }, [items, categories]);
   const renderLevel = (nodes, level = 1, prefix = "") => (
     <ol className={`toc__list toc__list--lvl${level}`}>
       {nodes.map((n, idx) => {
@@ -99,7 +129,7 @@ const TableContentPage = ({ items = defaultToc, pageNumberMap = {} }) => {
         <h2 className="toc__suptitle">Table of Contents</h2>
         <h1 className="toc__title">Contents</h1>
 
-        {renderLevel(items)}
+        {renderLevel(tocItems)}
       </div>
     </div>
   );

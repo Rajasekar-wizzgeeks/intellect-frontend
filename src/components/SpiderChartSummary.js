@@ -21,14 +21,12 @@ function polarToCartesian(angle, radius) {
   return [x, y];
 }
 
-function RadarGrid({ size = 420, levels = 5, spokes = 7 }) {
-  const R = size / 2;
+function RadarGrid({ cx = 320, cy = 240, R = 135, levels = 5, spokes = 7 }) {
   const step = R / levels;
-  const center = { x: 0, y: 0 };
   const angleStep = (2 * Math.PI) / spokes;
 
   return (
-    <g transform={`translate(${R}, ${R})`}>
+    <g transform={`translate(${cx}, ${cy})`}>
       {Array.from({ length: levels }, (_, i) => {
         const r = step * (i + 1);
         const points = Array.from({ length: spokes }, (_, s) => {
@@ -52,8 +50,8 @@ function RadarGrid({ size = 420, levels = 5, spokes = 7 }) {
         return (
           <line
             key={`spoke-${s}`}
-            x1={center.x}
-            y1={center.y}
+            x1={0}
+            y1={0}
             x2={x}
             y2={y}
             stroke="#e6e6e6"
@@ -65,15 +63,13 @@ function RadarGrid({ size = 420, levels = 5, spokes = 7 }) {
   );
 }
 
-function RadarLevelLabels({ size = 420, levels = 5, max = 5 }) {
-  const R = size / 2;
+function RadarLevelLabels({ cx = 320, cy = 240, R = 135, levels = 5, max = 5 }) {
   const step = R / levels;
 
-  // Labels are drawn along the top spoke (vertical axis), like the PDF.
   return (
-    <g transform={`translate(${R}, ${R})`} fontSize={12} fill="#222">
+    <g transform={`translate(${cx}, ${cy})`} fontSize={11} fill="#555">
       {Array.from({ length: levels + 1 }, (_, i) => {
-        const v = i; // 0..levels
+        const v = i;
         const y = -step * v;
         return (
           <text
@@ -82,6 +78,7 @@ function RadarLevelLabels({ size = 420, levels = 5, max = 5 }) {
             y={y}
             textAnchor="middle"
             alignmentBaseline="middle"
+            dy={i === 0 ? -4 : 0}
           >
             {Math.round((v / levels) * max)}
           </text>
@@ -91,8 +88,7 @@ function RadarLevelLabels({ size = 420, levels = 5, max = 5 }) {
   );
 }
 
-function RadarSeries({ size = 420, values = [], max = 5, color = "#0e4a2e" }) {
-  const R = size / 2;
+function RadarSeries({ cx = 320, cy = 240, R = 135, values = [], max = 5, color = "#0e4a2e" }) {
   const spokes = values.length;
   const angleStep = (2 * Math.PI) / spokes;
 
@@ -108,46 +104,63 @@ function RadarSeries({ size = 420, values = [], max = 5, color = "#0e4a2e" }) {
       .join(" ") + " Z";
 
   return (
-    <g transform={`translate(${R}, ${R})`}>
-      <path d={pathD} fill="none" stroke={color} strokeWidth={3} />
+    <g transform={`translate(${cx}, ${cy})`}>
+      <path d={pathD} fill="none" stroke={color} strokeWidth={2.5} />
     </g>
   );
 }
 
-function wrapLabel(text, maxLen = 22) {
-  if (text.length <= maxLen) return [text];
-  const conjMatch = text.match(/^(.*?)\s+(?:and|&)\s+(.+)$/i);
+function wrapLabel(text) {
+  const cleaned = text.trim();
+  if (cleaned.length <= 16) return [cleaned];
+
+  if (/sales/i.test(cleaned) && /customer/i.test(cleaned)) {
+    return ["Sales & Customer", "Centricity"];
+  }
+  if (/expertise/i.test(cleaned) && /communication/i.test(cleaned)) {
+    return ["Expertise &", "Communication"];
+  }
+  if (/operational/i.test(cleaned) && /excellence/i.test(cleaned)) {
+    return ["Operational", "Excellence"];
+  }
+  if (/results/i.test(cleaned) && /orientation/i.test(cleaned)) {
+    return ["Results", "Orientation"];
+  }
+
+  const conjMatch = cleaned.match(/^(.*?)\s+(?:and|&)\s+(.+)$/i);
   if (conjMatch) {
-    const first = conjMatch[1];
-    const second = conjMatch[2];
-    if (first.length <= maxLen) return [first, second];
+    return [`${conjMatch[1]} &`, conjMatch[2]];
   }
-  const spaceIdx = text.lastIndexOf(" ", maxLen);
+
+  const spaceIdx = cleaned.lastIndexOf(" ", 18);
   if (spaceIdx > 0) {
-    return [text.slice(0, spaceIdx), text.slice(spaceIdx + 1)];
+    return [cleaned.slice(0, spaceIdx), cleaned.slice(spaceIdx + 1)];
   }
-  return [text.slice(0, maxLen), text.slice(maxLen).trim()];
+  return [cleaned];
 }
 
-function RadarLabels({ size = 420, labels = [] }) {
-  const R = size / 2;
+function RadarLabels({ cx = 320, cy = 240, R = 135, labels = [] }) {
   const angleStep = (2 * Math.PI) / labels.length;
-  const labelRadius = R + 26;
+  const labelRadius = R + 22;
 
   return (
-    <g transform={`translate(${R}, ${R})`} fontSize={15} fill="#222" fontWeight="bold">
+    <g transform={`translate(${cx}, ${cy})`} fontSize={13} fill="#1e293b" fontWeight="600">
       {labels.map((lab, i) => {
         const a = -Math.PI / 2 + i * angleStep;
         const [x, y] = polarToCartesian(a, labelRadius);
+
+        const cosA = Math.cos(a);
         const anchor =
-          Math.abs(Math.cos(a)) < 0.3
+          Math.abs(cosA) < 0.25
             ? "middle"
-            : Math.cos(a) > 0
+            : cosA > 0
             ? "start"
             : "end";
+
         const lines = wrapLabel(lab);
-        const lineHeight = 18;
+        const lineHeight = 16;
         const startY = lines.length > 1 ? y - ((lines.length - 1) * lineHeight) / 2 : y;
+
         return (
           <text
             key={i}
@@ -194,8 +207,12 @@ const SpiderChartSummary = ({
   manager = [4.5, 3.8, 4.0, 3.0, 3.0, 4.0, 4.0],
   others = [4.2, 4.0, 4.1, 4.0, 3.0, 4.0, 3.8],
 }) => {
-  const size = 400;
-  const pad = 30; 
+  const width = 640;
+  const height = 480;
+  const cx = 320;
+  const cy = 240;
+  const R = 135;
+
   const blocks = useMemo(() => {
     const out = [];
 
@@ -243,19 +260,19 @@ const SpiderChartSummary = ({
         <div className="scs-chartwrap__center">
           <svg
             className="scs-chart"
-            width={size}
-            height={size}
+            width={width}
+            height={height}
             role="img"
             aria-label="LBSCORE spider chart"
-            viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
+            viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="xMidYMid meet"
           >
-            <RadarGrid size={size} levels={5} spokes={categories.length} />
-            <RadarLevelLabels size={size} levels={5} max={5} />
-            <RadarLabels size={size} labels={categories} />
-            <RadarSeries size={size} values={self} color="#caa785" />
-            <RadarSeries size={size} values={manager} color="#0e4a2e" />
-            <RadarSeries size={size} values={others} color="#b8860b" />
+            <RadarGrid cx={cx} cy={cy} R={R} levels={5} spokes={categories.length} />
+            <RadarLevelLabels cx={cx} cy={cy} R={R} levels={5} max={5} />
+            <RadarLabels cx={cx} cy={cy} R={R} labels={categories} />
+            <RadarSeries cx={cx} cy={cy} R={R} values={self} color="#caa785" />
+            <RadarSeries cx={cx} cy={cy} R={R} values={manager} color="#0e4a2e" />
+            <RadarSeries cx={cx} cy={cy} R={R} values={others} color="#b8860b" />
           </svg>
           <Legend />
         </div>

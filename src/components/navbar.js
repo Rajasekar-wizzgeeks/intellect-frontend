@@ -13,6 +13,7 @@ import {
   Menu,
   Search,
   Settings,
+  Sliders,
   Target,
   User,
   X,
@@ -143,10 +144,17 @@ const Navbar = () => {
               </NavLink>
 
               {storedUser?.role === "admin" && (
-                <NavLink to="/admin/users" className={navLinkClassName}>
-                  <User className="rh-nav__link-icon" />
-                  <span className="rh-nav__link-text">Users</span>
-                </NavLink>
+                <>
+                  <NavLink to="/admin/users" className={navLinkClassName}>
+                    <User className="rh-nav__link-icon" />
+                    <span className="rh-nav__link-text">Users</span>
+                  </NavLink>
+
+                  <NavLink to="/admin/Competency" className={navLinkClassName}>
+                    <Sliders className="rh-nav__link-icon" />
+                    <span className="rh-nav__link-text">Competency Config</span>
+                  </NavLink>
+                </>
               )}
 
               {/* <NavLink

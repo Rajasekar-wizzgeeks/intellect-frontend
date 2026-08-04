@@ -28,6 +28,7 @@ import StatusModal from "../components/StatusModal";
 import CoachingActionPlan from "../components/CoachingActionPlan";
 import CoachingActionPlanPage2 from "../components/CoachingActionPlanPage2";
 import IndividualDevelopmentPlan from "../components/IndividualDevelopmentPlan";
+import { getCategoryConfigs } from "../helper/apicalls/feedback";
 import BlindSpots from "../components/BlindSpots";
 import ChessKingIcon from "../assets/png/chessKingIcon.png";
 import MarketingIcon from "../assets/png/marketingIcon.png";
@@ -80,6 +81,7 @@ const MainPage = () => {
   const fileInputRef = useRef(null);
   const draftFetched = useRef(false);
   const [pageNumberMap, setPageNumberMap] = useState({});
+  const [categoryConfigs, setCategoryConfigs] = useState([]);
   const pageMapTimerRef = useRef(null);
 
   const QUALITATIVE_ROLES = ["Manager", "Peer", "Subordinate", "Self"];
@@ -195,7 +197,15 @@ const parseQualitativeComment = (c)=> {
   };
 
   useEffect(() => {
-    // Optional: Auto-fetch if there's a default state or trigger
+    getCategoryConfigs()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCategoryConfigs(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load dynamic category configs, using fallbacks:", err);
+      });
   }, []);
 
   const qualitativeSectionsData = useMemo(() => {
@@ -204,16 +214,21 @@ const parseQualitativeComment = (c)=> {
     const feedbackData = reportData.feedbacks;
     const sections = [];
 
-    // Define the mapping between API keys and local section headers
-    const mapping = [
-      { key: "Leadership Feedback", titleIndex: "3.1.", titleText: "Leadership" },
-      { key: "Bandwidth Feedback", titleIndex: "3.2.", titleText: "Bandwidth" },
-      { key: "Sales and Customer Centricity Feedback", titleIndex: "3.3.", titleText: "Sales & Customer Centricity" },
-      { key: "Collaboration Feedback", titleIndex: "3.4.", titleText: "Collaboration" },
-      { key: "Operational Excellence Feedback", titleIndex: "3.5.", titleText: "Operational Excellence" },
-      { key: "Result Orientation Feedback", titleIndex: "3.6.", titleText: "Results Orientation" },
-      { key: "Expertise and Communication Feedback", titleIndex: "3.7.", titleText: "Expertise & Communication" }
-    ];
+    const mapping = categoryConfigs.length > 0
+      ? categoryConfigs.map((c, idx) => ({
+          key: c.feedback_key,
+          titleIndex: `3.${idx + 1}.`,
+          titleText: c.name,
+        }))
+      : [
+          { key: "Leadership Feedback", titleIndex: "3.1.", titleText: "Leadership" },
+          { key: "Bandwidth Feedback", titleIndex: "3.2.", titleText: "Bandwidth" },
+          { key: "Sales and Customer Centricity Feedback", titleIndex: "3.3.", titleText: "Sales & Customer Centricity" },
+          { key: "Collaboration Feedback", titleIndex: "3.4.", titleText: "Collaboration" },
+          { key: "Operational Excellence Feedback", titleIndex: "3.5.", titleText: "Operational Excellence" },
+          { key: "Result Orientation Feedback", titleIndex: "3.6.", titleText: "Results Orientation" },
+          { key: "Expertise and Communication Feedback", titleIndex: "3.7.", titleText: "Expertise & Communication" }
+        ];
 
     mapping.forEach((m) => {
       const apiSection = feedbackData[m.key];
@@ -770,7 +785,7 @@ const parseQualitativeComment = (c)=> {
       }
     }
 
-    // Apply competency summary (quartile) edits
+    // Apply competency summary (quartile and overall score) edits
     if (cEdits) {
       const cs = data?.competency_summary || {};
       finalData.competency_summary = {
@@ -782,6 +797,11 @@ const parseQualitativeComment = (c)=> {
           ? buildCompetencyQuartilesFromMap(cEdits.streamMap, cs.quartile_by_stream)
           : cs.quartile_by_stream,
       };
+      
+      if (cEdits.overallScore !== undefined) {
+        finalData.competency_summary.overall_score = cEdits.overallScore;
+        finalData.overall_score = cEdits.overallScore;
+      }
     }
 
     // Apply Coaching Action Plan edits
@@ -1454,11 +1474,11 @@ const parseQualitativeComment = (c)=> {
         </div>
 
         <section className="section-page pdf-section">
-          <TableContentPage pageNumberMap={pageNumberMap} />
+          <TableContentPage pageNumberMap={pageNumberMap} categories={categoryConfigs} />
         </section>
 
         <div data-toc-id="toc-about-assessment">
-          <AboutAssessmentPages />
+          <AboutAssessmentPages categories={categoryConfigs} />
         </div>
 
         <div data-toc-id="toc-about-sections">
@@ -1473,7 +1493,13 @@ const parseQualitativeComment = (c)=> {
           <AboutSectionPages
           titleIndex="1.4."
           titleText="LBSCORE Element Snapshot"
-          sections={[
+          sections={
+            categoryConfigs.length > 0
+              ? categoryConfigs.map((c) => ({
+                  chip: c.name,
+                  items: (c.behaviors || []).map((b) => ({ tail: b })),
+                }))
+              : [
             {
               chip: "Leadership",
               items: [

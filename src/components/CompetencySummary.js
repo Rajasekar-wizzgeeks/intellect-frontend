@@ -10,14 +10,27 @@ import "../styles/competencySummary.scss";
 
 ChartJS.register(ArcElement, Tooltip);
 
-const Gauge = ({ score = 370, max = 500 }) => {
+const Gauge = ({ score = 370, max = 500, onScoreChange }) => {
   const [currentScore, setCurrentScore] = useState(score);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(score));
 
-  const value = Number(currentScore) || 0;
-  const total = Number(max) || 500;
-  const percentage = Math.max(0, Math.min(100, (value / total) * 100));
+  useEffect(() => {
+    setCurrentScore(score);
+    setEditValue(String(score));
+  }, [score]);
+
+  const effectiveTotal = Number(max) || 500;
+
+  const activeValue = isEditing
+    ? Number.isFinite(Number(editValue))
+      ? Math.min(effectiveTotal, Math.max(0, Number(editValue)))
+      : Number(currentScore) || 0
+    : Number(currentScore) || 0;
+
+  const value = activeValue;
+
+  const percentage = Math.max(0, Math.min(100, (value / effectiveTotal) * 100));
 
   const emptyDoughnut = {
     id: "emptyDoughnut",
@@ -50,13 +63,39 @@ const Gauge = ({ score = 370, max = 500 }) => {
   };
 
   const handleInputChange = (e) => {
-    setEditValue(e.target.value);
+    const val = e.target.value;
+    if (val === "" || val === "-") {
+      setEditValue(val);
+      return;
+    }
+    const parsed = Number(val);
+    if (Number.isFinite(parsed)) {
+      if (parsed > effectiveTotal) {
+        setEditValue(String(effectiveTotal));
+      } else if (parsed < 0) {
+        setEditValue("0");
+      } else {
+        setEditValue(val);
+      }
+    }
   };
 
   const commitEdit = () => {
-    const parsed = Number(editValue);
+    let parsed = Number(editValue);
     if (Number.isFinite(parsed)) {
+      if (parsed < 0) parsed = 0;
+      if (parsed > effectiveTotal) parsed = effectiveTotal;
+      
+      // Keep up to 2 decimal places cleanly
+      parsed = Math.round(parsed * 100) / 100;
+
       setCurrentScore(parsed);
+      setEditValue(String(parsed));
+      if (onScoreChange) {
+        onScoreChange(parsed);
+      }
+    } else {
+      setEditValue(String(currentScore));
     }
     setIsEditing(false);
   };
@@ -130,7 +169,7 @@ const Gauge = ({ score = 370, max = 500 }) => {
       ctx.fillStyle = "#ffffff";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(value, centerX, centerY);
+      // ctx.fillText(value, centerX, centerY); // Removed to use HTML overlay
 
       ctx.restore();
     },
@@ -192,10 +231,13 @@ const Gauge = ({ score = 370, max = 500 }) => {
           plugins={[dottedTicks, centerText, emptyDoughnut]}
         />
       </div>
-      {/* <div className="cs-gauge-chart__value" onDoubleClick={handleDoubleClick}>
+      <div className="cs-gauge-chart__value" onClick={handleDoubleClick}>
         {isEditing ? (
           <input
-            type="text"
+            type="number"
+            min="0"
+            max={max}
+            step="any"
             value={editValue}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
@@ -206,7 +248,7 @@ const Gauge = ({ score = 370, max = 500 }) => {
         ) : (
           <span>{value}</span>
         )}
-      </div> */}
+      </div>
     </div>
   );
 };
@@ -245,13 +287,17 @@ const CompetencySummary = ({
 
   const [cohortMap, setCohortMap] = useState(() => cohortQuartiles ?? defaultCohortMap);
   const [streamMap, setStreamMap] = useState(() => streamQuartiles ?? defaultStreamMap);
+  const [currentOverallScore, setCurrentOverallScore] = useState(overallScore);
 
   useEffect(() => {
     setCohortMap(cohortQuartiles ?? defaultCohortMap);
   }, [cohortQuartiles]);
   useEffect(() => {
     setStreamMap(streamQuartiles ?? defaultStreamMap);
-  }, [streamQuartiles]); 
+  }, [streamQuartiles]);
+  useEffect(() => {
+    setCurrentOverallScore(overallScore);
+  }, [overallScore]); 
 
   const quartileHeaders = [
     "Min Score",
@@ -267,7 +313,7 @@ const CompetencySummary = ({
         ...prev,
         [quartile]: prev[quartile].map((v, i) => (i === index ? value : v)),
       };
-      if (onDataChange) onDataChange({ cohortMap: next, streamMap });
+      if (onDataChange) onDataChange({ cohortMap: next, streamMap, overallScore: currentOverallScore });
       return next;
     });
   };
@@ -278,13 +324,21 @@ const CompetencySummary = ({
         ...prev,
         [quartile]: prev[quartile].map((v, i) => (i === index ? value : v)),
       };
-      if (onDataChange) onDataChange({ cohortMap, streamMap: next });
+      if (onDataChange) onDataChange({ cohortMap, streamMap: next, overallScore: currentOverallScore });
       return next;
     });
   };
 
+  const handleScoreChange = (newScore) => {
+    setCurrentOverallScore(newScore);
+    if (onDataChange) onDataChange({ cohortMap, streamMap, overallScore: newScore });
+  };
+
   const blocks = useMemo(() => {
     const out = [];
+
+    const numScore = Number(currentOverallScore) || 0;
+    const computedMax = 500;
 
     out.push(
       <h2 key="title" className="content-page__title cs-title">
@@ -300,19 +354,19 @@ const CompetencySummary = ({
         </h3>
         <div className="cs-overall__note">
           <em>
-            Note: The overall score is calculated on a total score of 500 using
+            Note: The overall score is calculated on a total score of {computedMax} using
             weightages applicable for your respective streams.
           </em>
         </div>
         <div className="cs-gauge-wrap">
           <div className="cs-gauge">
             <div className="cs-gauge__label">Your Overall Score</div>
-            <Gauge score={overallScore} />
+            <Gauge score={currentOverallScore} max={computedMax} onScoreChange={handleScoreChange} />
           </div>
         </div>
         <ul className="cs-overall__bullets">
           <li>
-            The overall score is calculated on a total score of 500 using
+            The overall score is calculated on a total score of {computedMax} using
             weightages applicable for <strong>{stream ? stream.toUpperCase() : "YOUR"}</strong>
             &nbsp;Stream.
           </li>
@@ -349,7 +403,7 @@ const CompetencySummary = ({
     );
 
     return out;
-  }, [cohortMap, streamMap, quartileHeaders, cohortInitialSelected, streamInitialSelected]);
+  }, [cohortMap, streamMap, quartileHeaders, cohortInitialSelected, streamInitialSelected, currentOverallScore, stream]);
 
   return (
     <AutoPaginatedSections

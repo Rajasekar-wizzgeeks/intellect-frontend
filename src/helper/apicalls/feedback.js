@@ -1,6 +1,6 @@
 import { apiFetch } from "../apiFetch";
 import { parseApiErrorBody } from "../getApiErrorMessage";
-import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl, deleteFeedbackDraftUrl, multisave } from "../apiurls";
+import { feedbackExcelUrl, lbscore360ExcelUrl, dav360SummaryExcelUrl, savedDraftUrl, getFeedbackDraftUrl, getOneFeedbackDraftUrl, updateFeedbackDraftUrl, getAllUsersUrl, giveAccessUrl, deleteFeedbackDraftUrl, multisave, categoryConfigsUrl } from "../apiurls";
 
 const apiRequestError = (errorData, fallback) =>
   new Error(parseApiErrorBody(errorData) || fallback);
@@ -553,6 +553,90 @@ export const multiSaveDraft = async (payload) => {
     return await response.json();
   } catch (error) {
     console.error("Error multi-saving draft:", error);
+    throw error;
+  }
+};
+
+export const getCategoryConfigs = async () => {
+  try {
+    const response = await apiFetch(categoryConfigsUrl, { method: "GET" });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw apiRequestError(errorData, "Failed to fetch category configs");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching category configs:", error);
+    throw error;
+  }
+};
+
+export const createCategoryConfig = async (payload) => {
+  try {
+    const response = await apiFetch(categoryConfigsUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw apiRequestError(errorData, "Failed to create category config");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating category config:", error);
+    throw error;
+  }
+};
+
+export const updateCategoryConfig = async (id, payload) => {
+  try {
+    const response = await apiFetch(`${categoryConfigsUrl}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw apiRequestError(errorData, "Failed to update category config");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating category config:", error);
+    throw error;
+  }
+};
+
+export const deleteCategoryConfig = async (id) => {
+  try {
+    const response = await apiFetch(`${categoryConfigsUrl}/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw apiRequestError(errorData, "Failed to delete category config");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting category config:", error);
+    throw error;
+  }
+};
+
+export const reorderCategoryConfigs = async (ordersList) => {
+  try {
+    const response = await apiFetch(`${categoryConfigsUrl}/reorder`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ordersList),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw apiRequestError(errorData, "Failed to reorder categories");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error reordering categories:", error);
     throw error;
   }
 };

@@ -29,17 +29,21 @@
 
 .scs-chartwrap {
   margin-top: 12px;
+  width: 100%;
 
   &__center {
     position: relative;
     display: flex;
     justify-content: center;
+    align-items: center;
+    width: 100%;
   }
 }
 
 .scs-chart {
-  width: 400px; // matches the size variable
-  height: 400px;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
   object-fit: contain;
   overflow: visible;
   display: block;
@@ -47,35 +51,38 @@
 
 .scs-legend {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  background: var(--color-muted);
-  padding: 6px 10px;
-  border-radius: 4px;
+  top: 0px;
+  right: 0px;
+  background: rgba(243, 244, 246, 0.95);
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 6px;
   z-index: 1;
 
   &__title {
     font-size: 11px;
-    margin-bottom: 3px;
-    font-weight: 400;
+    margin-bottom: 4px;
+    font-weight: 700;
+    color: #4b5563;
   }
 
   &__item {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-top: 2px;
+    gap: 6px;
+    margin-top: 3px;
   }
 
   &__color {
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: #999; // overridden inline per item
+    width: 10px;
+    height: 10px;
     border-radius: 2px;
   }
 
   &__label {
     font-size: 11px;
+    font-weight: 600;
+    color: #374151;
   }
 }
