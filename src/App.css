@@ -36,17 +36,17 @@ body {
   overflow: hidden;
 }
 
-.rh-nav + .app-main-container,
-.navbar + .app-main-container,
-.navbar-collapse-div + .app-main-container {
+.rh-nav ~ .app-main-container,
+.navbar ~ .app-main-container,
+.navbar-collapse-div ~ .app-main-container {
   margin-left: 210px;
   width: calc(100% - 210px);
 }
 
 @media (max-width: 768px) {
-  .rh-nav + .app-main-container,
-  .navbar + .app-main-container,
-  .navbar-collapse-div + .app-main-container {
+  .rh-nav ~ .app-main-container,
+  .navbar ~ .app-main-container,
+  .navbar-collapse-div ~ .app-main-container {
     margin-left: 0;
     width: 100%;
   }

@@ -250,7 +250,7 @@ const CategoryConfigPage = () => {
           </button>
           <button className="category-config-page__btn category-config-page__btn--primary" onClick={handleOpenAdd}>
             <Plus size={16} />
-            <span>Add Category</span>
+            <span>Add Competency</span>
           </button>
         </div>
       </div>
@@ -267,7 +267,7 @@ const CategoryConfigPage = () => {
         {loading && categories.length === 0 ? (
           <div className="users-table__empty">Loading category configurations...</div>
         ) : categories.length === 0 ? (
-          <div className="users-table__empty">No categories configured yet.</div>
+          <div className="users-table__empty">No Competencies configured yet.</div>
         ) : (
           categories.map((cat, idx) => (
             <div
@@ -367,7 +367,7 @@ const CategoryConfigPage = () => {
             <div className="modal-header">
               <div className="modal-title">
                 <Sliders size={20} />
-                <span>{editingId ? "Edit Category Configuration" : "Add New Category Configuration"}</span>
+                <span>{editingId ? "Edit Competency Configuration" : "Add New Competency Configuration"}</span>
               </div>
               <button className="modal-close" onClick={() => setIsModalOpen(false)}>
                 ✕
@@ -517,19 +517,19 @@ const CategoryConfigPage = () => {
         isOpen={Boolean(deletingId)}
         onClose={() => setDeletingId(null)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Category Configuration?"
-        message="Are you sure you want to delete this category? This will remove it from future report calculations."
+        title="Delete Competency Configuration?"
+        message="Are you sure you want to delete this competency? This will remove it from future report calculations."
         isDeleting={deleteLoading}
       />
 
-      {/* Category Preview Modal */}
+      {/* Competency Preview Modal */}
       {previewCategory && (
         <div className="modal-overlay" onClick={() => setPreviewCategory(null)}>
           <div className="modal-content category-preview-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title">
                 <Eye size={20} style={{ color: "var(--color-green-header)" }} />
-                <span>Category Details Preview</span>
+                <span>Competency Details Preview</span>
               </div>
               <button className="modal-close" onClick={() => setPreviewCategory(null)}>
                 <X size={18} />
